@@ -172,11 +172,8 @@ def load_fixtures(path: Path = DB_PATH) -> dict[str, int]:
     counts = {"inventory_records": load_inventory_fixture(conn)}
     counts.update(load_menu_fixtures(conn))
 
-    # TODO(T030): load the committed recall snapshots here via
-    # pullsheet.recalls.corpus.load_snapshots(conn). Deliberately NOT stubbed:
-    # a stub that silently loaded nothing would make an empty corpus look like a
-    # clean district, which is the one lie this system must not tell.
-    counts["recall_records"] = 0
+    from pullsheet.recalls.corpus import load_snapshots
+    counts["recall_records"] = sum(load_snapshots(conn).values())
 
     conn.close()
     return counts

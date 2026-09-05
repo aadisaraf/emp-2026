@@ -147,8 +147,51 @@ def test_no_inventory_row_is_screened_out_entirely_without_reason():
     assert len(empty) < len(INVENTORY) / 2, f"{len(empty)} rows reach nothing: {empty[:5]}"
 
 
+def test_a_single_common_word_is_not_enough_on_its_own():
+    """'milk' reaches every milk recall there has ever been. Admitting a pair on
+    that alone produces a sheet nobody can read, which is its own way of missing
+    a recall. Sharing a SECOND word still admits it."""
+    from pullsheet.matching.screen import COMMON_TOKEN_SHARE
+    common = [t for t, n in INDEXES.doc_freq.items()
+              if n > COMMON_TOKEN_SHARE * INDEXES.record_count]
+    assert common, "no token is common enough for this test to mean anything"
+    token = max(common, key=lambda t: INDEXES.doc_freq[t])
+    assert not INDEXES.is_distinctive(token)
+
+    only_common = SimpleNamespace(normalized_description=token,
+                                  gtin=None, upc=None, lot_code=None)
+    assert generate_candidates(only_common, INDEXES) == set()
+
+
+def test_two_common_words_together_are_enough():
+    """Take a real record, keep only its COMMON tokens, and check the pair still
+    reaches it. Neither word would admit it alone."""
+    for rec in CORPUS:
+        common = [t for t in significant_tokens(rec.normalized_description)
+                  if not INDEXES.is_distinctive(t)]
+        if len(common) >= 2:
+            row = SimpleNamespace(normalized_description=" ".join(common[:2]),
+                                  gtin=None, upc=None, lot_code=None)
+            assert rec.id in generate_candidates(row, INDEXES)
+            for word in common[:2]:
+                alone = SimpleNamespace(normalized_description=word,
+                                        gtin=None, upc=None, lot_code=None)
+                assert rec.id not in generate_candidates(alone, INDEXES)
+            return
+    pytest.skip("no record carries two common tokens")
+
+
+def test_one_distinctive_word_is_enough():
+    """'mozzarella' appears in 6 of 1012 records. One is plenty."""
+    row = SimpleNamespace(normalized_description="mozzarella",
+                          gtin=None, upc=None, lot_code=None)
+    assert INDEXES.is_distinctive("mozzarella")
+    assert generate_candidates(row, INDEXES)
+
+
 def test_the_screening_rule_is_stated_in_prose():
     """T045 renders this string verbatim on the sheet. It must answer 'what does
     your system throw away?' without the reader opening a file."""
-    assert "significant name token" in SCREENING_RULE
+    assert "significant name word" in SCREENING_RULE
     assert "never evaluated" in SCREENING_RULE
+    assert "barcode" in SCREENING_RULE and "lot code" in SCREENING_RULE

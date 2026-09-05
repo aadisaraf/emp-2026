@@ -45,6 +45,19 @@ STOPLIST: frozenset[str] = frozenset({
     # filler
     "and", "with", "without", "the", "for", "all", "any", "other", "following",
     "includes", "including", "contains", "made", "approx", "approximately",
+    "in", "on", "at", "to", "of", "by", "or", "is", "was", "were", "been", "has",
+    "have", "had", "not", "no", "new", "use", "used", "also", "its", "this",
+    "that", "these", "those", "each", "per", "one", "two", "three", "four",
+    # code and date words that appear in descriptions rather than code fields
+    "upc", "gtin", "sku", "plu", "code", "codes", "lot", "lots", "batch", "est",
+    "date", "dates", "exp", "expiration", "best", "sell", "number", "numbers",
+    "found", "located", "printed", "stamped", "bottom", "top", "back", "front",
+    "side", "ingredients", "ingredient", "allergen", "warning",
+    # corporate boilerplate
+    "inc", "llc", "ltd", "company", "co", "corp", "corporation", "manufactured",
+    "distributor", "distributors", "foods", "food", "brands",
+    # packaging materials
+    "plastic", "paper", "glass", "metal", "poly", "clear", "white", "black",
 })
 
 
@@ -78,11 +91,32 @@ class ScreenRecord(NamedTuple):
     lot_codes: tuple[str, ...] = ()
 
 
+#: A token appearing in more than this share of the corpus narrows nothing on
+#: its own: "milk" reaches every milk recall there has ever been. Such a token
+#: still creates a candidate when the pair shares a SECOND token, and it is
+#: still scored -- it just cannot be the sole reason two things are compared.
+#: Every one of the 25 seeded correspondences survives this threshold, which is
+#: asserted, not assumed:
+#: tests/unit/test_screen.py::test_every_seeded_pair_survives_screening
+COMMON_TOKEN_SHARE = 0.02
+
+#: A pair sharing this many significant tokens is a candidate no matter how
+#: common each one is.
+MIN_SHARED_TOKENS = 2
+
+
 class Indexes(NamedTuple):
     by_code: dict[str, set]
     by_lot: dict[str, set]
     by_token: dict[str, set]
     record_count: int
+    doc_freq: dict[str, int] = {}
+
+    def is_distinctive(self, token: str) -> bool:
+        """True when this token is rare enough to justify a comparison alone."""
+        if not self.record_count:
+            return True
+        return self.doc_freq.get(token, 0) <= COMMON_TOKEN_SHARE * self.record_count
 
     def significant_tokens(self, text: str | None) -> frozenset[str]:
         return significant_tokens(text)
@@ -98,6 +132,7 @@ def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
     by_code: dict[str, set] = defaultdict(set)
     by_lot: dict[str, set] = defaultdict(set)
     by_token: dict[str, set] = defaultdict(set)
+    doc_freq: dict[str, int] = defaultdict(int)
     n = 0
 
     for rec in records:
@@ -113,8 +148,9 @@ def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
                 by_lot[key].add(rec.id)
         for token in significant_tokens(rec.normalized_description):
             by_token[token].add(rec.id)
+            doc_freq[token] += 1
 
-    return Indexes(dict(by_code), dict(by_lot), dict(by_token), n)
+    return Indexes(dict(by_code), dict(by_lot), dict(by_token), n, dict(doc_freq))
 
 
 def generate_candidates(inv, indexes: Indexes) -> set:
@@ -125,17 +161,24 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     --------------------------------------------------------------------------
     Requirement:  FR-020. This is the screening floor, and the only operation in
                   PullSheet that can cause a pair never to be evaluated.
-    Rule:         a recall record becomes a candidate if it shares a barcode
-                  fragment, a normalized lot code, OR at least one significant
-                  name token with this inventory row. Union, never intersection:
-                  any one of the three is enough.
-    Why safe:     the three channels are independent. A row with no barcode is
-                  still reachable by name (FR-026); a row whose name normalizes
-                  to nothing is still reachable by code. Only a pair sharing
-                  *none* of the three is skipped, and that pair has no evidence
-                  of any kind linking it.
-    Stoplist:     removed from SEARCH only. Stoplisted tokens are still scored
-                  by similarity.dice() once a pair exists.
+    Rule:         a recall record becomes a candidate if it shares, with this
+                  inventory row, ANY of:
+                    - a barcode fragment (right-most 11 digits, check digit off)
+                    - a normalized lot code
+                    - two or more significant name tokens
+                    - one significant name token appearing in <= 2% of the corpus
+                  Union, never intersection. Any one of the four is enough.
+    Why safe:     the channels are independent. A row with no barcode is still
+                  reachable by name (FR-026); a row whose name normalizes to
+                  nothing is still reachable by code. The token conditions only
+                  refuse a pair whose ONLY link is a single word that reaches a
+                  large fraction of the corpus -- "milk" alone is not evidence
+                  that this milk is that milk, and a sheet that says it is
+                  cannot be read, which is its own way of missing a recall.
+    Cost:         measured, not assumed. All 25 hand-seeded correspondences
+                  survive this rule; the test asserting so is build-stopping.
+    Stoplist:     removed from SEARCH only. Stoplisted and common tokens are
+                  still counted by similarity.dice() once a pair exists.
     Covered by:   tests/unit/test_screen.py::test_every_seeded_pair_survives_screening
                   tests/unit/test_clearing_audit.py
     ==========================================================================
@@ -151,9 +194,17 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     if lot_key and lot_key in indexes.by_lot:
         hits |= indexes.by_lot[lot_key]
 
+    # Name channel. Count how many of this row's significant tokens each recall
+    # shares, so "two common tokens" and "one distinctive token" can both admit
+    # a pair while "one common token" alone cannot.
+    shared_counts: dict = defaultdict(int)
     for token in significant_tokens(getattr(inv, "normalized_description", None)):
-        if token in indexes.by_token:
-            hits |= indexes.by_token[token]
+        for recall_id in indexes.by_token.get(token, ()):
+            shared_counts[recall_id] += 1
+            if indexes.is_distinctive(token):
+                hits.add(recall_id)
+
+    hits |= {rid for rid, count in shared_counts.items() if count >= MIN_SHARED_TOKENS}
 
     return hits
 
@@ -162,7 +213,7 @@ def generate_candidates(inv, indexes: Indexes) -> set:
 #: operator can read what the system throws away without reading the code (T045).
 SCREENING_RULE = (
     "A recall is compared against an inventory line only if the two share a barcode "
-    "fragment, a lot code, or at least one significant name token. A pair that "
-    "shares no significant name token, no lot, and no barcode fragment is never "
-    "evaluated."
+    "fragment, a lot code, two or more significant name words, or one significant "
+    "name word that appears in fewer than 2% of recall records. A pair whose only "
+    "link is a single common word - milk, chicken, cheese - is never evaluated."
 )
