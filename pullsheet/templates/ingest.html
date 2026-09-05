@@ -1,0 +1,70 @@
+{% import "base.html" as ui with context %}
+<title>Add inventory &mdash; PullSheet</title>
+{% include "base.html" %}
+
+<main>
+  <h1>Add inventory</h1>
+  <p class="generated">Three ways in. They all reach the same matcher and produce
+     the same sheet.</p>
+
+  {% if pending %}
+  <section class="mapping">
+    <h2>One column needs a decision</h2>
+    <p>We recognised every other column in <code>{{ pending.filename }}</code>.
+       This one could mean two different things, and guessing it would produce a
+       sheet that is confidently wrong. Tell us once and we will remember it for
+       this source.</p>
+    <form method="post" action="/ingest/mapping">
+      <input type="hidden" name="filename" value="{{ pending.filename }}">
+      {% for header, candidates in pending.ambiguous.items() %}
+      <label class="map-row">
+        <span>Column <code>{{ header }}</code> means</span>
+        <select name="map__{{ header }}">
+          {% for c in candidates %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+          <option value="ignore">ignore this column</option>
+        </select>
+      </label>
+      {% endfor %}
+      <button type="submit">Use this mapping</button>
+    </form>
+    <details>
+      <summary>Columns we did recognise</summary>
+      <ul>{% for h, f in pending.mapping.items() %}<li><code>{{ h }}</code> &rarr; {{ f }}</li>{% endfor %}</ul>
+    </details>
+  </section>
+  {% endif %}
+
+  <section class="door">
+    <h2>The watched folder</h2>
+    <p>Drop a CSV or XLSX export into <code>data/watched/</code>. Nothing else to
+       do &mdash; it is picked up within a couple of seconds, and the file moves to
+       <code>data/archive/</code> once it has been read. A file that could not be
+       read stays put so you can see it.</p>
+  </section>
+
+  <section class="door">
+    <h2>Upload a spreadsheet</h2>
+    <form method="post" action="/ingest/upload" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".csv,.xlsx,.xlsm" required>
+      <button type="submit">Upload</button>
+    </form>
+  </section>
+
+  <section class="door">
+    <h2>Type or paste a list</h2>
+    <p>One item per line. This never rejects anything: if every other path has
+       failed, this one still produces a pull sheet.</p>
+    <form method="post" action="/ingest/paste">
+      <label>Site <input name="site" placeholder="Lincoln Elementary"></label>
+      <textarea name="text" rows="8" placeholder="12 chkn strips froz&#10;grnd bf 80/20&#10;mozz shred lm"></textarea>
+      <button type="submit">Add these items</button>
+    </form>
+  </section>
+
+  {% if rejections %}
+  <section class="rejections">
+    <h2>Rejected exports</h2>
+    <ul>{% for r in rejections %}<li><code>{{ r.filename }}</code> &mdash; {{ r.rejection_reason }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+</main>

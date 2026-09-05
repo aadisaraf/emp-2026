@@ -18,12 +18,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from pullsheet import db
+from pullsheet.adapters.column_map import ALIASES
+from pullsheet.adapters.paste import PasteAdapter
+from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
 from pullsheet.artifacts import pull_sheet
+from pullsheet.matching.run import run_matcher
 from pullsheet.matching.screen import SCREENING_RULE
 from pullsheet.provenance import LABELS, SOURCES, label_for
 
 ROOT = Path(__file__).resolve().parent.parent
 HERE = Path(__file__).resolve().parent
+UPLOADS = ROOT / "data" / "uploads"
 
 app = FastAPI(title="PullSheet", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
@@ -40,6 +45,28 @@ def now() -> datetime:
 
 def _conn():
     return db.connect(db.DB_PATH)
+
+
+def _sync_form(request: Request) -> dict:
+    """Read a form body from a sync route.
+
+    Starlette exposes form parsing as a coroutine; this route is otherwise
+    entirely synchronous, and one nested event loop is cheaper than making the
+    whole clearing and mapping surface async for no other reason.
+    """
+    import asyncio
+
+    async def _read():
+        return dict(await request.form())
+
+    try:
+        return asyncio.run(_read())
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(_read())
+        finally:
+            loop.close()
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +169,117 @@ def match_detail(request: Request, match_id: int):
 # ---------------------------------------------------------------------------
 # Actions
 # ---------------------------------------------------------------------------
+
+@app.get("/ingest", response_class=HTMLResponse)
+def ingest_page(request: Request, pending: str | None = None):
+    """Upload, or paste. Two doors to the same matcher."""
+    conn = _conn()
+    try:
+        context = {
+            "request": request,
+            "header": pull_sheet.header(conn, now()),
+            "rejections": pull_sheet.rejections(conn),
+            "pending": None,
+        }
+        if pending:
+            path = UPLOADS / pending
+            if path.exists():
+                adapter = SpreadsheetUploadAdapter()
+                headers, mapping, ambiguous = adapter.inspect(path)
+                context["pending"] = {"filename": pending, "headers": headers,
+                                      "mapping": mapping, "ambiguous": ambiguous,
+                                      "fields": sorted(ALIASES)}
+        return templates.TemplateResponse("ingest.html", context)
+    finally:
+        conn.close()
+
+
+@app.post("/ingest/paste")
+def ingest_paste(text: str = Form(""), site: str = Form("Pasted inventory")):
+    """The floor. Never rejects anything."""
+    conn = _conn()
+    try:
+        adapter = PasteAdapter()
+        records = list(adapter.read(text, site.strip() or "Pasted inventory"))
+        if not records:
+            return RedirectResponse("/ingest?empty=1", status_code=303)
+        source_id = db.ensure_source(conn, "Pasted inventory", "paste", "live")
+        db.persist_records(conn, source_id, "pasted", "paste", records)
+        run_matcher(conn)
+    finally:
+        conn.close()
+    return RedirectResponse("/sheet", status_code=303)
+
+
+@app.post("/ingest/upload")
+async def ingest_upload(file: UploadFile):
+    """Accept a spreadsheet, detect its columns, and ask once if anything is
+    genuinely ambiguous."""
+    UPLOADS.mkdir(parents=True, exist_ok=True)
+    name = Path(file.filename or "upload.csv").name
+    target = UPLOADS / name
+    target.write_bytes(await file.read())
+
+    adapter = SpreadsheetUploadAdapter()
+    conn = _conn()
+    try:
+        source_name = f"Upload: {name}"
+        remembered = conn.execute(
+            "SELECT column_map FROM inventory_sources WHERE name = ?", (source_name,)
+        ).fetchone()
+        if remembered and remembered["column_map"]:
+            # Asked once, answered once. This source never prompts again.
+            mapping = json.loads(remembered["column_map"])
+            result = db.ingest_file(conn, target, adapter, source_name, mapping)
+        else:
+            try:
+                _headers, mapping, ambiguous = adapter.inspect(target)
+            except Exception as err:            # noqa: BLE001
+                source_id = db.ensure_source(conn, source_name, adapter.name, adapter.provenance)
+                db.record_rejection(conn, source_id, name, adapter.name, str(err))
+                return RedirectResponse("/ingest", status_code=303)
+            if ambiguous:
+                return RedirectResponse(f"/ingest?pending={name}", status_code=303)
+            result = db.ingest_file(conn, target, adapter, source_name, mapping)
+
+        if result["status"] == "ok":
+            run_matcher(conn)
+            return RedirectResponse("/sheet", status_code=303)
+        return RedirectResponse("/ingest", status_code=303)
+    finally:
+        conn.close()
+
+
+@app.post("/ingest/mapping")
+def ingest_mapping(request: Request, filename: str = Form(...)):
+    """Store the operator's answer for this source and ingest with it.
+
+    The answer is remembered on inventory_sources.column_map, so the same export
+    layout never asks twice.
+    """
+    form = _sync_form(request)
+    path = UPLOADS / Path(filename).name
+    if not path.exists():
+        raise HTTPException(404, f"{filename} is no longer waiting to be mapped")
+
+    adapter = SpreadsheetUploadAdapter()
+    _headers, mapping, ambiguous = adapter.inspect(path)
+    for header in ambiguous:
+        chosen = form.get(f"map__{header}")
+        if chosen and chosen != "ignore":
+            mapping[header] = chosen
+
+    conn = _conn()
+    try:
+        source_name = f"Upload: {path.name}"
+        result = db.ingest_file(conn, path, adapter, source_name, mapping)
+        if result["status"] == "ok":
+            run_matcher(conn)
+            return RedirectResponse("/sheet", status_code=303)
+        return RedirectResponse("/ingest", status_code=303)
+    finally:
+        conn.close()
+
 
 @app.post("/match/{match_id}/clear")
 def clear_match(match_id: int, actor: str = Form(""), note: str = Form("")):
