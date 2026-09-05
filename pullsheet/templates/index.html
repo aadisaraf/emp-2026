@@ -1,0 +1,64 @@
+{% import "base.html" as ui with context %}
+<title>PullSheet &mdash; {{ header.district }}</title>
+{% include "base.html" %}
+
+<main>
+  <h1>{{ header.district }}</h1>
+  <p class="generated">Generated {{ header.generated_at }}</p>
+
+  <section class="tally">
+    <div class="stat stat-pull"><span class="n">{{ header.counts.pull_count }}</span> to pull</div>
+    <div class="stat stat-held"><span class="n">{{ header.counts.held_count }}</span> held for review</div>
+    <div class="stat"><span class="n">{{ sections | length }}</span> sites</div>
+  </section>
+
+  {% if rejections %}
+  <section class="rejections">
+    <h2>Rejected exports</h2>
+    <p>These files were not ingested. Any existing pull sheet is unchanged, and the
+       file is still sitting in the watched folder.</p>
+    <ul>
+      {% for r in rejections %}
+      <li><code>{{ r.filename }}</code> &mdash; {{ r.rejection_reason }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="sites">
+    <h2>Sites</h2>
+    <table>
+      <thead><tr><th>Site</th><th>Pull</th><th>Held</th><th>Cleared</th><th></th></tr></thead>
+      <tbody>
+      {% for s in sections %}
+        <tr>
+          <td>{{ s.site }}</td>
+          <td class="num">{{ s.pull }}</td>
+          <td class="num">{{ s.held }}</td>
+          <td class="num">{{ s.cleared }}</td>
+          <td><a href="/sheet/{{ s.site | lower | replace(' ', '-') }}">pull sheet</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">No inventory has been ingested yet. Drop an export into
+            <code>data/watched/</code>.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="sources">
+    <h2>Where this data comes from</h2>
+    <table>
+      <thead><tr><th>Source</th><th>Provenance</th><th>File</th></tr></thead>
+      <tbody>
+      {% for key, (prov, path, description) in sources.items() %}
+        <tr>
+          <td>{{ key }}</td>
+          <td>{{ ui.provenance(key) }}</td>
+          <td><code>{{ path }}</code></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</main>

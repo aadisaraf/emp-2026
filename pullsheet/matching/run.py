@@ -132,9 +132,10 @@ def ordered_matches(conn: sqlite3.Connection, site: str | None = None) -> list[s
           FROM matches m
           JOIN inventory_records i ON i.id = m.inventory_record_id
           JOIN recall_records   r ON r.id = m.recall_record_id
+         WHERE i.superseded_by IS NULL
     """
     params: tuple = ()
     if site:
-        sql += " WHERE i.site = ?"
+        sql += " AND i.site = ?"
         params = (site,)
     return list(conn.execute(sql + MATCH_ORDER, params))

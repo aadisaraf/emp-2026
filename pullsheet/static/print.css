@@ -1,0 +1,42 @@
+/* Letter portrait. Every column has to survive the printer, because the sheet's
+   real destination is a clipboard in a walk-in freezer, not a screen. */
+@page { size: letter portrait; margin: 0.5in; }
+
+.topbar, .clearing form, .crumb, nav { display: none !important; }
+
+body { background: #fff; font-size: 9.5pt; }
+main { max-width: none; padding: 0; }
+h1 { font-size: 14pt; }
+h2 { font-size: 11pt; }
+
+table { font-size: 8.5pt; width: 100%; table-layout: fixed; }
+th, td { padding: .12rem .2rem; word-wrap: break-word; overflow-wrap: anywhere; }
+.lines th:nth-child(1), .lines td:nth-child(1) { width: 8%; }
+.lines th:nth-child(2), .lines td:nth-child(2) { width: 20%; }
+.lines th:nth-child(3), .lines td:nth-child(3) { width: 6%; }
+.lines th:nth-child(4), .lines td:nth-child(4) { width: 10%; }
+.lines th:nth-child(5), .lines td:nth-child(5) { width: 8%; }
+.lines th:nth-child(6), .lines td:nth-child(6) { width: 8%; }
+.lines th:nth-child(7), .lines td:nth-child(7) { width: 8%; }
+.lines th:nth-child(8), .lines td:nth-child(8) { width: 26%; }
+.lines th:nth-child(9), .lines td:nth-child(9) { width: 6%; }
+
+/* Site sections start on a clean break so one building's sheet is one handout. */
+.site-section { break-before: page; break-inside: auto; }
+.site-section:first-of-type { break-before: auto; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+
+/* Provenance labels and the capture date PRINT. Principle V is not a
+   screen-only commitment: the printed sheet is the artifact that ends up in a
+   compliance folder, and it has to say where its data came from. */
+.prov { border: 1px solid #000 !important; color: #000 !important;
+        background: transparent !important; -webkit-print-color-adjust: exact;
+        print-color-adjust: exact; }
+.badge { color: #000 !important; background: transparent !important;
+         border: 1px solid #000; }
+.line-held { background: #f0f0f0 !important; -webkit-print-color-adjust: exact;
+             print-color-adjust: exact; }
+.line-held td:first-child::after { content: " \25C6"; }
+.line-pull td:first-child::before { content: "\25A0 "; }
+.sheet-footer { break-inside: avoid; border-top: 1.5pt solid #000; font-size: 8pt; }

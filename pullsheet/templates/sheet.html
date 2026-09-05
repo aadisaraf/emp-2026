@@ -1,0 +1,92 @@
+{% import "base.html" as ui with context %}
+<title>Pull sheet &mdash; {{ header.site or header.district }}</title>
+{% include "base.html" %}
+
+<main class="sheet">
+  <header class="sheet-header">
+    <h1>Recall pull sheet</h1>
+    <dl>
+      <dt>District</dt><dd>{{ header.district }}</dd>
+      {% if header.site %}<dt>Site</dt><dd>{{ header.site }}</dd>{% endif %}
+      <dt>Generated</dt><dd>{{ header.generated_at }}</dd>
+      <dt>Recall corpus</dt>
+      <dd>
+        {% for c in header.corpora %}
+          {{ c.source }} &mdash; {{ ui.provenance(c.source, c.captured_at) }}
+          {{ c.record_count }} records, {{ c.age_hours }}h old{% if c.stale %}
+          <strong class="stale">(stale)</strong>{% endif %}{% if not loop.last %}<br>{% endif %}
+        {% endfor %}
+      </dd>
+      <dt>Lines</dt>
+      <dd>{{ header.counts.pull_count }} to pull, {{ header.counts.held_count }} held</dd>
+    </dl>
+  </header>
+
+  {% set total = header.counts.pull_count + header.counts.held_count %}
+  {% if total == 0 %}
+  <section class="zero">
+    <h2>No inventory line matched a recall.</h2>
+    <p>
+      Checked against
+      {% for c in header.corpora %}{{ c.record_count }} {{ c.source }} records
+      captured {{ c.captured_at[:10] }}{% if not loop.last %} and {% endif %}{% endfor %}.
+      A zero-line sheet is a result, not an absence of one &mdash; it means the
+      comparison ran and found nothing, and this page is the record that it ran.
+    </p>
+  </section>
+  {% endif %}
+
+  {% for s in sections %}
+  <section class="site-section">
+    <h2>{{ s.site }} <span class="site-tally">{{ s.pull }} pull &middot; {{ s.held }} held</span></h2>
+    <table class="lines">
+      <thead>
+        <tr>
+          <th>Status</th><th>Item</th><th>Qty</th><th>Storage</th><th>Lot</th>
+          <th>Class</th><th>Evidence</th><th>Triggered by</th><th>Pulled?</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for m in s.lines %}
+        <tr class="line line-{{ m.status | lower }}{% if m.cleared_count %} line-cleared{% endif %}">
+          <td class="status">
+            {{ ui.tier_badge(m.tier, m.status) }}
+            <span class="status-word">{{ m.status }}</span>
+          </td>
+          <td class="item">
+            <a href="/match/{{ m.id }}">{{ m.raw_description }}</a>
+            {% if m.lot_note %}<div class="note">{{ m.lot_note }}</div>{% endif %}
+          </td>
+          <td class="num">{% if m.quantity is not none %}{{ m.quantity | round(0) | int }}{% if m.unit %} {{ m.unit }}{% endif %}{% else %}<span class="unknown">not recorded</span>{% endif %}</td>
+          <td>{{ m.storage_location or '&mdash;' | safe }}</td>
+          <td class="lot">{{ m.lot_code or '&mdash;' | safe }}</td>
+          <td class="class class-{{ m.class_rank }}">{{ m.classification or 'unclassified' }}</td>
+          <td class="kind">{{ m.evidence_kind }}</td>
+          <td class="trigger">
+            <code>{{ m.trigger_inventory_text }}</code>
+            <span class="arrow">&harr;</span>
+            <code>{{ m.trigger_recall_text }}</code>
+          </td>
+          <td class="checkbox">{% if m.cleared_count %}cleared{% else %}&#9744;{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+
+  <footer class="sheet-footer">
+    <p class="screening-rule"><strong>What this sheet leaves out.</strong> {{ SCREENING_RULE }}</p>
+    <p class="coverage">
+      Recall code fields parsed: {{ header.coverage.parsed }} of {{ header.coverage.total }}
+      ({{ header.coverage.percent }}%). The remaining {{ header.coverage.unparsed }} carry
+      no machine-readable code, so those records are matched on product name alone
+      and their lines are held rather than pulled.
+    </p>
+    <p class="held-note">
+      Held lines are on this sheet on purpose, interleaved in the same order as
+      pull lines. Nothing on this sheet was cleared automatically; nothing in this
+      system can be.
+    </p>
+  </footer>
+</main>
