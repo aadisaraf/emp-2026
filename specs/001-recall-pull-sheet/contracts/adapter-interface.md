@@ -20,6 +20,15 @@ class NormalizedRecord(NamedTuple):
     gtin: str | None              # digits only, or None
     upc: str | None               # digits only, or None
     lot_code: str | None          # VERBATIM. Adapters must not normalize it.
+
+    # Supplier identity (FR-069). Present far more reliably than gtin or
+    # lot_code: an item master has to know who supplies a line to reorder it.
+    brand: str | None
+    manufacturer: str | None             # joins to recall_records.recalling_firm
+    manufacturer_item_code: str | None   # quoted in recall notices as "Item Number: ..."
+    vendor_name: str | None
+    vendor_item_code: str | None         # SUPC. Not a matching key; used for credit claims
+
     unit_cost: float | None
     received_date: str | None     # ISO 8601, or None
     source_row: int               # 1-based row number in the source
@@ -50,8 +59,10 @@ new adapter cannot change matching behavior.
 2. **Never invent a value.** No defaulting a missing quantity to 1, no inferring a unit, no
    deriving a GTIN from a description. Absent means `None` plus an entry in `unpopulated`.
    (FR-003)
-3. **Pass `lot_code` through verbatim.** Case, punctuation, and whitespace exactly as the source
-   wrote them. Normalization is the matcher's job. (R3, FR-066)
+3. **Pass `lot_code` and the supplier names through verbatim.** Case, punctuation, and whitespace
+   exactly as the source wrote them. Normalization is the matcher's job — `firm.agrees()` is the
+   single implementation, so an adapter cannot change what matches by tidying a company name
+   differently. (R3, FR-066, FR-069)
 4. **`raw_description` is never rewritten.** It is what the pull sheet shows the operator, and it
    must match what they see in their own system.
 5. **Reject loudly, not partially.** If the whole source is unusable, raise
@@ -74,13 +85,22 @@ new adapter cannot change matching behavior.
 the codebase that knows what PrimeroEdge, LINQ/Titan, and Meals Plus call their columns.
 
 ```
-gtin        ← "gtin", "gtin-14", "case upc", "upc", "item upc", "barcode"
-lot_code    ← "lot", "lot #", "lot code", "batch", "batch #"
-quantity    ← "qty", "quantity", "on hand", "qty on hand", "count"
-raw_desc    ← "item", "item name", "description", "product", "product description"
-site        ← "site", "school", "location", "building"
+gtin            ← "gtin", "gtin-14", "case upc", "upc", "item upc", "barcode"
+lot_code        ← "lot", "lot #", "lot code", "batch", "batch #"
+quantity        ← "qty", "quantity", "on hand", "qty on hand", "count"
+raw_desc        ← "item", "item name", "description", "product", "product description"
+site            ← "site", "school", "location", "building"
+brand           ← "brand", "brand name", "label", "mfr brand"
+manufacturer    ← "manufacturer", "mfr", "mfr name", "maker", "producer", "packer"
+mfr_item_code   ← "manufacturer product code", "mfr item #", "mfr code", "item code"
+vendor_name     ← "vendor", "supplier", "distributor", "prime vendor"
+vendor_item_code← "supc", "vendor item #", "distributor product code", "supplier code"
 ...
 ```
+
+`tests/adapters/fixtures/` carries the same three rows in four vocabularies, and a test asserts
+all four resolve to the identical set of internal fields — including the five supplier fields,
+which every real district export carries because purchasing is what an item master is for.
 
 Matching is case-insensitive on punctuation-stripped headers. When a required field has no
 confident header match, the UI asks once and remembers the answer for that source. When a header

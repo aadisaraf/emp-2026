@@ -1,6 +1,7 @@
 # Contract: the Fail-Safe Hold gate
 
-**Plan**: [../plan.md](../plan.md) | Satisfies FR-018 through FR-025, FR-066, FR-067, SC-003
+**Plan**: [../plan.md](../plan.md) | Satisfies FR-018 through FR-025, FR-066, FR-067, FR-070,
+FR-071, SC-003
 
 The most heavily tested function in the codebase. Every pull/hold decision in PullSheet passes
 through it, and it is the only place a status is assigned.
@@ -29,8 +30,20 @@ inputs, same output, always. (FR-024, SC-011)
 | Evidence found | Tier | Status |
 |---|---|---|
 | Normalized `gtin` or `upc` equality | `CONFIRMED` | `PULL` |
+| Manufacturer catalog number equality, on an agreeing manufacturer | `CONFIRMED` | `PULL` |
 | Normalized lot/batch agreement, or a secondary code field match | `PROBABLE` | `PULL` |
-| Name similarity only, **any score** | `POSSIBLE` | `HELD` |
+| Agreeing manufacturer or brand, plus a distinctive shared product word | `PROBABLE` | `PULL` |
+| Name agreement only, **any score** | `POSSIBLE` | `HELD` |
+
+The two supplier rungs exist because most district rows carry no barcode and no lot — 46 of the
+53 rows in the committed fixture have no GTIN — while `recalling_firm` is populated on 100% of
+the openFDA corpus. Without them the ordinary case is `POSSIBLE`, and a sheet on which everything
+is held is a sheet nobody reads.
+
+Neither supplier signal is sufficient alone, and that is asserted rather than asserted-about:
+`data/fixtures/expected_matches.json` carries a `must_not_pull` list of rows bought **from a
+recalled firm** whose product is not one of the recalled ones. Every line they produce must be
+`HELD`.
 
 The score is carried on the Decision for ordering within `POSSIBLE`. It never appears in a
 comparison that determines `status` or `tier`. A test asserts this directly: for a fixed pair with
@@ -48,6 +61,7 @@ Each of these is a separate named test. All of them push toward the sheet, never
 | Inventory has no GTIN | Still matched on name and lot; never excluded (FR-026) |
 | `code_info` unparsed on the recall side | Recall keeps name evidence; candidates land `POSSIBLE` |
 | Any field absent, malformed, or ambiguous | Produce or retain a line; never suppress (FR-025) |
+| A catalog number matches but the manufacturer does not | `POSSIBLE`, note the unconfirmed supplier (FR-070) |
 | Recall `status` is `terminated` or `amended` | Line retained and marked; not removed (FR-016) |
 
 ## What is *not* in this function
@@ -64,6 +78,8 @@ for "where can something be lost?" has exactly one file to open.
 1. Each ladder row produces the stated tier and status.
 2. Score sweep 0.0 → 1.0 on name-only evidence yields `HELD` throughout.
 3. Every widening rule above, one test each, asserting a line exists.
+3b. Demotion is scoped: a lot-based kind demotes on an unequal lot, a supplier-based kind demotes
+   on an absent firm agreement, and a barcode match demotes on neither.
 4. `Decision.status` is only ever `PULL` or `HELD` — property test over generated inputs.
 5. Determinism: the same `(inv, rec, evidence)` triple yields an identical Decision across 100
    calls and across two process runs.

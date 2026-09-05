@@ -36,6 +36,11 @@ FR-002's fourteen fields, plus identity bookkeeping from FR-064.
 | `gtin` | TEXT | Digits only, or NULL |
 | `upc` | TEXT | Digits only, or NULL |
 | `lot_code` | TEXT | **Verbatim** from the source (R3). Normalization happens in the matcher |
+| `brand` | TEXT | The label on the case: `High Liner`, `Simplot` |
+| `manufacturer` | TEXT | Who made it. Joins to `recall_records.recalling_firm` |
+| `manufacturer_item_code` | TEXT | The maker's catalog number, quoted in recall notices |
+| `vendor_name` | TEXT | The distributor: `Sysco`, `US Foods` |
+| `vendor_item_code` | TEXT | SUPC and equivalents. Never a matching key — see below |
 | `unit_cost` | REAL | NULL when the source does not carry it |
 | `received_date` | TEXT | ISO date, or NULL |
 | `source_export_id` | INTEGER FK → `ingest_runs.id` | |
@@ -44,10 +49,22 @@ FR-002's fourteen fields, plus identity bookkeeping from FR-064.
 | `merged_from` | TEXT | JSON array of source row numbers when this record absorbed others (FR-065) |
 | `superseded_by` | INTEGER FK → `inventory_records.id` | Set when a later export replaces this row |
 
-**Identity (FR-064)**: `identity_key = site ‖ storage_location ‖ product_identity ‖ lot_code`,
-where `product_identity` is `gtin` when present and `normalized_description` otherwise. Rows
-sharing an identity within one ingest merge, quantities sum, and every contributing source row
-number is retained in `merged_from`.
+**The five supplier columns are the ordinary matching path, not a fallback (FR-069).** A district
+item master is built around purchasing, so it always records who supplies a line — it has to, in
+order to reorder it. Barcode and lot coverage is partial: 46 of the 53 rows in the committed
+fixture carry no GTIN, and lot codes are captured only where someone scans at receiving.
+`recalling_firm` meanwhile is populated on 100% of the openFDA corpus. Supplier is therefore the
+channel most rows actually reach a recall through.
+
+`vendor_item_code` is deliberately **not** a matching key. A distributor's SUPC never appears in
+an FDA or FSIS notice, so it can join to nothing; it is carried because the distributor needs
+their own code to process a credit (P3).
+
+**Identity (FR-064)**: `identity_key = site ‖ storage_location ‖ product_identity ‖ lot_code`.
+`product_identity` is `gtin` when present, else `manufacturer#manufacturer_item_code`, else
+`normalized_description` — strongest thing the row actually carries. Rows sharing an identity
+within one ingest merge, quantities sum, and every contributing source row number is retained in
+`merged_from`.
 
 **Validation**: `quantity >= 0`. `gtin`/`upc` digits only. A row missing `raw_description` is
 still stored, with `raw_description = ''` and the field listed in `unpopulated_fields` — FR-007
@@ -86,7 +103,7 @@ One row per candidate. Written only by the matcher, never edited afterwards.
 | `recall_record_id` | INTEGER FK NOT NULL | |
 | `tier` | TEXT NOT NULL | `CONFIRMED` \| `PROBABLE` \| `POSSIBLE` — CHECK-constrained |
 | `status` | TEXT NOT NULL | `PULL` \| `HELD` — CHECK-constrained to exactly these two |
-| `evidence_kind` | TEXT NOT NULL | `gtin` \| `upc` \| `lot` \| `secondary_code` \| `name` |
+| `evidence_kind` | TEXT NOT NULL | `gtin` \| `upc` \| `mfr_item` \| `lot` \| `secondary_code` \| `firm_and_name` \| `name` |
 | `trigger_inventory_text` | TEXT NOT NULL | Exact substring from the inventory side (FR-023) |
 | `trigger_recall_text` | TEXT NOT NULL | Exact substring from the recall side |
 | `score` | REAL | Populated for `POSSIBLE` only; ordering, never status |
@@ -184,11 +201,16 @@ state to disagree with itself.
 **Match status** — set once by `gate.decide()`, never mutated:
 
 ```
-                    ┌─ CONFIRMED ─┐
-  candidate ────────┤             ├──→ PULL
-                    └─ PROBABLE  ─┘
-            └────── POSSIBLE ─────────→ HELD ──(decisions row, actor required)──→ cleared
+   gtin / upc / mfr_item ────── CONFIRMED ─┐
+                                           ├──→ PULL
+   lot / secondary_code / firm_and_name ── PROBABLE ─┘
+
+   name ───────────────────── POSSIBLE ──→ HELD ──(decisions row, actor required)──→ cleared
 ```
+
+Two rungs depend on a second condition and fall to POSSIBLE without it: a lot-based kind whose
+codes are not equal (FR-066), and a supplier-based kind whose firm does not actually agree
+(FR-070). Demotion moves a line from PULL to HELD. It never removes one.
 
 `cleared` is not a status value. It is the existence of a `decisions` row. There is no arrow back
 into the matcher, and no arrow that any automatic process can take.
@@ -225,4 +247,7 @@ matches, and the stale gate is applied at read time by construction.
 | FR-051 | `recall_records.received_at` |
 | FR-058 | `monitor_runs.zero_hit` |
 | FR-064 / FR-065 | `identity_key`, `merged_from` |
+| FR-069 | `inventory_records.brand`, `manufacturer`, `manufacturer_item_code`, `vendor_name`, `vendor_item_code` |
+| FR-070 | `matching/screen.py` item index keyed `firm\|code`; `matching/gate.py` `_NEEDS_FIRM` |
+| FR-071 | `matching/firm.py::agrees`, `matches.evidence_kind = 'firm_and_name'` |
 | FR-068 | `recall_snapshots.captured_at` vs injected `now` |

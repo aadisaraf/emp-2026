@@ -37,6 +37,23 @@ HELD for human review, never auto-dismissed.
 
 ## Clarifications
 
+### Session 2026-09-05 (amendment 2)
+
+- Q: Should the matcher be tolerant of misspelled or idiosyncratically abbreviated item
+  descriptions? → A: No. Districts do not type descriptions freehand — an item master carries the
+  distributor's catalog string, and the recall notices carry the same catalog dialect
+  (`GRDL WFL MINI HSTYLE`, `HFS 10/6lb ... Item Number: 10003220`). Both sides are database
+  fields, so words are compared as written. The hand-authored abbreviation dictionary is removed.
+- Q: What replaces GTIN as the primary identity signal, given that most district rows carry no
+  barcode and no lot? → A: Supplier identity. `brand`, `manufacturer`, `manufacturer_item_code`,
+  `vendor_name`, and `vendor_item_code` join the record shape (FR-069). An item code with an
+  agreeing manufacturer is CONFIRMED (FR-070); an agreeing manufacturer or brand plus a
+  distinctive shared product word is PROBABLE (FR-071). `recalling_firm` is populated on 100% of
+  the openFDA corpus, which makes it the most reliably present join key on the recall side.
+- Q: Does the amended ladder weaken Fail-Safe Hold? → A: No. It adds two rungs above POSSIBLE and
+  removes none. Name-only evidence remains POSSIBLE → HELD, `status` remains two-valued, and no
+  new path can clear, hide, or drop a line.
+
 ### Session 2026-09-05
 
 - Q: How should a match's confidence tier be decided, and what happens at each tier? → A: Evidence ladder with a single screening floor. CONFIRMED (exact GTIN or UPC) → PULL; PROBABLE (lot/batch code, or a secondary code field) → PULL; POSSIBLE (name similarity only) → HELD. The similarity score orders lines within POSSIBLE and never promotes or demotes a tier. A pair is screened out only when it shares no significant name token and no code fragment.
@@ -71,10 +88,11 @@ action, every line traceable to a specific recall record and triggering field va
 2. **Given** an inventory line whose GTIN exactly equals a GTIN named in a recall record,
    **When** matching runs, **Then** the line appears on the pull sheet with status PULL and
    displays the matched GTIN as the triggering field value.
-3. **Given** an inventory line reading `chkn strips froz` and a recall record for
-   `Frozen Chicken Strips, breaded`, **When** no code match is available, **Then** the line
-   appears on the pull sheet by name similarity with its confidence tier and the compared
-   text shown.
+3. **Given** an inventory line reading `BRD COD PORTIONS CRUNCHY ROW 3 OZ` from manufacturer
+   `High Liner Foods` and a recall record from recalling firm `High Liner Foods Inc.` for
+   `HFS 10/6lb Crunchy Row Breaded Cod Rectangles 3 oz.`, **When** no barcode is present on
+   either side, **Then** the line appears on the pull sheet as PROBABLE → PULL, showing the
+   agreeing firm and the shared product words as the triggering text.
 4. **Given** a match supported by name similarity alone, **When** the pull sheet is produced,
    **Then** the line appears in tier POSSIBLE with status HELD, is visually distinct from PULL
    lines, and is not removed, hidden, or filtered out of the default view.
@@ -256,6 +274,7 @@ the scheduled diff, and confirm an alert is raised naming exactly the affected s
   normalizes source records into a single internal inventory record shape before any matching
   occurs. That shape MUST carry: `site`, `storage_location`, `raw_description` (verbatim from the
   source), `normalized_description`, `quantity`, `unit`, `pack_size`, `gtin`, `upc`, `lot_code`,
+  `brand`, `manufacturer`, `manufacturer_item_code`, `vendor_name`, `vendor_item_code`,
   `unit_cost`, `received_date`, `source_export_id`, and `unpopulated_fields`.
 - **FR-003**: Each adapter MUST declare which internal fields it can populate. A field the
   source does not carry MUST be listed in `unpopulated_fields` and recorded as absent — never
@@ -313,12 +332,25 @@ the scheduled diff, and confirm an alert is raised naming exactly the affected s
   overlap → the lot contributes no evidence and the pair is decided on its remaining evidence.
 - **FR-067**: A lot range or date code that cannot be parsed into explicit values MUST produce a
   HELD line stating that the lot could not be evaluated. It MUST NOT be treated as a non-match.
+- **FR-069**: The internal record MUST carry the supplier identity a district purchasing system
+  records: `brand`, `manufacturer`, `manufacturer_item_code`, `vendor_name`, `vendor_item_code`.
+  Each MUST be populated when the source carries it and listed in `unpopulated_fields` otherwise.
+- **FR-070**: A manufacturer item code MUST be treated as product identity only when the
+  manufacturer or brand agrees as well. An item code is unique within one manufacturer's catalog
+  and means nothing across manufacturers; matching on the number alone would assert an identity
+  the number does not carry.
+- **FR-071**: When the inventory brand or manufacturer appears in a recall's recalling firm or
+  product description, and the two descriptions also share a product word that is distinctive in
+  the recall corpus, the pair MUST be treated as PROBABLE evidence and routed to PULL. Neither
+  signal alone is sufficient: a firm recalls products it did not make this line of, and a shared
+  product word alone is the POSSIBLE tier.
 - **FR-018**: Every generated candidate MUST be assigned exactly one status: **PULL** or
   **HELD**. No automatic process may assign a cleared status.
 - **FR-019**: Status MUST be determined by the kind of evidence that matched, never by where a
-  score falls. Tiers are: **CONFIRMED** — exact GTIN or UPC match → PULL; **PROBABLE** — lot or
-  batch code match, or a code match on a secondary field → PULL; **POSSIBLE** — name similarity
-  only → HELD and routed to human review. A similarity score MUST NOT promote or demote a
+  score falls. Tiers are: **CONFIRMED** — exact GTIN or UPC match, or a manufacturer item code
+  match on an agreeing manufacturer → PULL; **PROBABLE** — lot or batch code match, a code match
+  on a secondary field, or an agreeing manufacturer or brand together with a distinctive shared
+  product word → PULL; **POSSIBLE** — name agreement only → HELD. A similarity score MUST NOT promote or demote a
   candidate between tiers; it MUST be used only to order lines within the POSSIBLE tier.
 - **FR-020**: A pair MUST be screened out — never becoming a candidate at all — only when it
   shares no significant name token and no code fragment. This is the system's single screening
@@ -334,8 +366,10 @@ the scheduled diff, and confirm an alert is raised naming exactly the affected s
   inputs MUST produce identical scores and statuses on every run.
 - **FR-025**: Missing, unparseable, or ambiguous data MUST widen the sheet — producing or
   retaining a HELD line — and MUST NEVER narrow it.
-- **FR-026**: An inventory item carrying no GTIN MUST still be matched by name similarity and
-  lot code. Absence of a code MUST NOT exclude an item from consideration.
+- **FR-026**: An inventory item carrying no GTIN MUST still be matched by name, lot code,
+  manufacturer, and brand. Absence of a barcode MUST NOT exclude an item from consideration.
+  Barcode and lot coverage in district item masters is partial — most rows carry neither — so
+  the paths that do not depend on them are the ordinary path, not a fallback.
 - **FR-027**: When a recall names a lot code the inventory does not track, System MUST produce a
   HELD line for every inventory record matching on the remaining identifiers, stating that the
   lot could not be confirmed.

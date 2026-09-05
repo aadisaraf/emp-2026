@@ -44,6 +44,29 @@ this table.
 If you are asked in review "where did the FSIS data come from?", the answer is: we wrote it,
 because the agency blocks automated access, and the label says so everywhere it appears.
 
+## What the inventory fixture is, and what it is not
+
+`inventory_lincoln.csv` is a **hand-authored** district export: 53 rows, three sites, written by
+the build team. It is not an extract from any real district's system, and no real district's data
+appears anywhere in this repository.
+
+Two things about it are deliberate and worth stating, because both shape what the demo proves:
+
+* **Its item descriptions are written in distributor-catalog dialect**, the way a real item master
+  reads — `CHICKEN STRIPS BRD FC FROZEN 2/5 LB`, `POLLOCK WEDGE BRD WG OVEN READY 3.4 OZ` — rather
+  than in an invented shorthand. The recall corpus writes the same dialect back
+  (`HFS 10/6lb Crunchy Row Breaded Cod Rectangles 3 oz.`), which is why the matcher compares words
+  as written.
+* **46 of the 53 rows carry no barcode and most carry no lot code.** That is the realistic case,
+  and it is what makes the supplier channels load-bearing rather than decorative. A fixture where
+  every row had a GTIN would exercise the easy path and prove nothing.
+
+The brands, manufacturers and item numbers on those rows are chosen so that some of them
+correspond to **real firms and real recalls in the committed openFDA snapshot** — High Liner
+Foods item 53374, JR Simplot item 473015, Mann Packing, Grimmway, Pictsweet, C. H. Guenther. The
+inventory row is invented; the recall it reaches is not. The vendor names (Sysco, US Foods) and
+the vendor item codes are invented and match nothing.
+
 ## Why the openFDA snapshot is committed rather than fetched
 
 Constitution Principle III: no external dependency at demo time. The snapshot is captured once,

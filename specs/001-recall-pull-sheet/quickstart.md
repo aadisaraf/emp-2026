@@ -52,17 +52,19 @@ The file moves to `data/archive/`.
 **Passes when**: a complete pull sheet exists, nobody touched the browser, and the network was off
 the whole time.
 
-### V2 — Abbreviated names still match (SC-005)
+### V2 — Every seeded correspondence reaches the sheet (SC-005)
 
-The fixture contains `chkn strips froz`, `grnd bf 80/20`, and similar. Each seeded correspondence
-must appear on the sheet as PULL or HELD.
+`data/fixtures/expected_matches.json` names 30 inventory-row-to-recall pairs that must appear,
+covering every rung of the ladder, plus two rows bought from a recalled firm whose product is not
+recalled — those must appear and must be HELD.
 
 ```bash
-pytest tests/integration/test_abbreviations.py -v
+pytest tests/integration/test_seeded_correspondences.py -v
 ```
 
-**Passes when**: every seeded correspondence is present. A seeded pair that is *absent* is a
-failure; a seeded pair that appears as HELD rather than PULL is not.
+**Passes when**: every seeded correspondence is present, and no `must_not_pull` row pulled. A
+seeded pair that is *absent* is a failure; a seeded pair that appears as HELD rather than PULL is
+not.
 
 ### V3 — Nothing clears itself (SC-003)
 

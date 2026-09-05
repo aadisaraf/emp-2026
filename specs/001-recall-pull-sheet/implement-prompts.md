@@ -2,6 +2,20 @@
 description: "Copy-paste /speckit-implement prompts for a three-person PullSheet build"
 ---
 
+
+> **Amendment, 2026-09-05.** These prompts are the record of what was asked at the time, and are
+> left as written. Two decisions inside them have since been superseded and the prompts for
+> T016/T017 should NOT be followed as-is:
+>
+> * `matching/abbreviations.py` was written, then removed. Both sides of the comparison are
+>   distributor-catalog strings, not freehand text, so words are compared as written.
+> * The inventory record gained five supplier fields — `brand`, `manufacturer`,
+>   `manufacturer_item_code`, `vendor_name`, `vendor_item_code` (FR-069) — and the ladder gained
+>   two rungs that use them (FR-070, FR-071). Anything below that touches the record shape or the
+>   evidence kinds should read `specs/001-recall-pull-sheet/data-model.md` first.
+>
+> `tests/integration/test_abbreviations.py` is now `tests/integration/test_seeded_correspondences.py`.
+
 # Implement Prompts — Three-Person Team
 
 **Companion to**: [parallel-plan.md](./parallel-plan.md) · [tasks.md](./tasks.md)

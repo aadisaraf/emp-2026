@@ -17,8 +17,13 @@ generate candidates only from index hits.
   found in a recall is stripped to alphanumerics and indexed. GTINs are additionally indexed by
   their right-most 11 digits, because a GTIN-14 case code and a UPC-12 consumer code for the same
   product differ only in the packaging-indicator digit, leading zeros, and check digit.
-- **Token index**: significant name token → recall record ids, built over normalized,
-  abbreviation-expanded tokens.
+- **Token index**: significant product word → recall record ids, built over normalized words —
+  compared as written, with no expansion. See the amendment under R0-3.
+- **Firm index**: identifying word of `recalling_firm` → recall record ids. Populated on 100% of
+  the openFDA corpus, and the channel most district rows reach a recall through, because barcode
+  and lot coverage in an item master is partial.
+- **Item index**: manufacturer catalog number, keyed *within* a firm (`liner|53374`). A catalog
+  number means nothing across manufacturers, so it is never indexed on its own.
 
 A candidate is generated when an inventory record hits either index. FR-020's screening rule —
 "screened out only when it shares no significant name token and no code fragment" — is exactly
@@ -71,13 +76,21 @@ decides anyone's safety, so buying accuracy with opacity would be a bad trade.
 
 ## R0-3 — What counts as a "significant" token
 
-**Decision**: A hand-authored stoplist in `matching/abbreviations.py`, alongside the abbreviation
-dictionary. Tokens on the stoplist (`frozen`, `fresh`, `case`, `pack`, `bag`, `box`, `lb`, `oz`,
+**Decision**: A hand-authored stoplist in `matching/screen.py`. Tokens on the stoplist (`frozen`, `fresh`, `case`, `pack`, `bag`, `box`, `lb`, `oz`,
 `ct`, and similar) do not by themselves generate a candidate; every other token does.
 
 Note the asymmetry: stoplisted words are still used in *scoring* — `frozen` legitimately raises
 similarity between two frozen products. They are excluded only from *candidate generation*, so a
 pair sharing nothing but the word `frozen` never enters the sheet.
+
+> **Amended 2026-09-05.** The abbreviation dictionary this decision sat alongside has been
+> removed, and words are now compared exactly as written. Neither side of the comparison is
+> freehand text: a district item master carries the string its distributor's catalog supplied,
+> and agency notices quote the manufacturer's own catalog string back — the same dialect, from
+> the same industry (`GRDL WFL MINI HSTYLE`, `HFS 10/6lb ... Item Number: 10003220`). A
+> dictionary that recovers `chicken` from `chkn` was solving a problem neither database has, and
+> every entry in it was a place a wrong guess could change what matched with nothing to catch it.
+> The stoplist itself is unaffected and still does exactly what this section describes.
 
 **Rationale**: A static, readable list is the whole rule. Anyone can open the file, read forty
 words, and say exactly what the system will and will not consider — which is the answer to the
