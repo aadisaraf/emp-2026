@@ -141,3 +141,31 @@ def parse_code_info(text: str | None) -> dict[str, Any]:
         # not something a lot can be compared against.
         "unparsed": not (gtins or upcs or lots),
     }
+
+
+def parse_record(product_description: str | None,
+                 code_info: str | None,
+                 more_code_info: str | None = None) -> dict[str, Any]:
+    """Parse a whole recall record, not just its code field.
+
+    Agencies put barcodes wherever they land: ``H-0109-2026`` prints its UPC in
+    the product description and its lot codes in ``code_info``. Reading only
+    ``code_info`` loses the UPC, and losing a barcode is losing the strongest
+    evidence there is.
+
+    Lots are taken from the code fields ONLY. A word like "lot" appearing in a
+    product description is prose, and treating it as a label manufactures lot
+    codes out of sentences.
+    """
+    codes = parse_code_info(" ".join(filter(None, (code_info, more_code_info))))
+    from_description = parse_code_info(product_description)
+
+    gtins = _dedupe(codes["gtins"] + from_description["gtins"])
+    upcs = _dedupe([u for u in codes["upcs"] + from_description["upcs"] if u not in gtins])
+    return {
+        "gtins": gtins,
+        "upcs": upcs,
+        "lots": codes["lots"],
+        "date_codes": _dedupe(codes["date_codes"] + from_description["date_codes"]),
+        "unparsed": not (gtins or upcs or codes["lots"]),
+    }
