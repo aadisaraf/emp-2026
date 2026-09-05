@@ -1,0 +1,235 @@
+{
+  "_comment": "The seeded correspondence map -- the oracle for SC-005. Every entry names an inventory row in data/fixtures/inventory_lincoln.csv that MUST reach the named recall record. A seeded pair that is absent from the sheet is a build-stopping failure. A seeded pair that lands HELD rather than PULL is not a failure: the gate is allowed to be more cautious than this file.",
+  "_source_row": "1-based over data rows of inventory_lincoln.csv; the header is not a data row.",
+  "_corpora": [
+    "pullsheet/recalls/snapshots/openfda-2026-09-05.json",
+    "pullsheet/recalls/snapshots/fsis-2026-09-05.json"
+  ],
+  "matches": [
+    {
+      "source_row": 1,
+      "site": "Lincoln Elementary",
+      "item_description": "chkn strips froz",
+      "recall_source_record_id": "FSIS-RC-018-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Inventory writes the lot as 4829-B; the recall writes LOT 4829B. Equal after lot normalization."
+    },
+    {
+      "source_row": 2,
+      "site": "Lincoln Elementary",
+      "item_description": "chkn nuggets wg froz",
+      "recall_source_record_id": "FSIS-RC-021-2026",
+      "expected_evidence_kind": "gtin",
+      "expected_tier": "CONFIRMED",
+      "why": "GTIN-14 10073803110075 appears on both sides."
+    },
+    {
+      "source_row": 3,
+      "site": "Lincoln Elementary",
+      "item_description": "spinach froz org 10oz",
+      "recall_source_record_id": "H-0109-2026",
+      "expected_evidence_kind": "upc",
+      "expected_tier": "CONFIRMED",
+      "why": "Recall prints the UPC spaced as 0 24284-96910 5; inventory carries 024284969105."
+    },
+    {
+      "source_row": 4,
+      "site": "Lincoln Elementary",
+      "item_description": "peas & carrots froz 2lb",
+      "recall_source_record_id": "H-0286-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "25080 is one of nine lots listed in code_info."
+    },
+    {
+      "source_row": 5,
+      "site": "Lincoln Elementary",
+      "item_description": "mozz shred lm",
+      "recall_source_record_id": "F-1757-2012",
+      "expected_evidence_kind": "name",
+      "expected_tier": "POSSIBLE",
+      "why": "Only reachable if mozz expands to mozzarella. This pair is the abbreviation proof (SC-005)."
+    },
+    {
+      "source_row": 6,
+      "site": "Lincoln Elementary",
+      "item_description": "beef crumbles ckd",
+      "recall_source_record_id": "FSIS-RC-009-2026",
+      "expected_evidence_kind": "name",
+      "expected_tier": "POSSIBLE",
+      "why": "Recall carries no lot code on the case label, so name evidence is all there is. Must still surface."
+    },
+    {
+      "source_row": 7,
+      "site": "Lincoln Elementary",
+      "item_description": "peas & carrots 16oz",
+      "recall_source_record_id": "F-0438-2021",
+      "expected_evidence_kind": "secondary_code",
+      "expected_tier": "PROBABLE",
+      "why": "K10635 is a Daycode on the recall side, not a lot field. Secondary-code evidence."
+    },
+    {
+      "source_row": 8,
+      "site": "Lincoln Elementary",
+      "item_description": "apples fresh 125ct",
+      "recall_source_record_id": "F-0616-2018",
+      "expected_evidence_kind": "name",
+      "expected_tier": "POSSIBLE",
+      "why": "No GTIN, no lot, produce. FR-026: absence of a code must not exclude the row."
+    },
+    {
+      "source_row": 16,
+      "site": "Lincoln Elementary",
+      "item_description": "corn dogs chkn prk",
+      "recall_source_record_id": "FSIS-RC-003-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "The blank-quantity row. A missing quantity must not suppress a match."
+    },
+    {
+      "source_row": 18,
+      "site": "Roosevelt Middle School",
+      "item_description": "chkn strips froz",
+      "recall_source_record_id": "FSIS-RC-014-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Same product as Lincoln's, different lot, different recall. Site-level lot discrimination."
+    },
+    {
+      "source_row": 19,
+      "site": "Roosevelt Middle School",
+      "item_description": "chkn patty wg 3oz",
+      "recall_source_record_id": "FSIS-RC-027-2026",
+      "expected_evidence_kind": "gtin",
+      "expected_tier": "CONFIRMED",
+      "why": "GTIN-14 10073803110242 on both sides."
+    },
+    {
+      "source_row": 20,
+      "site": "Roosevelt Middle School",
+      "item_description": "turkey brst slcd",
+      "recall_source_record_id": "FSIS-RC-012-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Inventory lot 6112A contains recall lot 6112. Contained, not equal -- still PULL."
+    },
+    {
+      "source_row": 21,
+      "site": "Roosevelt Middle School",
+      "item_description": "fruit mix cut fresh",
+      "recall_source_record_id": "H-0068-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Lot X0924992 appears verbatim in code_info."
+    },
+    {
+      "source_row": 22,
+      "site": "Roosevelt Middle School",
+      "item_description": "snack bar choc cherry",
+      "recall_source_record_id": "H-0543-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Recall says Lot L1300, including L1300A and L1300B. Contained."
+    },
+    {
+      "source_row": 23,
+      "site": "Roosevelt Middle School",
+      "item_description": "chkn fajita strips",
+      "recall_source_record_id": "FSIS-RC-014-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Second product sharing lot 4831A. One recall, two inventory lines."
+    },
+    {
+      "source_row": 26,
+      "site": "Roosevelt Middle School",
+      "item_description": "pot wedges crnkl froz",
+      "recall_source_record_id": "F-0132-2025",
+      "expected_evidence_kind": "name",
+      "expected_tier": "POSSIBLE",
+      "why": "Recall code_info reads 'Lote Code: 001 JUN 05 24' and does not parse. Widens to HELD, never drops."
+    },
+    {
+      "source_row": 33,
+      "site": "Roosevelt Middle School",
+      "item_description": "chz amer slcd",
+      "recall_source_record_id": "F-0022-2015",
+      "expected_evidence_kind": "upc",
+      "expected_tier": "CONFIRMED",
+      "why": "Case UPC 210006046400 is listed on the recall as 'UPC Code (Case)'."
+    },
+    {
+      "source_row": 35,
+      "site": "Central High School",
+      "item_description": "grnd bf 80/20",
+      "recall_source_record_id": "FSIS-RC-019-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "grnd bf expands to ground beef; lot 25142 is exact."
+    },
+    {
+      "source_row": 36,
+      "site": "Central High School",
+      "item_description": "beef taco fill",
+      "recall_source_record_id": "FSIS-RC-007-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Lot 25139 exact."
+    },
+    {
+      "source_row": 37,
+      "site": "Central High School",
+      "item_description": "chkn broth ns 32oz",
+      "recall_source_record_id": "F-0732-2024",
+      "expected_evidence_kind": "upc",
+      "expected_tier": "CONFIRMED",
+      "why": "Recall prints 41220273355 (11 digits, leading zero dropped); inventory has 041220273355."
+    },
+    {
+      "source_row": 38,
+      "site": "Central High School",
+      "item_description": "pot wedges crnkl froz",
+      "recall_source_record_id": "F-0132-2025",
+      "expected_evidence_kind": "name",
+      "expected_tier": "POSSIBLE",
+      "why": "Same unparseable recall reaching a second site."
+    },
+    {
+      "source_row": 39,
+      "site": "Central High School",
+      "item_description": "saus patty prk ckd",
+      "recall_source_record_id": "FSIS-RC-024-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Lot 8817-C vs recall 8817-C, equal."
+    },
+    {
+      "source_row": 40,
+      "site": "Central High School",
+      "item_description": "chkn diced ckd",
+      "recall_source_record_id": "FSIS-RC-031-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Lot 6209 exact."
+    },
+    {
+      "source_row": 41,
+      "site": "Central High School",
+      "item_description": "veg pizza mix",
+      "recall_source_record_id": "F-0316-2020",
+      "expected_evidence_kind": "upc",
+      "expected_tier": "CONFIRMED",
+      "why": "UPC 795631819731 exact. Also one of the two rows with no unit cost (FR-047)."
+    },
+    {
+      "source_row": 47,
+      "site": "Central High School",
+      "item_description": "turkey deli slcd",
+      "recall_source_record_id": "FSIS-RC-029-2026",
+      "expected_evidence_kind": "lot",
+      "expected_tier": "PROBABLE",
+      "why": "Class III recall. Lowest class still produces a line."
+    }
+  ]
+}

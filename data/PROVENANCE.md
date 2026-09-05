@@ -1,0 +1,55 @@
+# Data provenance
+
+Every data source PullSheet reads, what kind of thing it is, and how to regenerate it.
+
+This table is checked against [`pullsheet/provenance.py`](../pullsheet/provenance.py) by
+`tests/unit/test_provenance.py`. Adding a source to one without the other fails the build, and so
+does naming a path here that does not exist on disk. That is deliberate: Constitution Principle V
+makes provenance load-bearing, and a table nobody verifies is worse than no table.
+
+Three labels, and only three:
+
+| Label | Means |
+|---|---|
+| `live` | Fetched from the agency at run time |
+| `dated-snapshot` | Fetched once, committed, and always displayed with its capture date |
+| `hand-authored` | Written by the build team. Not sourced from anywhere |
+
+## Sources
+
+| Key | Label | Path | Captured | How to regenerate |
+|---|---|---|---|---|
+| `openfda` | `dated-snapshot` | `pullsheet/recalls/snapshots/openfda-2026-09-05.json` | 2026-09-05 | `curl -s 'https://api.fda.gov/food/enforcement.json?limit=1000' -o pullsheet/recalls/snapshots/openfda-2026-09-05.json` |
+| `fsis` | `hand-authored` | `pullsheet/recalls/snapshots/fsis-2026-09-05.json` | 2026-09-05 | Hand-edit the file. There is no fetch path — see below |
+| `inventory_lincoln` | `hand-authored` | `data/fixtures/inventory_lincoln.csv` | — | Hand-edit |
+| `expected_matches` | `hand-authored` | `data/fixtures/expected_matches.json` | — | Hand-edit |
+| `unit_costs` | `hand-authored` | `data/fixtures/unit_costs.csv` | — | Hand-edit |
+| `recipes` | `hand-authored` | `data/fixtures/recipes.csv` | — | Hand-edit |
+| `recipe_ingredients` | `hand-authored` | `data/fixtures/recipe_ingredients.csv` | — | Hand-edit |
+| `recipe_components` | `hand-authored` | `data/fixtures/recipe_components.csv` | — | Hand-edit |
+| `service_days` | `hand-authored` | `data/fixtures/service_days.csv` | — | Hand-edit |
+
+## Why FSIS is `hand-authored` and not a snapshot
+
+FSIS returns **HTTP 403 to programmatic requests**, verified on 2026-09-05 against both
+`https://www.fsis.usda.gov/fsis/api/recall/v/1` and the public recalls page. The meat and poultry
+corpus therefore could not be fetched, and could not be checked against published notices.
+
+The twelve records in `fsis-2026-09-05.json` are written by the build team in FSIS notice format
+so that the meat and poultry half of the corpus exists at all. They are **illustrative, not
+transcriptions**. Calling them a "dated snapshot" would imply a capture that never happened, so
+they carry the `hand-authored` label on every surface that shows them — screen, printed sheet, and
+this table.
+
+If you are asked in review "where did the FSIS data come from?", the answer is: we wrote it,
+because the agency blocks automated access, and the label says so everywhere it appears.
+
+## Why the openFDA snapshot is committed rather than fetched
+
+Constitution Principle III: no external dependency at demo time. The snapshot is captured once,
+committed, and read from disk. The application will show its capture date and its age, and will
+say so plainly when that age exceeds the 24-hour freshness window (FR-068). A stale-data banner
+during the demo is intended behavior, not a defect.
+
+The one live path, `pullsheet/recalls/fetch.py`, is a refresh convenience. It is never on the path
+between a dropped file and a printed pull sheet.

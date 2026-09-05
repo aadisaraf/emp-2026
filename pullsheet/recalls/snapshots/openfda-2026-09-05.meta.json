@@ -1,0 +1,9 @@
+{
+  "source": "openfda",
+  "endpoint": "https://api.fda.gov/food/enforcement.json?limit=1000",
+  "captured_at": "2026-09-05T09:12:00Z",
+  "record_count": 1000,
+  "provenance": "dated-snapshot",
+  "api_last_updated": "2026-08-19",
+  "regenerate": "curl -s 'https://api.fda.gov/food/enforcement.json?limit=1000' -o pullsheet/recalls/snapshots/openfda-2026-09-05.json"
+}

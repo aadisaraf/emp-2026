@@ -1,0 +1,10 @@
+{
+  "source": "fsis",
+  "endpoint": "https://www.fsis.usda.gov/fsis/api/recall/v/1 (returns HTTP 403 to programmatic requests)",
+  "captured_at": "2026-09-05T09:40:00Z",
+  "record_count": 12,
+  "provenance": "hand-authored",
+  "authored_by": "PullSheet build team",
+  "transcription_note": "NOT a transcription. FSIS blocks server-side access (verified 403 on 2026-09-05), so these records could not be fetched or checked against published notices. They are hand-authored in FSIS notice format so the meat/poultry half of the corpus exists for the demo. Labeled hand-authored everywhere per Constitution Principle V, which forbids presenting authored data as sourced data.",
+  "regenerate": "Hand-edit pullsheet/recalls/snapshots/fsis-2026-09-05.json. There is no fetch path."
+}
