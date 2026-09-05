@@ -19,7 +19,9 @@ from pullsheet.recalls.corpus import load_snapshots
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 FIXTURE = ROOT / "data" / "fixtures" / "inventory_lincoln.csv"
-SEEDS = json.loads((ROOT / "data" / "fixtures" / "expected_matches.json").read_text())["matches"]
+ORACLE = json.loads((ROOT / "data" / "fixtures" / "expected_matches.json").read_text())
+SEEDS = ORACLE["matches"]
+NEGATIVES = ORACLE["must_not_pull"]
 
 
 @pytest.fixture(scope="module")
@@ -50,23 +52,52 @@ def test_every_seeded_correspondence_reaches_the_sheet(seed, sheet):
     assert line["evidence_kind"] == seed["expected_evidence_kind"], seed["why"]
 
 
-def test_the_abbreviation_cases_specifically(sheet):
-    """The three descriptions the whole abbreviation dictionary exists for."""
-    for abbreviated in ("chkn strips froz", "grnd bf 80/20", "mozz shred lm"):
-        lines = [r for r in sheet if r["raw_description"] == abbreviated]
-        assert lines, f"{abbreviated!r} produced no line at all"
+@pytest.mark.parametrize("neg", NEGATIVES, ids=lambda n: n["item_description"])
+def test_a_recalled_supplier_alone_never_pulls(neg, sheet):
+    """FR-071, end to end. These rows are bought from a firm that IS being
+    recalled. They must appear -- suppressing them would be the one thing the
+    system may never do -- and every one of their lines must be HELD."""
+    lines = [r for r in sheet
+             if r["site"] == neg["site"] and r["raw_description"] == neg["item_description"]]
+    assert lines, f"{neg['item_description']!r} produced no line at all"
+    pulled = [r["evidence_kind"] for r in lines if r["status"] == "PULL"]
+    assert not pulled, f"{neg['item_description']} pulled on {pulled}: {neg['why']}"
+
+
+def test_most_rows_carry_no_barcode_which_is_the_point(sheet):
+    """FR-026. Barcode and lot coverage in a district item master is partial;
+    the fixture reflects that. If most rows had barcodes, the paths that matter
+    would never be exercised."""
+    import csv
+    with FIXTURE.open() as f:
+        rows = list(csv.DictReader(f))
+    without = [r for r in rows if not r["Case UPC"]]
+    assert len(without) > len(rows) * 0.75, (
+        "the fixture has become unrealistically well-barcoded")
 
 
 def test_a_row_with_no_barcode_still_reaches_a_recall(sheet):
     """FR-026. Produce and USDA commodity foods carry no barcode, and absence of
     a code is not evidence of absence of a recall."""
-    lines = [r for r in sheet if r["raw_description"] == "apples fresh 125ct"]
+    lines = [r for r in sheet if r["raw_description"] == "APPLES FRESH 125 CT"]
     assert lines
     assert all(r["evidence_kind"] == "name" for r in lines)
 
 
+def test_a_row_with_neither_barcode_nor_lot_still_pulls(sheet):
+    """The case the supplier channels exist for: no barcode, no lot code, and a
+    CONFIRMED pull anyway, off the manufacturer's own catalog number."""
+    lines = [r for r in sheet
+             if r["raw_description"] == "POLLOCK WEDGE BRD WG OVEN READY 3.4 OZ"]
+    assert lines
+    confirmed = [r for r in lines if r["evidence_kind"] == "mfr_item"]
+    assert confirmed, "the manufacturer item code produced no line"
+    assert confirmed[0]["tier"] == "CONFIRMED" and confirmed[0]["status"] == "PULL"
+    assert confirmed[0]["lot_code"] is None
+
+
 def test_the_blank_quantity_row_still_reaches_a_recall(sheet):
-    lines = [r for r in sheet if r["raw_description"] == "corn dogs chkn prk"]
+    lines = [r for r in sheet if r["raw_description"] == "CORN DOGS CHICKEN & PORK 4 OZ 72 CT"]
     assert lines, "a missing quantity suppressed a match"
     assert lines[0]["quantity"] is None
 

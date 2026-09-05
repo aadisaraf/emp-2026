@@ -141,6 +141,8 @@ def match_detail(request: Request, match_id: int):
         row = conn.execute(
             """SELECT m.*, i.site, i.storage_location, i.raw_description, i.quantity,
                       i.unit, i.pack_size, i.gtin, i.lot_code, i.unit_cost,
+                      i.brand, i.manufacturer, i.manufacturer_item_code,
+                      i.vendor_name, i.vendor_item_code,
                       i.unpopulated_fields, i.merged_from,
                       r.source, r.source_record_id, r.product_description, r.code_info,
                       r.classification, r.class_rank, r.recalling_firm, r.reason_for_recall,

@@ -86,7 +86,8 @@ def test_prose_after_a_lot_label_is_not_a_lot():
 def test_unreadable_input_widens_instead_of_raising(text):
     got = parse_code_info(text)
     assert isinstance(got, dict)
-    assert set(got) == {"gtins", "upcs", "lots", "date_codes", "unparsed"}
+    assert set(got) == {"gtins", "upcs", "lots", "date_codes",
+                        "item_codes", "unparsed"}
     if not got["gtins"] and not got["upcs"] and not got["lots"]:
         assert got["unparsed"] is True
 

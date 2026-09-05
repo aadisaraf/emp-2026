@@ -1,39 +1,55 @@
 """Normalization is the one place a food description is rewritten. If it is
 wrong, every downstream comparison is wrong in the same direction and nothing
-else in the system will notice."""
+else in the system will notice.
+
+The governing decision these tests pin down: **words are compared as written.**
+Neither side is freehand text. A district item master carries the string its
+distributor's catalog supplied, and an agency notice quotes the manufacturer's
+own catalog string -- the same dialect, from the same industry. Normalization
+discards pack sizes, units, punctuation and case, and touches nothing else.
+"""
 
 from __future__ import annotations
 
 from pullsheet.matching.normalize import normalize, tokens
 
 
-def test_abbreviated_inventory_description():
-    assert tokens("chkn strips froz") == {"chicken", "strips", "frozen"}
+def test_a_district_catalog_description():
+    assert tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB") == {
+        "chicken", "strips", "brd", "fc", "frozen"}
 
 
-def test_recall_side_of_the_same_product():
-    assert tokens("Frozen Chicken Strips, breaded") == {"frozen", "chicken", "strips", "breaded"}
+def test_the_recall_side_of_the_same_product():
+    assert tokens("Frozen Chicken Strips, breaded") == {
+        "frozen", "chicken", "strips", "breaded"}
 
 
-def test_the_two_sides_overlap_only_because_of_expansion():
-    """Without the abbreviation dictionary these two share nothing at all.
-    This is the whole reason abbreviations.py is hand-authored."""
-    raw_overlap = set("chkn strips froz".split()) & set("frozen chicken strips breaded".split())
-    assert raw_overlap == {"strips"}
-    assert len(tokens("chkn strips froz") & tokens("Frozen Chicken Strips, breaded")) == 3
+def test_the_two_sides_overlap_on_the_words_they_share():
+    """No expansion, no spelling correction: three words agree because both
+    catalogs wrote the same three words."""
+    shared = tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB") & tokens("Frozen Chicken Strips, breaded")
+    assert shared == {"chicken", "strips", "frozen"}
 
 
-def test_multiword_expansion():
-    assert tokens("chkn nuggets wg froz") == {"chicken", "nuggets", "whole", "grain", "frozen"}
-    assert tokens("mozz shred lm") == {"mozzarella", "shredded", "low", "moisture"}
+def test_an_abbreviation_is_not_expanded():
+    """``BRD`` and ``breaded`` are different words and stay different words.
+
+    This is the deliberate limit of matching as-written. It costs one token of
+    overlap on this pair -- and the pair still matches on the other three, on
+    the supplier, and on the lot. What it buys is that no hand-authored guess
+    can silently change what matches.
+    """
+    assert "brd" in tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB")
+    assert "breaded" not in tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB")
 
 
 def test_pack_sizes_and_units_are_stripped():
-    assert tokens("spinach froz org 10oz") == {"spinach", "frozen", "organic"}
-    assert tokens("peas & carrots froz 2lb") == {"peas", "carrots", "frozen"}
-    assert tokens("grnd bf 80/20") == {"ground", "beef"}
-    assert tokens("salsa mild #10") == {"salsa", "mild"}
-    assert tokens("chkn broth ns 32oz") == {"chicken", "broth", "no", "salt"}
+    assert tokens("SPINACH CHOPPED ORGANIC IQF 10 OZ") == {"spinach", "chopped", "organic", "iqf"}
+    assert tokens("PEAS & CARROTS BLEND IQF 2 LB") == {"peas", "carrots", "blend", "iqf"}
+    assert tokens("GROUND BEEF 80/20 COARSE 10 LB CHUB") == {"ground", "beef", "coarse", "chub"}
+    assert tokens("SALSA MILD #10 CAN") == {"salsa", "mild"}
+    assert tokens("HFS 10/6lb Crunchy Row Breaded Cod Rectangles 3 oz.") == {
+        "hfs", "crunchy", "row", "breaded", "cod", "rectangles"}
 
 
 def test_empty_and_missing_input_do_not_raise():
@@ -44,11 +60,23 @@ def test_empty_and_missing_input_do_not_raise():
 
 
 def test_normalize_is_stable_and_sorted():
-    assert normalize("chkn strips froz") == "chicken frozen strips"
-    assert normalize("froz chkn strips") == normalize("chkn strips froz")
+    assert normalize("CHICKEN STRIPS BRD FC FROZEN 2/5 LB") == "brd chicken fc frozen strips"
+    assert normalize("FROZEN BRD CHICKEN STRIPS FC") == normalize("CHICKEN STRIPS BRD FC FROZEN")
 
 
 def test_normalization_is_deterministic():
     first = normalize("Frozen Chicken Strips, breaded")
     for _ in range(100):
         assert normalize("Frozen Chicken Strips, breaded") == first
+
+
+def test_there_is_no_abbreviation_dictionary():
+    """A regression guard on the decision, not just on its effects.
+
+    The dictionary was removed because it was solving a problem neither side of
+    the comparison has, and because every entry in it was a place a wrong guess
+    could change what matched without anyone noticing.
+    """
+    import pullsheet.matching as matching
+    from pathlib import Path
+    assert not (Path(matching.__file__).parent / "abbreviations.py").exists()

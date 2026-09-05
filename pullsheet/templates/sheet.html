@@ -55,6 +55,17 @@
           </td>
           <td class="item">
             <a href="/match/{{ m.id }}">{{ m.raw_description }}</a>
+            {# The supplier line is what the manager reads off the side of the
+               case, and for most rows it is the identifier the match was made
+               on -- so it belongs on the sheet, not only on the detail page. #}
+            {% set supplier = m.brand or m.manufacturer %}
+            {% if supplier or m.vendor_item_code %}
+              <div class="supplier">
+                {% if supplier %}{{ supplier }}{% endif %}
+                {% if m.manufacturer_item_code %} &middot; item {{ m.manufacturer_item_code }}{% endif %}
+                {% if m.vendor_name %} &middot; {{ m.vendor_name }} {{ m.vendor_item_code or '' }}{% endif %}
+              </div>
+            {% endif %}
             {% if m.lot_note %}<div class="note">{{ m.lot_note }}</div>{% endif %}
           </td>
           <td class="num">{% if m.quantity is not none %}{{ m.quantity | round(0) | int }}{% if m.unit %} {{ m.unit }}{% endif %}{% else %}<span class="unknown">not recorded</span>{% endif %}</td>

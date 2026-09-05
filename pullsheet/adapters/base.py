@@ -41,6 +41,16 @@ class NormalizedRecord(NamedTuple):
     gtin: str | None              # digits only, or None
     upc: str | None               # digits only, or None
     lot_code: str | None          # VERBATIM. Adapters must not normalize it (R3)
+
+    # Supplier identity (FR-069). Districts run on purchasing systems, so these
+    # are present far more reliably than gtin or lot_code: an item master has to
+    # know who supplies a line in order to reorder it.
+    brand: str | None                    # the label on the case
+    manufacturer: str | None             # who made it. Joins to recalling_firm
+    manufacturer_item_code: str | None   # the maker's catalog number, quoted in recall notices
+    vendor_name: str | None              # the distributor
+    vendor_item_code: str | None         # SUPC and equivalents. Not a recall key; used for credit claims
+
     unit_cost: float | None
     received_date: str | None     # ISO 8601, or None
     source_row: int               # 1-based row number in the source

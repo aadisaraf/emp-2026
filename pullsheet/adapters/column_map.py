@@ -35,6 +35,22 @@ ALIASES: dict[str, set[str]] = {
              "case gtin", "upc code", "case code"},
     "lot_code": {"lot", "lot code", "lot no", "lot number", "batch", "batch no",
                  "batch number", "lot batch"},
+    # Supplier identity (FR-069). Purchasing is what an item master is FOR, so
+    # these columns are present in district exports far more reliably than gtin
+    # or lot -- and they are what a row with neither still matches on.
+    "brand": {"brand", "brand name", "label", "mfr brand", "manufacturer brand"},
+    "manufacturer": {"manufacturer", "mfr", "mfr name", "manufacturer name",
+                     "maker", "producer", "packer", "processor"},
+    "manufacturer_item_code": {"manufacturer product code", "mfr item", "mfr item no",
+                               "mfr item number", "manufacturer item code", "mfr code",
+                               "mfr no", "manufacturer code", "mfr product code",
+                               "item code", "product code", "manufacturer item"},
+    "vendor_name": {"vendor", "vendor name", "supplier", "supplier name",
+                    "distributor", "distributor name", "prime vendor"},
+    "vendor_item_code": {"vendor item", "vendor item no", "vendor item number",
+                         "supc", "vendor product code", "distributor product code",
+                         "vendor code", "supplier item", "supplier code",
+                         "distributor item", "vendor item code"},
     # "$/unit" and "$ per case" are common. The dollar sign is the signal, so
     # canonical() turns it into the word `cost` rather than stripping it -- which
     # would leave "$/unit" indistinguishable from the unit column itself.
@@ -53,6 +69,10 @@ AMBIGUOUS: dict[str, tuple[str, ...]] = {
     "number": ("lot_code", "gtin"),
     "no": ("lot_code", "gtin"),
     "id": ("gtin", "site"),
+    # Bare "item" is the description in PrimeroEdge and the catalog number in
+    # some LINQ exports. Guessing wrong puts a number where a name belongs.
+    "item no": ("manufacturer_item_code", "vendor_item_code"),
+    "item number": ("manufacturer_item_code", "vendor_item_code"),
 }
 
 _PUNCT = re.compile(r"[^a-z0-9]+")

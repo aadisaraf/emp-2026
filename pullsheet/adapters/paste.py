@@ -17,8 +17,8 @@ from typing import Iterator
 
 from pullsheet.adapters.base import InventoryAdapter, NormalizedRecord
 
-#: A leading or trailing count: "12 chkn strips froz", "chkn strips froz x 12",
-#: "chkn strips froz, 12 cases". Anything less obvious is left alone -- inventing
+#: A leading or trailing count: "12 CHICKEN STRIPS BRD FC FROZEN", "CHICKEN STRIPS BRD FC FROZEN x 12",
+#: "CHICKEN STRIPS BRD FC FROZEN, 12 cases". Anything less obvious is left alone -- inventing
 #: a quantity is worse than not having one.
 _LEADING = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*(?:x\s*)?(?=\D)")
 _TRAILING = re.compile(r"[\s,;]+(?:x\s*)?(\d+(?:\.\d+)?)\s*"
@@ -68,7 +68,8 @@ class PasteAdapter(InventoryAdapter):
                 description = line[:match.start()].strip() or line
 
         unpopulated = {"storage_location", "unit", "pack_size", "gtin", "upc",
-                       "lot_code", "unit_cost", "received_date"}
+                       "lot_code", "brand", "manufacturer", "manufacturer_item_code",
+                       "vendor_name", "vendor_item_code", "unit_cost", "received_date"}
         if quantity is None:
             unpopulated.add("quantity")
 
@@ -80,6 +81,8 @@ class PasteAdapter(InventoryAdapter):
             raw_description=description or line,
             quantity=quantity,
             unit=None, pack_size=None, gtin=None, upc=None, lot_code=None,
+            brand=None, manufacturer=None, manufacturer_item_code=None,
+            vendor_name=None, vendor_item_code=None,
             unit_cost=None, received_date=None,
             source_row=source_row,
             unpopulated=frozenset(unpopulated),

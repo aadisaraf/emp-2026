@@ -59,7 +59,9 @@ class WatchedFolderAdapter(InventoryAdapter):
         anything a given file omits comes back in ``unpopulated`` per row."""
         return frozenset({
             "site", "storage_location", "raw_description", "quantity", "unit",
-            "pack_size", "gtin", "upc", "lot_code", "unit_cost", "received_date",
+            "pack_size", "gtin", "upc", "lot_code", "brand", "manufacturer",
+            "manufacturer_item_code", "vendor_name", "vendor_item_code",
+            "unit_cost", "received_date",
         })
 
     # -- reading -----------------------------------------------------------
@@ -156,6 +158,13 @@ class WatchedFolderAdapter(InventoryAdapter):
         if unit_cost is None:
             unpopulated.add("unit_cost")
 
+        # Supplier identity (FR-069). Passed through as the source wrote it:
+        # firm.agrees() does the normalizing, in one place, so an adapter cannot
+        # change what matches by tidying a company name differently.
+        supplier = {name: keep(name, (f.get(name) or "").strip() or None)
+                    for name in ("brand", "manufacturer", "manufacturer_item_code",
+                                 "vendor_name", "vendor_item_code")}
+
         return NormalizedRecord(
             site=site,
             storage_location=keep("storage_location", (f.get("storage_location") or "").strip() or None),
@@ -167,6 +176,7 @@ class WatchedFolderAdapter(InventoryAdapter):
             upc=gtin,
             # VERBATIM. Case, punctuation and whitespace exactly as written (R3).
             lot_code=keep("lot_code", f.get("lot_code") or None),
+            **supplier,
             unit_cost=unit_cost,
             received_date=keep("received_date", (f.get("received_date") or "").strip() or None),
             source_row=source_row,

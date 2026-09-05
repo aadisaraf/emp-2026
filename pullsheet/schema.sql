@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS inventory_records (
     gtin                   TEXT,
     upc                    TEXT,
     lot_code               TEXT,               -- verbatim from source (R3)
+
+    -- Supplier identity (FR-069). A district item master is built around
+    -- purchasing, so it always knows who supplies a line even when it carries no
+    -- barcode and no lot. These are the join keys that survive that absence.
+    brand                  TEXT,               -- the label on the case: 'High Liner', 'Simplot'
+    manufacturer           TEXT,               -- who made it; joins to recall_records.recalling_firm
+    manufacturer_item_code TEXT,               -- the maker's own catalog number, printed in recall notices
+    vendor_name            TEXT,               -- the distributor: 'Sysco', 'US Foods'
+    vendor_item_code       TEXT,               -- SUPC and equivalents. Never appears in a recall
+                                               -- notice; carried for the credit claim (P3).
     unit_cost              REAL,
     received_date          TEXT,
     source_export_id       INTEGER REFERENCES ingest_runs(id),
@@ -91,7 +101,8 @@ CREATE TABLE IF NOT EXISTS matches (
     -- cleared item is not merely forbidden by policy -- it cannot be represented.
     -- Covered by tests/unit/test_gate.py::test_no_input_can_auto_clear.
     CHECK (status IN ('PULL', 'HELD')),
-    CHECK (evidence_kind IN ('gtin', 'upc', 'lot', 'secondary_code', 'name'))
+    CHECK (evidence_kind IN ('gtin', 'upc', 'mfr_item', 'lot', 'secondary_code',
+                            'firm_and_name', 'name'))
 );
 
 CREATE TABLE IF NOT EXISTS decisions (

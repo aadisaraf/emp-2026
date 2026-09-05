@@ -76,7 +76,7 @@ def test_canonical():
 
 def test_unrecognised_columns_are_kept_not_dropped():
     mapping, _ = detect(["Site", "Item Description", "Vendor Notes"])
-    row = {"Site": "Lincoln", "Item Description": "chkn strips froz",
+    row = {"Site": "Lincoln", "Item Description": "CHICKEN STRIPS BRD FC FROZEN",
            "Vendor Notes": "substitute approved"}
     out = apply(mapping, row)
     assert out["site"] == "Lincoln"

@@ -6,14 +6,21 @@ pair can fail to exist at all, which is why it is a separate module from
 file to open, and its rule is rendered verbatim on the pull sheet (T045) so an
 operator can read it without reading the code.
 
-Two in-memory inverted indexes, rebuilt on every run:
+Four in-memory inverted indexes, rebuilt on every run:
 
 * **code index** -- GTINs, UPCs, and lot codes. Barcodes are keyed by their
   right-most 11 digits *after* dropping the check digit, so a GTIN-14 and the
   UPC-12 printed on the same case collide on one key instead of missing each
   other over a packaging indicator.
-* **token index** -- significant tokens of the normalized description, with a
-  hand-authored stoplist removed.
+* **firm index** -- the identifying words of ``recalling_firm``. Populated on
+  100% of the corpus, which makes it the channel most district rows actually
+  reach a recall through: barcodes and lot codes are absent from most item
+  masters, but every purchasing system knows its suppliers.
+* **item index** -- manufacturer catalog numbers, keyed *within* a firm. An item
+  number means nothing across manufacturers, so ``2075`` is filed under
+  ``liner|2075`` rather than under ``2075``.
+* **token index** -- significant words of the description, with a hand-authored
+  stoplist removed.
 """
 
 from __future__ import annotations
@@ -21,6 +28,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Iterable, NamedTuple, Optional
 
+from pullsheet.matching.firm import firm_tokens
 from pullsheet.matching.lot import normalize_lot
 from pullsheet.matching.normalize import tokens
 
@@ -82,6 +90,19 @@ def code_key(code: str | None) -> Optional[str]:
     return digits[:-1][-11:]
 
 
+def _item_key(code: str | None) -> Optional[str]:
+    """Index key for a manufacturer catalog number: see ``tiers.item_key``.
+
+    Defined here rather than imported because ``tiers`` imports from this
+    module. ``tests/unit/test_screen.py::test_item_key_agrees_with_tiers`` fails
+    the build if the two ever disagree.
+    """
+    import re
+    if not code:
+        return None
+    return re.sub(r"[^A-Z0-9]", "", str(code).upper()).lstrip("0") or None
+
+
 class ScreenRecord(NamedTuple):
     """The minimum a recall record must expose to be screened."""
 
@@ -89,6 +110,7 @@ class ScreenRecord(NamedTuple):
     normalized_description: str
     parsed_codes: dict
     lot_codes: tuple[str, ...] = ()
+    recalling_firm: str = ""
 
 
 #: A token appearing in more than this share of the corpus narrows nothing on
@@ -111,6 +133,8 @@ class Indexes(NamedTuple):
     by_token: dict[str, set]
     record_count: int
     doc_freq: dict[str, int] = {}
+    by_firm: dict[str, set] = {}
+    by_item: dict[str, set] = {}
 
     def is_distinctive(self, token: str) -> bool:
         """True when this token is rare enough to justify a comparison alone."""
@@ -128,10 +152,12 @@ def significant_tokens(text: str | None) -> frozenset[str]:
 
 
 def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
-    """Build the two inverted indexes over the recall corpus."""
+    """Build the four inverted indexes over the recall corpus."""
     by_code: dict[str, set] = defaultdict(set)
     by_lot: dict[str, set] = defaultdict(set)
     by_token: dict[str, set] = defaultdict(set)
+    by_firm: dict[str, set] = defaultdict(set)
+    by_item: dict[str, set] = defaultdict(set)
     doc_freq: dict[str, int] = defaultdict(int)
     n = 0
 
@@ -146,11 +172,21 @@ def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
             key = normalize_lot(lot)
             if key:
                 by_lot[key].add(rec.id)
+        firm = firm_tokens(rec.recalling_firm)
+        for token in firm:
+            by_firm[token].add(rec.id)
+            # Catalog numbers are filed under the firm that issued them, so a
+            # district item number can only ever collide with the same maker's.
+            for code in codes.get("item_codes", ()):
+                key = _item_key(code)
+                if key:
+                    by_item[f"{token}|{key}"].add(rec.id)
         for token in significant_tokens(rec.normalized_description):
             by_token[token].add(rec.id)
             doc_freq[token] += 1
 
-    return Indexes(dict(by_code), dict(by_lot), dict(by_token), n, dict(doc_freq))
+    return Indexes(dict(by_code), dict(by_lot), dict(by_token), n, dict(doc_freq),
+                   dict(by_firm), dict(by_item))
 
 
 def generate_candidates(inv, indexes: Indexes) -> set:
@@ -165,16 +201,21 @@ def generate_candidates(inv, indexes: Indexes) -> set:
                   inventory row, ANY of:
                     - a barcode fragment (right-most 11 digits, check digit off)
                     - a normalized lot code
-                    - two or more significant name tokens
-                    - one significant name token appearing in <= 2% of the corpus
-                  Union, never intersection. Any one of the four is enough.
-    Why safe:     the channels are independent. A row with no barcode is still
-                  reachable by name (FR-026); a row whose name normalizes to
-                  nothing is still reachable by code. The token conditions only
-                  refuse a pair whose ONLY link is a single word that reaches a
-                  large fraction of the corpus -- "milk" alone is not evidence
-                  that this milk is that milk, and a sheet that says it is
-                  cannot be read, which is its own way of missing a recall.
+                    - a word from the supplier's name
+                    - the same catalog number under the same supplier
+                    - two or more significant product words
+                    - one product word appearing in <= 2% of the corpus
+                  Union, never intersection. Any one of the six is enough.
+    Why safe:     the channels are independent, and each covers the others'
+                  blind spots. A row with no barcode is reachable by supplier or
+                  by name (FR-026) -- which is the ordinary case, not the
+                  exception: most district rows carry neither a barcode nor a
+                  lot. A row whose description normalizes to nothing is still
+                  reachable by code or supplier. The token conditions only refuse
+                  a pair whose ONLY link is a single word that reaches a large
+                  fraction of the corpus -- "milk" alone is not evidence that
+                  this milk is that milk, and a sheet that says it is cannot be
+                  read, which is its own way of missing a recall.
     Cost:         measured, not assumed. All 25 hand-seeded correspondences
                   survive this rule; the test asserting so is build-stopping.
     Stoplist:     removed from SEARCH only. Stoplisted and common tokens are
@@ -193,6 +234,21 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     lot_key = normalize_lot(getattr(inv, "lot_code", None))
     if lot_key and lot_key in indexes.by_lot:
         hits |= indexes.by_lot[lot_key]
+
+    # Supplier channels. Any shared firm word admits the pair; whether the two
+    # names actually agree is decided later, by firm.agrees(), on the full name.
+    # Screening deliberately admits more than agreement would: over-admitting
+    # costs a comparison, and under-admitting costs a line.
+    supplier_tokens: set[str] = set()
+    for name in (getattr(inv, "manufacturer", None), getattr(inv, "brand", None)):
+        supplier_tokens |= firm_tokens(name)
+    for token in supplier_tokens:
+        hits |= indexes.by_firm.get(token, set())
+
+    item = _item_key(getattr(inv, "manufacturer_item_code", None))
+    if item:
+        for token in supplier_tokens:
+            hits |= indexes.by_item.get(f"{token}|{item}", set())
 
     # Name channel. Count how many of this row's significant tokens each recall
     # shares, so "two common tokens" and "one distinctive token" can both admit
@@ -213,7 +269,8 @@ def generate_candidates(inv, indexes: Indexes) -> set:
 #: operator can read what the system throws away without reading the code (T045).
 SCREENING_RULE = (
     "A recall is compared against an inventory line only if the two share a barcode "
-    "fragment, a lot code, two or more significant name words, or one significant "
-    "name word that appears in fewer than 2% of recall records. A pair whose only "
-    "link is a single common word - milk, chicken, cheese - is never evaluated."
+    "fragment, a lot code, a word from the supplier's name, two or more significant "
+    "product words, or one product word that appears in fewer than 2% of recall "
+    "records. A pair whose only link is a single common word - milk, chicken, cheese "
+    "- is never evaluated."
 )

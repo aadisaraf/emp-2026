@@ -26,6 +26,19 @@
         <dt>Pack size</dt><dd>{{ m.pack_size or 'not recorded' }}</dd>
         <dt>Barcode</dt><dd>{{ m.gtin or 'none on this row' }}</dd>
         <dt>Lot</dt><dd>{{ highlight(m.lot_code or 'not tracked', m.trigger_inventory_text) }}</dd>
+        {# Supplier identity (FR-069). Shown next to the barcode and the lot
+           because it is the same kind of thing -- an identifier -- and on most
+           rows it is the only one present. #}
+        <dt>Brand</dt><dd>{{ m.brand or 'not recorded' }}</dd>
+        <dt>Manufacturer</dt><dd>{{ m.manufacturer or 'not recorded' }}</dd>
+        <dt>Mfr item</dt><dd>{{ m.manufacturer_item_code or 'not recorded' }}</dd>
+        <dt>Vendor</dt>
+        <dd>{{ m.vendor_name or 'not recorded' }}{% if m.vendor_item_code %}
+          &middot; {{ m.vendor_item_code }}{% endif %}
+          {# The distributor's own code never appears in an agency notice, so it
+             is not a matching key. It is what the distributor needs to process
+             the credit. #}
+        </dd>
         <dt>Unit cost</dt><dd>{% if m.unit_cost is not none %}${{ '%.2f' | format(m.unit_cost) }}{% else %}not recorded{% endif %}</dd>
       </dl>
       {% if unpopulated %}

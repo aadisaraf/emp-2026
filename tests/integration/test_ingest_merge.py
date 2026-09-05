@@ -49,11 +49,11 @@ def test_same_identity_rows_merge_with_summed_quantity(conn, adapter, tmp_path):
     """SC-014. Two lines for the same product, same site, same storage, same lot
     are one record -- and both contributing source rows are named."""
     path = _write(tmp_path / "dupes.csv", [
-        ["Lincoln Elementary", "Freezer A", "chkn strips froz", "14", "CS",
+        ["Lincoln Elementary", "Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "14", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-24"],
-        ["Lincoln Elementary", "Freezer A", "chkn strips froz", "9", "CS",
+        ["Lincoln Elementary", "Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "9", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-26"],
-        ["Lincoln Elementary", "Cooler 1", "chkn strips froz", "3", "CS",
+        ["Lincoln Elementary", "Cooler 1", "CHICKEN STRIPS BRD FC FROZEN", "3", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-26"],
     ])
     db.ingest_file(conn, path, adapter, "test source")
@@ -76,9 +76,9 @@ def test_same_identity_rows_merge_with_summed_quantity(conn, adapter, tmp_path):
 
 def test_a_missing_quantity_does_not_become_zero_when_merging(conn, adapter, tmp_path):
     path = _write(tmp_path / "blank.csv", [
-        ["Lincoln Elementary", "Freezer A", "chkn strips froz", "", "CS",
+        ["Lincoln Elementary", "Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-24"],
-        ["Lincoln Elementary", "Freezer A", "chkn strips froz", "5", "CS",
+        ["Lincoln Elementary", "Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "5", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-26"],
     ])
     db.ingest_file(conn, path, adapter, "test source")
@@ -89,9 +89,9 @@ def test_a_missing_quantity_does_not_become_zero_when_merging(conn, adapter, tmp
 
 def test_different_lots_at_the_same_site_stay_separate(conn, adapter, tmp_path):
     path = _write(tmp_path / "lots.csv", [
-        ["Lincoln Elementary", "Freezer A", "chkn strips froz", "14", "CS",
+        ["Lincoln Elementary", "Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "14", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-24"],
-        ["Lincoln Elementary", "Freezer A", "chkn strips froz", "9", "CS",
+        ["Lincoln Elementary", "Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "9", "CS",
          "2/5 lb", "", "4831A", "38.50", "2026-08-26"],
     ])
     db.ingest_file(conn, path, adapter, "test source")

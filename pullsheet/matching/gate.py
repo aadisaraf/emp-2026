@@ -53,10 +53,27 @@ class Decision(NamedTuple):
 _LADDER: dict[str, Tier] = {
     "gtin": "CONFIRMED",
     "upc": "CONFIRMED",
+    # A manufacturer's own catalog number, on an agreeing manufacturer. Product
+    # identity, and the only kind of it most district rows can offer: barcodes
+    # and lot codes are both absent from the majority of item masters, while the
+    # supplier and the number used to order from them are always there (FR-070).
+    "mfr_item": "CONFIRMED",
     "lot": "PROBABLE",
     "secondary_code": "PROBABLE",
+    # The recalled firm made this line, and both descriptions name the same
+    # distinctive product word. Two independent agreements, neither of which is
+    # a guess about spelling (FR-071).
+    "firm_and_name": "PROBABLE",
     "name": "POSSIBLE",
 }
+
+#: Kinds whose whole claim rests on the supplier being the recalled firm. If the
+#: evidence does not actually carry that agreement, the claim is not the one the
+#: kind names, and the pair falls to POSSIBLE rather than being trusted.
+_NEEDS_FIRM: frozenset[str] = frozenset({"mfr_item", "firm_and_name"})
+
+#: Kinds whose claim rests on two lot codes being the same code.
+_NEEDS_LOT: frozenset[str] = frozenset({"lot", "secondary_code"})
 
 
 def decide(inv, rec, evidence: Evidence) -> Decision:
@@ -107,12 +124,20 @@ def decide(inv, rec, evidence: Evidence) -> Decision:
         notes.append(f"recall status: {evidence.recall_status}")
 
     # --- Demotion ----------------------------------------------------------
-    # A lot-based claim that is not an exact agreement cannot support PULL, so it
-    # falls to POSSIBLE and is held for a human. A code-level match (gtin/upc) is
-    # product identity and is never demoted -- the lot notes above still ride
-    # along, so the operator sees the same caveat either way.
-    if tier == "PROBABLE" and evidence.lot_comparison != "equal":
+    # A claim is demoted when the thing it is named after is not actually there.
+    # Demotion moves a line from PULL to HELD; it never removes one, and the
+    # notes above ride along either way, so the operator sees the same caveat.
+    #
+    # A barcode match (gtin/upc) is product identity outright and is never
+    # demoted -- it names no second condition to be missing.
+    if evidence.kind in _NEEDS_LOT and evidence.lot_comparison != "equal":
+        # Prefix or partial overlap between two lot codes is not agreement.
         tier = "POSSIBLE"
+    if evidence.kind in _NEEDS_FIRM and not evidence.firm_agreement:
+        # An item number with no agreeing manufacturer behind it is just a
+        # number, and a number is not an identity (FR-070).
+        tier = "POSSIBLE"
+        notes.append("supplier could not be confirmed against the recalling firm")
 
     # Widening rules 4 and 6 need no branch: a missing GTIN, an empty string, a
     # None, or a contradictory field simply never reaches a condition that could

@@ -12,7 +12,7 @@ from types import SimpleNamespace
 import pytest
 
 from pullsheet.matching.normalize import normalize
-from pullsheet.matching.tiers import Evidence, build_evidence
+from pullsheet.matching.tiers import COMPOUND_KINDS, JOINER, Evidence, build_evidence
 from pullsheet.recalls.parse import parse_record
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -29,6 +29,7 @@ def _recalls():
                 product_description=r["product_description"],
                 code_info=r.get("code_info") or "",
                 parsed_codes=parse_record(r["product_description"], r.get("code_info"), r.get("more_code_info")),
+                recalling_firm=r.get("recalling_firm") or "",
                 status=(r.get("status") or "active").lower(),
             )
     return out
@@ -43,6 +44,11 @@ def _inventory():
                 site=r["Site"], raw_description=r["Item Description"],
                 normalized_description=normalize(r["Item Description"]),
                 gtin=gtin, upc=gtin, lot_code=r["Lot #"] or None,
+                brand=r["Brand"] or None,
+                manufacturer=r["Manufacturer"] or None,
+                manufacturer_item_code=r["Mfr Item #"] or None,
+                vendor_name=r["Vendor"] or None,
+                vendor_item_code=r["Vendor Item #"] or None,
             ))
     return rows
 
@@ -51,14 +57,16 @@ RECALLS = _recalls()
 INVENTORY = _inventory()
 SEEDS = json.loads((FIXTURES / "expected_matches.json").read_text())["matches"]
 
-# One seed per evidence kind, chosen so all five are exercised.
+# One seed per evidence kind, chosen so every rung of the ladder is exercised.
 ONE_PER_KIND = {}
 for s in SEEDS:
     ONE_PER_KIND.setdefault(s["expected_evidence_kind"], s)
 
 
-def test_all_five_kinds_are_exercised_by_the_fixtures():
-    assert set(ONE_PER_KIND) == {"gtin", "upc", "lot", "secondary_code", "name"}
+def test_every_rung_of_the_ladder_is_exercised_by_the_fixtures():
+    """A rung with no fixture behind it is a rung nobody has ever seen fire."""
+    from pullsheet.matching.gate import _LADDER
+    assert set(ONE_PER_KIND) == set(_LADDER)
 
 
 @pytest.mark.parametrize("kind", sorted(ONE_PER_KIND))
@@ -72,20 +80,34 @@ def test_each_evidence_kind_is_produced_from_a_fixture_pair(kind):
 
 
 @pytest.mark.parametrize("seed", SEEDS, ids=lambda s: f"row{s['source_row']}")
-def test_both_triggers_are_verbatim_substrings_of_their_own_side(seed):
+def test_both_triggers_are_verbatim(seed):
     """This is the assertion that makes a pull sheet defensible in a kitchen:
-    the operator can find the quoted text on the page in front of them."""
+    the operator can find every piece of quoted text on the page in front of
+    them.
+
+    A compound kind quotes two things -- the supplier and the code, or the
+    supplier and the product word -- and each is checked on its own side. The
+    rule is per component, never relaxed to "close enough".
+    """
     inv = INVENTORY[seed["source_row"] - 1]
     rec = RECALLS[seed["recall_source_record_id"]]
     ev = build_evidence(inv, rec)
     assert ev is not None
 
-    inv_haystack = f"{inv.raw_description} {inv.gtin or ''} {inv.lot_code or ''}"
-    rec_haystack = f"{rec.product_description} {rec.code_info}"
-    assert ev.trigger_inventory_text in inv_haystack, (
-        f"inventory trigger {ev.trigger_inventory_text!r} is not in {inv_haystack!r}")
-    assert ev.trigger_recall_text in rec_haystack, (
-        f"recall trigger {ev.trigger_recall_text!r} is not in {rec_haystack!r}")
+    inv_haystack = " ".join(filter(None, (
+        inv.raw_description, inv.gtin, inv.lot_code, inv.brand, inv.manufacturer,
+        inv.manufacturer_item_code)))
+    rec_haystack = f"{rec.product_description} {rec.code_info} {rec.recalling_firm}"
+
+    def parts(text):
+        return text.split(JOINER) if ev.kind in COMPOUND_KINDS else [text]
+
+    for part in parts(ev.trigger_inventory_text):
+        assert part in inv_haystack, (
+            f"inventory trigger part {part!r} is not in {inv_haystack!r}")
+    for part in parts(ev.trigger_recall_text):
+        assert part in rec_haystack, (
+            f"recall trigger part {part!r} is not in {rec_haystack!r}")
 
 
 @pytest.mark.parametrize("seed", SEEDS, ids=lambda s: f"row{s['source_row']}")
@@ -104,15 +126,52 @@ def test_the_spaced_upc_is_quoted_as_the_agency_printed_it():
     assert ev.trigger_recall_text == "0 24284-96910 5"
 
 
-def test_the_abbreviation_pair_quotes_both_spellings():
-    """chkn on one side, Chicken on the other. Same token, two spellings, and
-    the sheet shows each side as its own author wrote it."""
-    seed = next(s for s in SEEDS if s["item_description"] == "mozz shred lm")
+def test_a_name_pair_quotes_each_side_as_its_own_author_wrote_it():
+    """MOZZARELLA in a district catalog, Mozzarella in an agency notice. One
+    word, two spellings of its case, and the sheet shows each side its own."""
+    seed = next(s for s in SEEDS
+                if s["item_description"] == "MOZZARELLA CHEESE SHREDDED LMPS 5 LB")
     ev = build_evidence(INVENTORY[seed["source_row"] - 1],
                         RECALLS[seed["recall_source_record_id"]])
     assert ev.kind == "name"
-    assert ev.trigger_inventory_text == "mozz"
-    assert "ozzarella" in ev.trigger_recall_text
+    assert ev.trigger_inventory_text == "MOZZARELLA"
+    assert ev.trigger_recall_text == "Mozzarella"
+
+
+def test_a_catalog_number_is_identity_only_next_to_its_manufacturer():
+    """FR-070. The same number, moved to another company, must stop being
+    evidence of identity -- and must not silently become a weaker kind of
+    evidence for the same product either."""
+    seed = next(s for s in SEEDS if s["expected_evidence_kind"] == "mfr_item")
+    inv = INVENTORY[seed["source_row"] - 1]
+    rec = RECALLS[seed["recall_source_record_id"]]
+    assert build_evidence(inv, rec).kind == "mfr_item"
+
+    impostor = SimpleNamespace(**{**vars(inv), "brand": "Acme Provisions",
+                                  "manufacturer": "Acme Provisions"})
+    ev = build_evidence(impostor, rec)
+    assert ev is None or ev.kind == "name", (
+        "a catalog number matched across manufacturers")
+
+
+def test_firm_agreement_alone_produces_no_firm_evidence():
+    """FR-071. The supplier is recalled; the product is not one of the recalled
+    ones. The pair may still appear by name -- it must not appear as supplier
+    evidence."""
+    negatives = json.loads((FIXTURES / "expected_matches.json").read_text())["must_not_pull"]
+    checked = 0
+    for neg in negatives:
+        inv = next(i for i in INVENTORY
+                   if i.site == neg["site"] and i.raw_description == neg["item_description"])
+        for rec in RECALLS.values():
+            ev = build_evidence(inv, rec)
+            if ev is None:
+                continue
+            assert ev.kind not in ("firm_and_name", "mfr_item"), (
+                f"{neg['item_description']} claimed {ev.kind} against "
+                f"{rec.recalling_firm}: {neg['why']}")
+            checked += 1
+    assert checked, "the negative fixtures produced no evidence at all to check"
 
 
 def test_terminated_status_is_carried_not_dropped():

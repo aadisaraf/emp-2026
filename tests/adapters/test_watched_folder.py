@@ -38,7 +38,7 @@ def test_the_blank_quantity_row_survives_with_the_field_flagged(adapter):
     records = [r for r in adapter.read(FIXTURE) if r.quantity is None]
     assert len(records) == 1
     record = records[0]
-    assert record.raw_description == "corn dogs chkn prk"
+    assert record.raw_description == "CORN DOGS CHICKEN & PORK 4 OZ 72 CT"
     assert "quantity" in record.unpopulated
 
 
@@ -88,7 +88,7 @@ def test_an_unusable_source_is_rejected_loudly(adapter, name, expected_in_messag
 
 def test_a_missing_required_column_names_the_column(adapter, tmp_path):
     path = tmp_path / "no_site.csv"
-    path.write_text("Item Description,Qty On Hand\nchkn strips froz,14\n")
+    path.write_text("Item Description,Qty On Hand\nCHICKEN STRIPS BRD FC FROZEN,14\n")
     with pytest.raises(AdapterRejection) as err:
         list(adapter.read(path))
     assert "site" in str(err.value)

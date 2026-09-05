@@ -31,7 +31,7 @@ class Row:
         self.__dict__.update(kw)
 
 
-INV = Row(id=1, raw_description="chkn strips froz", gtin=None, lot_code="4829-B")
+INV = Row(id=1, raw_description="CHICKEN STRIPS BRD FC FROZEN", gtin=None, lot_code="4829-B")
 REC = Row(id=1, product_description="Frozen Chicken Strips, breaded",
           source_record_id="FSIS-RC-018-2026", status="active")
 
@@ -65,7 +65,7 @@ def test_ladder_secondary_code_is_probable_and_pulls():
 
 
 def test_ladder_name_only_is_possible_and_holds():
-    d = decide(INV, REC, Evidence("name", "chkn strips froz",
+    d = decide(INV, REC, Evidence("name", "CHICKEN STRIPS BRD FC FROZEN",
                                   "Frozen Chicken Strips, breaded", score=0.857))
     assert (d.tier, d.status) == ("POSSIBLE", "HELD")
 
@@ -108,8 +108,8 @@ def test_widen_lot_codes_overlap_partially():
 def test_widen_inventory_has_no_gtin():
     """FR-026. Produce and USDA commodity foods carry no barcode. Absence of a
     code is not evidence of absence of a recall."""
-    inv = Row(id=2, raw_description="apples fresh 125ct", gtin=None, lot_code=None)
-    d = decide(inv, REC, Evidence("name", "apples fresh 125ct",
+    inv = Row(id=2, raw_description="APPLES FRESH 125 CT", gtin=None, lot_code=None)
+    d = decide(inv, REC, Evidence("name", "APPLES FRESH 125 CT",
                                   "Golden delicious whole fresh apples", score=0.5))
     assert d.status == "HELD"
     assert d.evidence_kind == "name"
@@ -117,7 +117,7 @@ def test_widen_inventory_has_no_gtin():
 
 def test_widen_recall_code_info_unparsed():
     d = decide(INV, REC, Evidence(
-        "name", "pot wedges crnkl froz", "Crinkle Cut Wedge, Frozen Potatoes",
+        "name", "POTATO WEDGE CRINKLE CUT SAVORY 6 CUT 5 LB", "Crinkle Cut Wedge, Frozen Potatoes",
         score=0.55, recall_codes_unparsed=True))
     assert (d.tier, d.status) == ("POSSIBLE", "HELD")
 
@@ -196,7 +196,7 @@ def test_no_input_can_auto_clear():
     # --- (b) score sweep ----------------------------------------------------
     for step in range(101):
         score = step / 100.0
-        d = decide(INV, REC, Evidence("name", "chkn strips froz",
+        d = decide(INV, REC, Evidence("name", "CHICKEN STRIPS BRD FC FROZEN",
                                       "Frozen Chicken Strips, breaded", score=score))
         assert d.status == "HELD", f"score {score} promoted a name-only match to {d.status}"
         assert d.tier == "POSSIBLE", f"score {score} promoted a name-only match to {d.tier}"

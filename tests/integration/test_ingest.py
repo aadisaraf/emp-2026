@@ -58,8 +58,8 @@ def test_normalized_description_is_computed_downstream(conn, adapter):
     db.ingest_file(conn, FIXTURE, adapter, "Lincoln USD watched folder")
     row = conn.execute(
         "SELECT normalized_description FROM inventory_records "
-        "WHERE raw_description = 'chkn strips froz'").fetchone()
-    assert row["normalized_description"] == "chicken frozen strips"
+        "WHERE raw_description = 'CHICKEN STRIPS BRD FC FROZEN 2/5 LB'").fetchone()
+    assert row["normalized_description"] == "brd chicken fc frozen strips"
 
 
 def test_a_rejection_is_recorded_and_leaves_the_sheet_intact(conn, adapter):

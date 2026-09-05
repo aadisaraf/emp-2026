@@ -42,6 +42,7 @@ def _recall_objects(rows) -> list[SimpleNamespace]:
             product_description=row["product_description"],
             normalized_description=row["normalized_description"],
             code_info=row["code_info"] or "",
+            recalling_firm=row["recalling_firm"] or "",
             parsed_codes=json.loads(row["parsed_codes"] or "{}"),
             classification=row["classification"],
             class_rank=row["class_rank"],
@@ -60,6 +61,9 @@ def _inventory_objects(conn) -> list[SimpleNamespace]:
         normalized_description=r["normalized_description"],
         quantity=r["quantity"], gtin=r["gtin"], upc=r["upc"],
         lot_code=r["lot_code"], unit_cost=r["unit_cost"],
+        brand=r["brand"], manufacturer=r["manufacturer"],
+        manufacturer_item_code=r["manufacturer_item_code"],
+        vendor_name=r["vendor_name"], vendor_item_code=r["vendor_item_code"],
     ) for r in rows]
 
 
@@ -77,7 +81,7 @@ def run_matcher(conn: sqlite3.Connection, now: datetime | None = None,
     by_id = {r.id: r for r in recalls}
     indexes = build_indexes([
         ScreenRecord(id=r.id, normalized_description=r.normalized_description,
-                     parsed_codes=r.parsed_codes)
+                     parsed_codes=r.parsed_codes, recalling_firm=r.recalling_firm)
         for r in recalls
     ])
 
@@ -89,7 +93,7 @@ def run_matcher(conn: sqlite3.Connection, now: datetime | None = None,
         for recall_id in sorted(generate_candidates(inv, indexes)):
             stats["candidate_pairs"] += 1
             rec = by_id[recall_id]
-            evidence = build_evidence(inv, rec)
+            evidence = build_evidence(inv, rec, indexes.is_distinctive)
             if evidence is None:
                 # Screening let the pair through but nothing links it. Recording
                 # no match here is not a clearing path: no line ever existed to
@@ -123,6 +127,8 @@ def ordered_matches(conn: sqlite3.Connection, site: str | None = None) -> list[s
     sql = """
         SELECT m.*, i.site, i.storage_location, i.raw_description, i.quantity,
                i.unit, i.pack_size, i.lot_code, i.unit_cost,
+               i.brand, i.manufacturer, i.manufacturer_item_code,
+               i.vendor_name, i.vendor_item_code,
                r.source, r.source_record_id, r.product_description, r.code_info,
                r.classification, r.class_rank, r.recalling_firm, r.status AS recall_status,
                r.reason_for_recall,

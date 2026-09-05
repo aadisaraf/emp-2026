@@ -41,6 +41,16 @@ _LOT_LABEL = re.compile(
 # "SPM1.190.5" and the hyphens in "8817-C", but not a bare 1-2 character scrap.
 _LOT_TOKEN = re.compile(r"[A-Z0-9][A-Z0-9.\-]{2,}", re.I)
 
+# "Item Number: 10002800"  /  "Item #473015"  /  "SKU: 3107"  /  "Item # 74384"
+# The manufacturer's own catalog number. Districts carry these because they order
+# by them, and 239 of the 1000 committed openFDA records print one. A code is
+# only ever product identity ALONGSIDE an agreeing manufacturer (FR-070): item
+# number 02075 means a cod portion at High Liner and something else everywhere
+# else.
+_ITEM_CODE = re.compile(
+    r"\b(?:ITEM|SKU|PRODUCT|CATALOG|CAT|MFR|MFG)\s*"
+    r"(?:NUMBERS?|NOS?|CODES?|#)?\s*[:#.]?\s*([A-Z0-9][A-Z0-9\-]{3,19})\b", re.I)
+
 # "Exp. Date 05/2018"  /  "Best By 07/09/27"  /  "Sell by 10/10/19 to 11/10/19"
 # /  "Code Dates: 20 FEB 2015"  /  "001 JUN 05 24"
 _DATE_NUMERIC = re.compile(r"\b\d{1,2}/\d{1,2}(?:/\d{2,4})?\b")
@@ -88,7 +98,8 @@ def parse_code_info(text: str | None) -> dict[str, Any]:
     Returns ``{gtins, upcs, lots, date_codes, unparsed}``. Never raises: a
     ``code_info`` we cannot read must still produce a usable, honest result.
     """
-    empty = {"gtins": [], "upcs": [], "lots": [], "date_codes": [], "unparsed": True}
+    empty = {"gtins": [], "upcs": [], "lots": [], "date_codes": [],
+             "item_codes": [], "unparsed": True}
     if not text or not text.strip():
         return empty
 
@@ -126,16 +137,29 @@ def parse_code_info(text: str | None) -> dict[str, Any]:
                 continue                      # a word fragment, not a lot
             lots.append(upper)
 
+    item_codes: list[str] = []
+    for raw in _ITEM_CODE.findall(text):
+        code = raw.upper().strip(".-")
+        if not any(c.isdigit() for c in code):
+            continue                      # "Product codes beginning with B" is prose
+        if code in gtins or code in upcs:
+            continue
+        if code.isdigit() and len(code) >= 11:
+            continue                      # that is a barcode, not a catalog number
+        item_codes.append(code)
+
     date_codes = (_DATE_NUMERIC.findall(text)
                   + _DATE_WORDY.findall(text)
                   + _DATE_WORDY_2.findall(text))
 
-    gtins, upcs, lots, date_codes = map(_dedupe, (gtins, upcs, lots, date_codes))
+    gtins, upcs, lots, date_codes, item_codes = map(
+        _dedupe, (gtins, upcs, lots, date_codes, item_codes))
     return {
         "gtins": gtins,
         "upcs": upcs,
         "lots": lots,
         "date_codes": date_codes,
+        "item_codes": item_codes,
         # `unparsed` means "no identifier came out of this", which is what the
         # matcher needs to know. Date codes alone do not count: a date window is
         # not something a lot can be compared against.
@@ -167,5 +191,8 @@ def parse_record(product_description: str | None,
         "upcs": upcs,
         "lots": codes["lots"],
         "date_codes": _dedupe(codes["date_codes"] + from_description["date_codes"]),
+        # Item numbers are printed in the product description far more often than
+        # in code_info ("... Item Number: 10003220"), so both are read.
+        "item_codes": _dedupe(codes["item_codes"] + from_description["item_codes"]),
         "unparsed": not (gtins or upcs or codes["lots"]),
     }

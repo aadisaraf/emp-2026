@@ -41,6 +41,7 @@ def _corpus() -> list[ScreenRecord]:
                 id=r["recall_number"],
                 normalized_description=normalize(r["product_description"]),
                 parsed_codes=parse_record(r["product_description"], r.get("code_info"), r.get("more_code_info")),
+                recalling_firm=r.get("recalling_firm") or "",
             ))
     return out
 
@@ -56,6 +57,9 @@ def _inventory() -> list[SimpleNamespace]:
                 raw_description=r["Item Description"],
                 normalized_description=normalize(r["Item Description"]),
                 gtin=gtin, upc=gtin, lot_code=r["Lot #"] or None,
+                brand=r["Brand"] or None,
+                manufacturer=r["Manufacturer"] or None,
+                manufacturer_item_code=r["Mfr Item #"] or None,
             ))
     return rows
 
@@ -92,9 +96,19 @@ def test_code_key_ignores_unusable_input():
 
 def test_significant_tokens_drop_the_stoplist_but_normalization_keeps_it():
     from pullsheet.matching.normalize import tokens
-    assert "frozen" in tokens("chkn strips froz")
-    assert "frozen" not in significant_tokens("chkn strips froz")
-    assert significant_tokens("chkn strips froz") == {"chicken", "strips"}
+    desc = "CHICKEN STRIPS BRD FC FROZEN 2/5 LB"
+    assert "frozen" in tokens(desc)
+    assert "frozen" not in significant_tokens(desc)
+    assert significant_tokens(desc) == {"chicken", "strips", "brd", "fc"}
+
+
+def test_item_key_agrees_with_tiers():
+    """``screen`` defines its own copy because ``tiers`` imports from it. Two
+    implementations of one key is exactly the kind of thing that drifts."""
+    from pullsheet.matching.screen import _item_key
+    from pullsheet.matching.tiers import item_key
+    for code in ("02075", "2075", "B-1133", "473015", "", None, "0", "  53374 "):
+        assert _item_key(code) == item_key(code), code
 
 
 def test_a_row_that_normalizes_to_nothing_is_still_reachable_by_code():
@@ -192,6 +206,56 @@ def test_one_distinctive_word_is_enough():
 def test_the_screening_rule_is_stated_in_prose():
     """T045 renders this string verbatim on the sheet. It must answer 'what does
     your system throw away?' without the reader opening a file."""
-    assert "significant name word" in SCREENING_RULE
+    assert "significant product words" in SCREENING_RULE
     assert "never evaluated" in SCREENING_RULE
     assert "barcode" in SCREENING_RULE and "lot code" in SCREENING_RULE
+    # The supplier channel is how most district rows reach a recall at all, so a
+    # rule that does not mention it is not describing this system.
+    assert "supplier" in SCREENING_RULE
+
+
+# --------------------------------------------------------------------------
+# The supplier channels (FR-069, FR-070)
+# --------------------------------------------------------------------------
+
+def _firm_record_id():
+    """The id of the High Liner record carrying item number 53374."""
+    for rec in CORPUS:
+        if "53374" in (rec.parsed_codes.get("item_codes") or []):
+            return rec.id
+    raise AssertionError("the corpus no longer contains High Liner item 53374")
+
+
+def _any_high_liner_id():
+    for rec in CORPUS:
+        if "high liner" in (rec.recalling_firm or "").lower():
+            return rec.id
+    raise AssertionError("the corpus no longer contains a High Liner record")
+
+
+def test_a_row_with_no_barcode_and_no_lot_is_reachable_by_its_supplier():
+    """The ordinary case, not the exception: most district rows carry neither a
+    barcode nor a lot, and the supplier is the only identifier they have."""
+    row = SimpleNamespace(normalized_description="", gtin=None, upc=None, lot_code=None,
+                          brand="High Liner", manufacturer=None, manufacturer_item_code=None)
+    assert _any_high_liner_id() in generate_candidates(row, INDEXES)
+
+
+def test_a_catalog_number_only_reaches_its_own_manufacturer():
+    """FR-070. Item 53374 is a pollock wedge at High Liner and is nothing at all
+    at any other company, so it is indexed under the firm rather than alone."""
+    ours = SimpleNamespace(normalized_description="", gtin=None, upc=None, lot_code=None,
+                           brand="High Liner", manufacturer=None, manufacturer_item_code="53374")
+    assert _firm_record_id() in generate_candidates(ours, INDEXES)
+
+    theirs = SimpleNamespace(normalized_description="", gtin=None, upc=None, lot_code=None,
+                             brand="Simplot", manufacturer=None, manufacturer_item_code="53374")
+    assert _firm_record_id() not in generate_candidates(theirs, INDEXES)
+
+
+def test_a_row_with_no_supplier_at_all_is_unaffected():
+    """The paste adapter supplies a description and nothing else. Adding supplier
+    channels must not have made that row harder to match."""
+    bare = SimpleNamespace(normalized_description="mozzarella", gtin=None, upc=None,
+                           lot_code=None)
+    assert generate_candidates(bare, INDEXES)

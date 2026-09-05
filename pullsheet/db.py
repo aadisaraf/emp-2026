@@ -55,11 +55,23 @@ def _now() -> str:
 
 
 def identity_key(site: str, location: str | None, gtin: str | None,
-                 normalized_description: str, lot_code: str | None) -> str:
-    """FR-064. ``product_identity`` is the GTIN when there is one and the
-    normalized description otherwise, so a row without a barcode still has a
-    stable identity instead of being treated as unique every time."""
-    product_identity = gtin or normalized_description
+                 normalized_description: str, lot_code: str | None,
+                 manufacturer: str | None = None,
+                 manufacturer_item_code: str | None = None) -> str:
+    """FR-064. Product identity is the strongest thing the row actually carries.
+
+    GTIN first. Failing that, the manufacturer's own catalog number -- which is
+    what a district orders by, and is a far more stable identity than a
+    description string that a catalog refresh can reword. The normalized
+    description is the floor, so a row with neither still has a stable identity
+    instead of being treated as unique every time.
+    """
+    if gtin:
+        product_identity = gtin
+    elif manufacturer and manufacturer_item_code:
+        product_identity = f"{manufacturer.strip().lower()}#{manufacturer_item_code.strip().upper()}"
+    else:
+        product_identity = normalized_description
     return "␟".join([site, location or "", product_identity, lot_code or ""])
 
 
@@ -101,6 +113,17 @@ def load_inventory_fixture(conn: sqlite3.Connection) -> int:
             lot = row["Lot #"] or None                   # verbatim (R3)
             if not lot:
                 unpopulated.append("lot_code")
+            brand = (row.get("Brand") or "").strip() or None
+            mfr = (row.get("Manufacturer") or "").strip() or None
+            mfr_item = (row.get("Mfr Item #") or "").strip() or None
+            vendor = (row.get("Vendor") or "").strip() or None
+            vendor_item = (row.get("Vendor Item #") or "").strip() or None
+            for field, value in (("brand", brand), ("manufacturer", mfr),
+                                 ("manufacturer_item_code", mfr_item),
+                                 ("vendor_name", vendor), ("vendor_item_code", vendor_item)):
+                if not value:
+                    unpopulated.append(field)
+
             raw_cost = row["Unit Cost"].strip()
             cost = float(raw_cost) if raw_cost else costs.get(desc)
             if cost is None:
@@ -110,14 +133,19 @@ def load_inventory_fixture(conn: sqlite3.Connection) -> int:
             conn.execute(
                 """INSERT INTO inventory_records
                    (site, storage_location, raw_description, normalized_description,
-                    quantity, unit, pack_size, gtin, upc, lot_code, unit_cost,
+                    quantity, unit, pack_size, gtin, upc, lot_code,
+                    brand, manufacturer, manufacturer_item_code, vendor_name,
+                    vendor_item_code, unit_cost,
                     received_date, unpopulated_fields, identity_key, created_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (row["Site"], row["Storage Location"] or None, desc, norm,
                  float(qty) if qty else None, row["UOM"] or None, row["Pack Size"] or None,
-                 gtin, gtin, lot, cost, row["Received Date"] or None,
-                 json.dumps(unpopulated),
-                 identity_key(row["Site"], row["Storage Location"], gtin, norm, lot),
+                 gtin, gtin, lot,
+                 brand, mfr, mfr_item, vendor, vendor_item, cost,
+                 row["Received Date"] or None,
+                 json.dumps(sorted(unpopulated)),
+                 identity_key(row["Site"], row["Storage Location"], gtin, norm, lot,
+                              mfr, mfr_item),
                  now),
             )
             n += 1
@@ -257,7 +285,8 @@ def persist_records(conn: sqlite3.Connection, source_id: int, filename: str,
     merged: dict[str, dict] = {}
     for rec in records:
         norm = normalize(rec.raw_description)
-        key = identity_key(rec.site, rec.storage_location, rec.gtin, norm, rec.lot_code)
+        key = identity_key(rec.site, rec.storage_location, rec.gtin, norm, rec.lot_code,
+                           rec.manufacturer, rec.manufacturer_item_code)
         existing = merged.get(key)
         if existing is None:
             merged[key] = {"rec": rec, "norm": norm, "rows": [rec.source_row],
@@ -288,13 +317,17 @@ def persist_records(conn: sqlite3.Connection, source_id: int, filename: str,
         cur = conn.execute(
             """INSERT INTO inventory_records
                (site, storage_location, raw_description, normalized_description,
-                quantity, unit, pack_size, gtin, upc, lot_code, unit_cost,
+                quantity, unit, pack_size, gtin, upc, lot_code,
+                brand, manufacturer, manufacturer_item_code, vendor_name,
+                vendor_item_code, unit_cost,
                 received_date, source_export_id, unpopulated_fields, identity_key,
                 merged_from, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (rec.site, rec.storage_location, rec.raw_description, item["norm"],
              item["quantity"], rec.unit, rec.pack_size, rec.gtin, rec.upc,
-             rec.lot_code, rec.unit_cost, rec.received_date, run_id,
+             rec.lot_code, rec.brand, rec.manufacturer, rec.manufacturer_item_code,
+             rec.vendor_name, rec.vendor_item_code,
+             rec.unit_cost, rec.received_date, run_id,
              json.dumps(sorted(rec.unpopulated)), key,
              json.dumps(item["rows"]) if len(item["rows"]) > 1 else None, now),
         )

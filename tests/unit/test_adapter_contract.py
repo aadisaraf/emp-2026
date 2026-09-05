@@ -17,7 +17,12 @@ from pullsheet.adapters.base import (
 
 CONTRACT_FIELDS = (
     "site", "storage_location", "raw_description", "quantity", "unit", "pack_size",
-    "gtin", "upc", "lot_code", "unit_cost", "received_date", "source_row", "unpopulated",
+    "gtin", "upc", "lot_code",
+    # Supplier identity (FR-069). Ordered next to the other identifiers because
+    # that is what they are: for most district rows they are the ONLY identifiers,
+    # since barcode and lot coverage in item masters is partial.
+    "brand", "manufacturer", "manufacturer_item_code", "vendor_name", "vendor_item_code",
+    "unit_cost", "received_date", "source_row", "unpopulated",
 )
 
 
@@ -25,8 +30,8 @@ def test_field_names_match_the_contract_exactly():
     assert NormalizedRecord._fields == CONTRACT_FIELDS
 
 
-def test_thirteen_fields():
-    assert len(NormalizedRecord._fields) == 13
+def test_eighteen_fields():
+    assert len(NormalizedRecord._fields) == 18
 
 
 def test_normalized_description_is_not_an_adapter_output():
@@ -69,6 +74,9 @@ def test_declarable_excludes_bookkeeping_fields():
     assert "source_row" not in DECLARABLE
     assert "unpopulated" not in DECLARABLE
     assert "lot_code" in DECLARABLE and "gtin" in DECLARABLE
+    for field in ("brand", "manufacturer", "manufacturer_item_code",
+                  "vendor_name", "vendor_item_code"):
+        assert field in DECLARABLE
 
 
 def test_base_does_not_import_from_matching():

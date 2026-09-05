@@ -1,49 +1,49 @@
 item_description,uom,unit_cost,provenance
-chkn strips froz,CS,38.50,hand-authored
-chkn nuggets wg froz,CS,52.75,hand-authored
-spinach froz org 10oz,CS,19.40,hand-authored
-peas & carrots froz 2lb,CS,14.25,hand-authored
-mozz shred lm,CS,41.10,hand-authored
-beef crumbles ckd,CS,33.90,hand-authored
-peas & carrots 16oz,CS,11.80,hand-authored
-apples fresh 125ct,CS,28.00,hand-authored
-brd whl grn slcd,CS,16.45,hand-authored
-milk 1% hlf pt,CS,9.60,hand-authored
-rice brown parboiled,CS,22.30,hand-authored
-corn whl kernel froz,CS,13.75,hand-authored
-bns black cnd,CS,24.90,hand-authored
-yogurt lowfat 4oz,CS,18.20,hand-authored
-pnut btr smooth,CS,39.75,hand-authored
-corn dogs chkn prk,CS,31.20,hand-authored
-carrots baby fresh,CS,21.40,hand-authored
-chkn patty wg 3oz,CS,49.30,hand-authored
-turkey brst slcd,CS,44.60,hand-authored
-fruit mix cut fresh,CS,17.85,hand-authored
-snack bar choc cherry,CS,26.40,hand-authored
-chkn fajita strips,CS,36.90,hand-authored
-tortilla flour 8in,CS,15.50,hand-authored
-milk chocolate hlf pt,CS,9.95,hand-authored
-pot wedges crnkl froz,CS,27.60,hand-authored
-salsa mild #10,CS,29.10,hand-authored
-past penne whl grn,CS,20.85,hand-authored
-lettuce romaine chpd,CS,23.70,hand-authored
-oranges fresh 113ct,CS,30.25,hand-authored
-brocc florets froz,CS,18.90,hand-authored
-cereal bowl asst,CS,34.40,hand-authored
-chz amer slcd,CS,37.15,hand-authored
-bns refried cnd,CS,25.60,hand-authored
-grnd bf 80/20,CS,54.80,hand-authored
-beef taco fill,CS,42.15,hand-authored
-chkn broth ns 32oz,CS,23.45,hand-authored
-saus patty prk ckd,CS,35.70,hand-authored
-chkn diced ckd,CS,46.20,hand-authored
-veg pizza mix,CS,,hand-authored
-flour ap 50lb,BG,,hand-authored
-bread bun whl grn,CS,19.30,hand-authored
-fries swt pot froz,CS,31.85,hand-authored
-bananas fresh,CS,24.10,hand-authored
-turkey deli slcd,CS,28.95,hand-authored
-tomato sce #10,CS,26.70,hand-authored
-oats rolled bulk,CS,21.95,hand-authored
-eggs lqd whl,CS,33.40,hand-authored
-grapes red fresh,CS,32.60,hand-authored
+CHICKEN STRIPS BRD FC FROZEN 2/5 LB,CS,38.50,hand-authored
+CHICKEN NUGGETS WG BRD FC 30 LB,CS,52.75,hand-authored
+SPINACH CHOPPED ORGANIC IQF 10 OZ,CS,19.40,hand-authored
+PEAS & CARROTS BLEND IQF 2 LB,CS,14.25,hand-authored
+MOZZARELLA CHEESE SHREDDED LMPS 5 LB,CS,41.10,hand-authored
+BEEF CRUMBLES COOKED TACO SEASONED 5 LB,CS,33.90,hand-authored
+PEAS & CARROTS DICED CN 16 OZ,CS,11.80,hand-authored
+APPLES FRESH 125 CT,CS,28.00,hand-authored
+BREAD WHOLE GRAIN SLICED 24 OZ,CS,16.45,hand-authored
+MILK 1% LOWFAT HALF PINT,CS,9.60,hand-authored
+RICE BROWN PARBOILED 25 LB,CS,22.30,hand-authored
+CORN WHOLE KERNEL IQF 2 LB,CS,13.75,hand-authored
+BEANS BLACK CANNED #10,CS,24.90,hand-authored
+YOGURT LOWFAT STRAWBERRY 4 OZ,CS,18.20,hand-authored
+PEANUT BUTTER SMOOTH 5 LB,CS,39.75,hand-authored
+CORN DOGS CHICKEN & PORK 4 OZ 72 CT,CS,31.20,hand-authored
+CARROTS BABY PEELED FRESH 5 LB,CS,21.40,hand-authored
+CHICKEN PATTY BRD WG 3.0 OZ 30 LB,CS,49.30,hand-authored
+TURKEY BREAST SLICED OVEN ROASTED 6 LB,CS,44.60,hand-authored
+FRUIT MIX CUT FRESH 5 LB,CS,17.85,hand-authored
+SNACK BAR CHOCOLATE CHERRY 12 CT,CS,26.40,hand-authored
+CHICKEN FAJITA STRIPS SEASONED FC 5 LB,CS,36.90,hand-authored
+TORTILLA FLOUR 8 IN 12 CT,CS,15.50,hand-authored
+MILK CHOCOLATE LOWFAT HALF PINT,CS,9.95,hand-authored
+POTATO WEDGE CRINKLE CUT SAVORY 6 CUT 5 LB,CS,27.60,hand-authored
+SALSA MILD #10 CAN,CS,29.10,hand-authored
+PASTA PENNE WHOLE GRAIN 10 LB,CS,20.85,hand-authored
+LETTUCE ROMAINE CHOPPED 2 LB,CS,23.70,hand-authored
+ORANGES FRESH 113 CT,CS,30.25,hand-authored
+BROCCOLI FLORETS IQF 2 LB,CS,18.90,hand-authored
+CEREAL BOWL ASSORTED 96 CT,CS,34.40,hand-authored
+CHEESE AMERICAN SLICED YELLOW 5 LB,CS,37.15,hand-authored
+BEANS REFRIED CANNED #10,CS,25.60,hand-authored
+GROUND BEEF 80/20 COARSE 10 LB CHUB,CS,54.80,hand-authored
+BEEF TACO FILLING SEASONED 5 LB,CS,42.15,hand-authored
+CHICKEN BROTH NO SALT ADDED 32 OZ,CS,23.45,hand-authored
+SAUSAGE PATTY PORK FC 1.5 OZ 160 CT,CS,35.70,hand-authored
+CHICKEN DICED COOKED 1/2 IN 5 LB,CS,46.20,hand-authored
+VEGETABLE PIZZA MIX 2.5 LB,CS,,hand-authored
+FLOUR ALL PURPOSE ENRICHED 50 LB,BG,,hand-authored
+BUN HAMBURGER WHOLE GRAIN 12 CT,CS,19.30,hand-authored
+POLLOCK WEDGE BRD WG OVEN READY 3.4 OZ,CS,31.85,hand-authored
+BANANAS FRESH 40 LB,CS,24.10,hand-authored
+TURKEY DELI SLICED SMOKED 1/2 LB,CS,28.95,hand-authored
+TOMATO SAUCE CANNED #10,CS,26.70,hand-authored
+OATS ROLLED OLD FASHIONED 25 LB,CS,21.95,hand-authored
+EGG LIQUID WHOLE 2 LB,CS,33.40,hand-authored
+GRAPES RED SEEDLESS FRESH 18 LB,CS,32.60,hand-authored

@@ -1,13 +1,19 @@
 """Name similarity. Our own scorer, no library.
 
-The Dice coefficient over normalized token sets:
+The Dice coefficient over normalized word sets:
 
     dice(A, B) = 2 * |A n B| / (|A| + |B|)
 
-Chosen over edit distance because food descriptions differ by whole words, not
-characters: "chkn strips froz" and "Frozen Chicken Strips, breaded" share three
-tokens out of seven once abbreviations are expanded, which is a fact about the
-products. Levenshtein on those two strings says almost nothing.
+Word sets, not character distance, because food descriptions differ by whole
+words. Both sides are catalog strings, so the words that agree are the words
+both catalogs chose:
+
+    inventory  CHICKEN STRIPS BRD FC FROZEN 2/5 LB   -> 5 words
+    recall     Frozen Chicken Strips, breaded        -> 4 words
+    shared     chicken, strips, frozen               -> 6/9 = 0.667
+
+Levenshtein on those two strings says almost nothing, and it would say it with a
+confidence nobody could audit.
 
 The score ORDERS lines within POSSIBLE. It never promotes one out of POSSIBLE --
 see gate.decide(), which never compares it to anything.

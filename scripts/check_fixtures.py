@@ -21,6 +21,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))   # run from anywhere, no install step
 FIX = ROOT / "data" / "fixtures"
 
 
@@ -93,16 +94,26 @@ def check_seeds() -> int:
         snap = ROOT / "pullsheet" / "recalls" / "snapshots" / name
         ids |= {r["recall_number"] for r in json.loads(snap.read_text())["results"]}
 
-    seeds = json.loads((FIX / "expected_matches.json").read_text())["matches"]
+    oracle = json.loads((FIX / "expected_matches.json").read_text())
+    seeds, negatives = oracle["matches"], oracle["must_not_pull"]
     missing = [s["recall_source_record_id"] for s in seeds if s["recall_source_record_id"] not in ids]
 
-    kinds = sorted({s["expected_evidence_kind"] for s in seeds})
-    print(not missing, len(seeds))
-    print(f"  evidence kinds covered: {', '.join(kinds)}")
+    # Every rung of the ladder needs a fixture behind it. Reading the ladder
+    # itself rather than a copied list means adding a rung and forgetting to
+    # seed it fails here, not in a demo.
+    from pullsheet.matching.gate import _LADDER
+    kinds = {s["expected_evidence_kind"] for s in seeds}
+    unseeded = sorted(set(_LADDER) - kinds)
+
+    print(f"  {len(seeds)} seeds, {len(negatives)} must-not-pull rows")
+    print(f"  evidence kinds covered: {', '.join(sorted(kinds))}")
     if missing:
         print(f"  MISSING from the corpus: {missing}")
-    ok = not missing and len(seeds) >= 12 and len(kinds) == 5
-    print("OK" if ok else "FAIL: need >=12 seeds, all 5 evidence kinds, none missing")
+    if unseeded:
+        print(f"  LADDER RUNGS WITH NO FIXTURE: {unseeded}")
+    ok = not missing and not unseeded and len(seeds) >= 12 and len(negatives) >= 2
+    print("OK" if ok else
+          "FAIL: need >=12 seeds, >=2 must-not-pull rows, every ladder rung seeded, none missing")
     return 0 if ok else 1
 
 
