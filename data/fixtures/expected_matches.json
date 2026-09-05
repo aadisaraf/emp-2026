@@ -111,8 +111,8 @@
       "item_description": "turkey brst slcd",
       "recall_source_record_id": "FSIS-RC-012-2026",
       "expected_evidence_kind": "lot",
-      "expected_tier": "PROBABLE",
-      "why": "Inventory lot 6112A contains recall lot 6112. Contained, not equal -- still PULL."
+      "expected_tier": "POSSIBLE",
+      "why": "Inventory lot 6112A contains recall lot 6112. Contained, not equal -- still PULL. Contained rather than equal, so FR-066 holds it as unconfirmed."
     },
     {
       "source_row": 21,
@@ -129,8 +129,8 @@
       "item_description": "snack bar choc cherry",
       "recall_source_record_id": "H-0543-2026",
       "expected_evidence_kind": "lot",
-      "expected_tier": "PROBABLE",
-      "why": "Recall says Lot L1300, including L1300A and L1300B. Contained."
+      "expected_tier": "POSSIBLE",
+      "why": "Recall says Lot L1300, including L1300A and L1300B. Contained. Contained rather than equal, so FR-066 holds it as unconfirmed."
     },
     {
       "source_row": 23,
