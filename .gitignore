@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# pytest
+.pytest_cache/
+
+# PullSheet runtime state — the database is rebuilt from fixtures by
+# `python -m pullsheet.db --reset`, so it is never committed.
+data/pullsheet.db
+data/pullsheet.db-journal
+
+# Runtime folders keep their .gitkeep but not their contents: what lands in
+# the watched folder during a rehearsal is not part of the repository.
+data/watched/*
+!data/watched/.gitkeep
+data/archive/*
+!data/archive/.gitkeep
+
+# Universal
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
