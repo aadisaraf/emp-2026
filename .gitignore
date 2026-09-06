@@ -39,3 +39,4 @@ data/uploads/
 
 # opencode session state
 .omo/
+.gstack/
