@@ -24,6 +24,8 @@
   --text-secondary:    #495852;  /* supporting lines: supplier, vendor, notes */
   --text-muted:        #616F69;  /* column heads, provenance, timestamps */
   --text-inverse:      #FFFFFF;  /* on masthead and on filled alert chips */
+  --text-inverse-muted: #B9C6C0;  /* quiet inverse text on the masthead; solid, never opacity */
+  --masthead-rule:     #3A564B;  /* masthead separator on surface-masthead; solid, never opacity */
 
   /* ---- green: institutional chrome only ---------------------------- */
   --green-900:         #0D2E24;
