@@ -1,5 +1,5 @@
 import { EmptyState, ErrorState, PageHeader, Panel } from "@/components";
-import { attempt, getRuns } from "@/lib/api";
+import { getRuns } from "@/lib/api";
 import { EMPTY_NO_DELIVERIES, EMPTY_NO_RUNS, PAGE_TITLES } from "@/lib/strings";
 import { formatCount } from "@/lib/format";
 import { RunDayStrip } from "./_components/RunDayStrip";
@@ -22,7 +22,7 @@ export const dynamic = "force-dynamic";
 const LIMIT = 200;
 
 export default async function RunHistoryPage() {
-  const result = await attempt(getRuns(LIMIT));
+  const result = await getRuns(LIMIT);
 
   if (!result.ok) {
     return (

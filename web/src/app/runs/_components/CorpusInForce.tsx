@@ -13,10 +13,6 @@ import styles from "./CorpusInForce.module.css";
 
 /* What this run was matched against. */
 
-export interface CorpusInForceProps {
-  header: SheetHeader;
-}
-
 const SNAPSHOT_COLUMNS: Column<CorpusSnapshot>[] = [
   {
     key: "source",
@@ -69,7 +65,7 @@ const SNAPSHOT_COLUMNS: Column<CorpusSnapshot>[] = [
   },
 ];
 
-export function CorpusInForce({ header }: CorpusInForceProps) {
+export function CorpusInForce({ header }: { header: SheetHeader }) {
   const current = header.corpora.length > 0;
   const note = corpusNoteFor({
     corpus_note: header.corpus_note,

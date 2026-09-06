@@ -35,7 +35,7 @@ ALIASES: dict[str, set[str]] = {
                          "vendor code", "supplier item", "supplier code",
                          "distributor item", "vendor item code"},
     # "$/unit" and "$ per case" are common. The dollar sign is the signal, so
-    # canonical() turns it into the word `cost` rather than stripping it -- which
+    # canonical() turns it into the word `cost` rather than stripping it.
     "unit_cost": {"unit cost", "cost per unit", "unit price", "price", "cost",
                   "per unit", "cost unit", "cost per case", "cost case",
                   "case cost", "case price", "extended cost", "value"},
@@ -44,14 +44,13 @@ ALIASES: dict[str, set[str]] = {
 }
 
 # Headers that name the BUILDING, deliberately recognised and then ignored.
-#
 IGNORED: frozenset[str] = frozenset({
     "site", "school", "building", "bldg", "location name", "site name",
     "facility", "campus", "site id", "school name",
 })
 
 # Headers that genuinely could be two things. We ask; we do not guess.
-# "Code" is the common one -- half the operators mean the lot code by it and
+# "Code" is the common one: half the operators mean the lot code by it, half the GTIN.
 AMBIGUOUS: dict[str, tuple[str, ...]] = {
     "code": ("lot_code", "gtin"),
     "number": ("lot_code", "gtin"),
@@ -106,22 +105,3 @@ def detect(headers: Iterable[str]) -> tuple[dict[str, str], dict[str, tuple[str,
             del ambiguous[header]
 
     return mapping, ambiguous
-
-
-def required_missing(mapping: dict[str, str]) -> set[str]:
-    """Fields without which a row cannot be matched at all."""
-    return {"raw_description"} - set(mapping.values())
-
-
-def apply(mapping: dict[str, str], row: dict[str, str]) -> dict[str, str | None]:
-    """Rewrite one source row into internal field names."""
-    out: dict[str, str | None] = {field: None for field in ALIASES}
-    extra: dict[str, str] = {}
-    for header, value in row.items():
-        field = mapping.get(header)
-        if field:
-            out[field] = value
-        elif header:
-            extra[header] = value
-    out["_extra"] = extra or None
-    return out

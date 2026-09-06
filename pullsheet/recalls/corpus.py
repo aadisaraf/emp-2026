@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -13,11 +13,10 @@ from pullsheet.provenance import SOURCES
 from pullsheet.recalls.parse import parse_record
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-SNAPSHOT_DIR = ROOT / "pullsheet" / "recalls" / "snapshots"
 
 # FR-068. Beyond this the corpus is presented as stale -- loudly, on every
 # surface. A stale banner during a demo is intended behaviour, not a defect.
-FRESHNESS_WINDOW = timedelta(hours=24)
+FRESHNESS_HOURS = 24.0
 
 # openFDA writes 'Ongoing' / 'Completed' / 'Terminated'. FR-016 keeps every one
 # of them; the status only changes how the line is marked.
@@ -50,23 +49,19 @@ def _iso(value: str | None) -> Optional[str]:
     return v
 
 
-def snapshot_files() -> list[tuple[str, Path, Path]]:
-    """(source key, snapshot path, meta path) for every committed snapshot."""
-    out = []
-    for key in ("openfda", "fsis"):
-        path = ROOT / SOURCES[key][1]
-        out.append((key, path, path.with_suffix(".meta.json")))
-    return out
-
-
 def load_snapshots(conn: sqlite3.Connection, received_at: str | None = None) -> dict[str, int]:
     """Load every committed snapshot into ``recall_snapshots`` and ``recall_records``.
-    24-hour and 48-hour USDA FNS clocks run from (FR-051) -- not the agency's own
+
+    ``received_at`` is when THIS deployment learned of the recalls, which is what
+    the 24-hour and 48-hour USDA FNS clocks run from (FR-051) -- not the agency's
+    own report_date.
     """
     counts: dict[str, int] = {}
     now = received_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
 
-    for key, path, meta_path in snapshot_files():
+    for key in ("openfda", "fsis"):
+        path = ROOT / SOURCES[key][1]
+        meta_path = path.with_suffix(".meta.json")
         doc = json.loads(path.read_text())
         meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
         results = doc.get("results", [])
@@ -149,7 +144,9 @@ def _parse_ts(value: str) -> datetime:
 
 def snapshot_age_hours(conn: sqlite3.Connection, now: datetime) -> Optional[float]:
     """Age of the oldest loaded snapshot, in hours, measured from ``captured_at``.
+
     ``now`` is injected. Never read from the clock -- FR-068 is only testable
+    against an injected one.
     """
     row = conn.execute("SELECT MIN(captured_at) AS oldest FROM recall_snapshots").fetchone()
     if not row or not row["oldest"]:
@@ -160,7 +157,7 @@ def snapshot_age_hours(conn: sqlite3.Connection, now: datetime) -> Optional[floa
 def is_stale(conn: sqlite3.Connection, now: datetime) -> bool:
     """True when the corpus is older than the 24-hour window."""
     age = snapshot_age_hours(conn, now)
-    return age is not None and age > FRESHNESS_WINDOW.total_seconds() / 3600.0
+    return age is not None and age > FRESHNESS_HOURS
 
 
 def corpus_summary(conn: sqlite3.Connection, now: datetime) -> list[dict]:
@@ -176,7 +173,7 @@ def corpus_summary(conn: sqlite3.Connection, now: datetime) -> list[dict]:
             "captured_at": row["captured_at"],
             "record_count": row["record_count"],
             "age_hours": round(age, 1),
-            "stale": age > FRESHNESS_WINDOW.total_seconds() / 3600.0,
+            "stale": age > FRESHNESS_HOURS,
             "fetch_status": row["fetch_status"],
         })
     return out

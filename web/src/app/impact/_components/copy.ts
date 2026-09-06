@@ -80,7 +80,7 @@ export const MENU = {
 
 /**
   The two counts this page has to keep apart. 13 pulled inventory lines are not
-  13 broken meals, and a page that ran them together would be wrong in both
+  13 broken meals.
 */
 export function cascadeCounts(input: {
   brokenLines: number;

@@ -5,7 +5,7 @@ import type {
   SourceRef,
   SourcesResponse,
 } from "@/lib/api";
-import { attempt, getSources } from "@/lib/api";
+import { getSources } from "@/lib/api";
 import {
   DataTable,
   ErrorState,
@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 const LABEL_ORDER: Provenance[] = ["live", "dated-snapshot", "hand-authored"];
 
 export default async function SourcesPage() {
-  const result = await attempt(getSources());
+  const result = await getSources();
 
   if (!result.ok) {
     return (
@@ -154,10 +154,10 @@ export default async function SourcesPage() {
           flush
           printBlock
         >
-          <DataTable<CoverageRow>
+          <DataTable<string>
             columns={coverageColumns(data.adapters)}
-            rows={coverageRows(data)}
-            rowKey={(row) => row.field}
+            rows={data.declarable}
+            rowKey={(field) => field}
             caption="Field coverage per delivery channel"
           />
         </Panel>
@@ -319,35 +319,21 @@ function adapterColumns(declarable: number): Column<AdapterInfo>[] {
    The coverage map: one row per declarable field, one column per channel.
 --------------------------------------------------------------------------- */
 
-interface CoverageRow {
-  field: string;
-  reads: Record<string, boolean>;
-}
-
-function coverageRows(data: SourcesResponse): CoverageRow[] {
-  return data.declarable.map((field) => ({
-    field,
-    reads: Object.fromEntries(
-      data.adapters.map((adapter) => [adapter.name, adapter.declares.includes(field)]),
-    ),
-  }));
-}
-
-function coverageColumns(adapters: AdapterInfo[]): Column<CoverageRow>[] {
+function coverageColumns(adapters: AdapterInfo[]): Column<string>[] {
   return [
     {
       key: "field",
       header: "Inventory field",
       width: "260px",
-      render: (row) => <span className={styles.key}>{row.field}</span>,
+      render: (field) => <span className={styles.key}>{field}</span>,
     },
-    ...adapters.map<Column<CoverageRow>>((adapter, index) => ({
+    ...adapters.map<Column<string>>((adapter, index) => ({
       key: adapter.name,
       header: channelLabel(adapter.channel),
       width: "180px",
       groupEdge: index === 0,
-      render: (row) =>
-        row.reads[adapter.name] ? (
+      render: (field) =>
+        adapter.declares.includes(field) ? (
           <span className={styles.reads}>reads</span>
         ) : (
           <span className={styles.cannot}>cannot</span>
@@ -358,10 +344,11 @@ function coverageColumns(adapters: AdapterInfo[]): Column<CoverageRow>[] {
 
 function coverageSentence(data: SourcesResponse): string {
   const complete = data.adapters.filter((adapter) => adapter.cannot.length === 0).length;
-  if (complete === data.adapters.length) {
-    return `All ${data.adapters.length} channels declare all ${data.declarable.length} fields.`;
-  }
-  return `${complete} of ${data.adapters.length} channels declare all ${data.declarable.length} fields.`;
+  const lead =
+    complete === data.adapters.length
+      ? `All ${data.adapters.length}`
+      : `${complete} of ${data.adapters.length}`;
+  return `${lead} channels declare all ${data.declarable.length} fields.`;
 }
 
 /* ---------------------------------------------------------------------------

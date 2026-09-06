@@ -20,13 +20,11 @@
 }
 
 /*
-  A row waiting for a person. No fill and no left strip: the marker chip in the
-  value cell already carries the state in a word, and a tinted band behind 13 of
-  24 rows would make the 11 answered fields look like the exception.
+  A row waiting for a person carries no fill and no left strip: the marker chip
+  in the value cell already carries the state in a word, and a tinted band
+  behind 13 of 24 rows would make the 11 answered fields look like the
+  exception. So there is no rule for one here.
 */
-.unfilledRow td:first-child {
-  color: var(--text-primary);
-}
 
 /*
   The export block is the thing a director copies out of, so it is monospaced,

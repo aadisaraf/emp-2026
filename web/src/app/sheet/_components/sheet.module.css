@@ -640,8 +640,8 @@
   }
 
   /* Millimetres, because the target is 216mm of Letter with 12mm margins.
-     The six fixed columns take 87mm; Item and Triggered by, which carry the
-     wrapping text, split the 105mm that are left. */
+     Six columns are pinned and take 87mm: Status 17, Where 12, Qty 16, Lot 14,
+     Class 20, Triggered by 8. Item, Evidence and Pulled share the 105mm left. */
   .sheetTable col:nth-child(1) { width: 17mm; }
   .sheetTable col:nth-child(3) { width: 12mm; }
   .sheetTable col:nth-child(4) { width: 16mm; }
@@ -654,18 +654,11 @@
     text-decoration: none;
   }
 
-  .meta,
   .note,
   .code,
   .age {
     font-size: 7.5pt;
     line-height: 9.5pt;
-  }
-
-  .noteAmended {
-    font-size: 7.5pt;
-    line-height: 9.5pt;
-    color: #000000;
   }
 
   .footer {

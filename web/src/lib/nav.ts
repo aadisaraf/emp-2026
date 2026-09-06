@@ -29,7 +29,6 @@ export const ARTIFACT_NAV: NavItem[] = [
 
 /* What the print control is called on each route. */
 export const PRINT_LABEL: Record<string, string> = {
-  "/sheet": "Print pull sheet",
   "/impact": "Print impact",
   "/sources": "Print sources",
   "/match": "Print this match",

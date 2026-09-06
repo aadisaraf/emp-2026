@@ -29,7 +29,6 @@ code { font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
         padding: .7rem 1.1rem; font-size: .85rem; color: var(--muted); }
 .stat .n { display: block; font-size: 1.7rem; font-weight: 700; color: var(--ink); }
 .stat-pull .n { color: var(--pull); }
-.stat-held .n { color: var(--held); }
 
 table { border-collapse: collapse; width: 100%; background: #fff; font-size: .88rem; }
 th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line);
@@ -60,7 +59,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .line-pull .status-word { color: var(--pull); font-weight: 700; }
 .line-cleared { opacity: .62; text-decoration-line: line-through;
                 text-decoration-color: var(--muted); }
-.status-word { font-size: .72rem; display: block; margin-top: .15rem; }
 .note { font-size: .78rem; color: var(--held); margin-top: .2rem; }
 /* The supplier line: quieter than the description, and printed, because a
    manager standing at a freezer matches the case by its brand. */
@@ -73,8 +71,6 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .class-1 { color: var(--class1); font-weight: 700; }
 .class-2 { color: var(--class2); }
 .class-3 { color: var(--class3); }
-.checkbox { font-size: 1.1rem; text-align: center; }
-
 .sheet-header dl { display: grid; grid-template-columns: 9rem 1fr; gap: .2rem 1rem;
                    font-size: .88rem; margin: 0 0 1.5rem; }
 .sheet-header dt { color: var(--muted); }
@@ -90,8 +86,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
                 font-size: .82rem; color: var(--muted); }
 .sheet-footer strong { color: var(--ink); }
 
-.rejections { border-left: 3px solid var(--pull); background: var(--pull-bg);
-              padding: .8rem 1rem; }
+.rejections { border-left: 3px solid #8a1c1c; background: var(--pull-bg);
+              padding: .8rem 1rem; padding-left: .9rem; }
 .rejections h2 { margin-top: 0; }
 
 .sides { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -119,8 +115,6 @@ mark { background: #ffe680; padding: 0 .1em; }
         padding: 1rem 1.2rem; margin-bottom: 1rem; }
 .door h2 { margin-top: 0; }
 .door form { display: flex; gap: .7rem; align-items: flex-end; flex-wrap: wrap; }
-.door textarea { width: 100%; font: 13px/1.5 ui-monospace, Menlo, monospace;
-                 padding: .5rem; border: 1px solid var(--line); border-radius: 4px; }
 .door label { display: flex; flex-direction: column; font-size: .8rem; color: var(--muted); }
 .door input[type=text], .door input:not([type]) { font-size: .9rem; padding: .35rem .5rem;
       border: 1px solid var(--line); border-radius: 4px; min-width: 14rem; }
@@ -142,15 +136,10 @@ mark { background: #ffe680; padding: 0 .1em; }
 
 /* The status word is the load-bearing element on the dashboard, so it is
    legible before it is decorative. */
-.status-word { font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-               font-size: .8rem; }
+.status-word { display: block; margin-top: .15rem; font-weight: 700;
+               text-transform: uppercase; letter-spacing: .04em; font-size: .8rem; }
 .overrun, .clock-overrun td { color: #8a1c1c; font-weight: 700; }
-form.inline { display: inline-flex; gap: .3rem; }
-form.inline input { width: 7rem; }
 .note-amended { color: #7a2a00; font-weight: 600; }
-.refresh { display: flex; gap: 1.5rem; align-items: baseline; flex-wrap: wrap;
-           margin: 1rem 0; }
-.refresh form { display: flex; gap: .5rem; align-items: baseline; }
 
 /* ---------------------------------------------------------------------------
    The daily run. One word, then the evidence for it.
@@ -196,7 +185,6 @@ form.inline input { width: 7rem; }
 .clocks .note, .whats-new .note { color: var(--muted); }
 .frozen-corpus { color: var(--muted); }
 .corpus-line { font-size: .85rem; color: var(--muted); }
-.rejections { border-left: 3px solid #8a1c1c; padding-left: .9rem; }
 
 .two-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
                margin: 1rem 0; }

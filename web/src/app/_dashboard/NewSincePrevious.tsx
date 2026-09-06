@@ -10,17 +10,17 @@ import {
   TierBadge,
   type Column,
 } from "@/components";
+import { plural } from "@/lib/format";
 import { UNCLASSIFIED } from "@/lib/strings";
 import {
   FIRST_RUN_NOTE,
   NEW_COLUMNS,
-  lineTally,
   newSinceTitle,
   nothingNewNote,
 } from "./strings";
 import styles from "./dashboard.module.css";
 
-export interface NewSincePreviousProps {
+interface NewSincePreviousProps {
   lines: NewLine[];
   previousRunId: number | null;
 }
@@ -42,7 +42,7 @@ export function NewSincePrevious({ lines, previousRunId }: NewSincePreviousProps
   return (
     <Panel
       title={title}
-      note={lineTally(lines.length)}
+      note={plural(lines.length, "line")}
       flush
       printBlock
     >

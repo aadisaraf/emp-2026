@@ -160,8 +160,3 @@ export const AGENCY_RECORD_HEADING = "The agency record as it arrived";
 export const AGENCY_RECORD_NOTE =
   "The payload this recall record was built from, stored as it arrived. Keys vary by agency.";
 
-/* ---------------------------------------------------------------------------
-   When a match id does not exist.
---------------------------------------------------------------------------- */
-
-export const NO_SUCH_MATCH = "There is no match with this id.";

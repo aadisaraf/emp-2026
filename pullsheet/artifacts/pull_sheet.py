@@ -11,18 +11,13 @@ from pullsheet.matching.run import ordered_matches
 from pullsheet.recalls.corpus import corpus_summary
 
 
-def lines(conn: sqlite3.Connection, run_id: int,
-          decided_before: str | None = None) -> list[sqlite3.Row]:
-    return ordered_matches(conn, run_id, decided_before)
-
-
 def by_storage(conn: sqlite3.Connection, run_id: int,
                decided_before: str | None = None) -> list[dict[str, Any]]:
     """Sheet sections, one per storage location, each already in the single
     deterministic order the whole application uses.
     """
     sections: dict[str, dict[str, Any]] = {}
-    for row in lines(conn, run_id, decided_before):
+    for row in ordered_matches(conn, run_id, decided_before):
         where = row["storage_location"] or "unspecified"
         section = sections.setdefault(where, {
             "storage_location": where, "lines": [], "pull": 0, "held": 0, "cleared": 0,
@@ -51,20 +46,6 @@ def counts(conn: sqlite3.Connection, run_id: int) -> dict[str, int]:
             "total": row["total"] or 0}
 
 
-def parser_coverage(conn: sqlite3.Connection) -> dict[str, int]:
-    """How much of the recall corpus we could actually read."""
-    row = conn.execute(
-        """SELECT COUNT(*) AS total,
-                  SUM(CASE WHEN json_extract(parsed_codes,'$.unparsed') THEN 1 ELSE 0 END)
-                    AS unparsed
-             FROM recall_records"""
-    ).fetchone()
-    total = row["total"] or 0
-    unparsed = row["unparsed"] or 0
-    return {"total": total, "unparsed": unparsed, "parsed": total - unparsed,
-            "percent": round(100.0 * (total - unparsed) / total, 1) if total else 0.0}
-
-
 def rejections(conn: sqlite3.Connection, limit: int = 5) -> list[dict]:
     """Recent rejected deliveries, so a bad export is visible rather than silent."""
     return [dict(r) for r in conn.execute(
@@ -77,6 +58,15 @@ def header(conn: sqlite3.Connection, run: sqlite3.Row, now: datetime) -> dict[st
     is_current = run["id"] == (latest := conn.execute(
         "SELECT MAX(id) AS id FROM runs WHERE status = 'ok'").fetchone())["id"]
     corpora = corpus_summary(conn, now) if is_current else []
+    # How much of the recall corpus we could actually read.
+    parsing = conn.execute(
+        """SELECT COUNT(*) AS total,
+                  SUM(CASE WHEN json_extract(parsed_codes,'$.unparsed') THEN 1 ELSE 0 END)
+                    AS unparsed
+             FROM recall_records"""
+    ).fetchone()
+    total = parsing["total"] or 0
+    unparsed = parsing["unparsed"] or 0
     return {
         "location": location.summary(),
         "run": dict(run),
@@ -87,5 +77,7 @@ def header(conn: sqlite3.Connection, run: sqlite3.Row, now: datetime) -> dict[st
         "corpus_note": run["corpus_note"],
         "stale": any(c["stale"] for c in corpora),
         "counts": counts(conn, run["id"]),
-        "coverage": parser_coverage(conn),
+        "coverage": {
+            "total": total, "unparsed": unparsed, "parsed": total - unparsed,
+            "percent": round(100.0 * (total - unparsed) / total, 1) if total else 0.0},
     }

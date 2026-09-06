@@ -13,10 +13,6 @@ import styles from "./NewLinesTable.module.css";
 
 /* The lines this run produced that the run before it did not. */
 
-export interface NewLinesTableProps {
-  lines: readonly NewLine[];
-}
-
 const COLUMNS: Column<NewLine>[] = [
   {
     key: "status",
@@ -90,7 +86,7 @@ const COLUMNS: Column<NewLine>[] = [
   },
 ];
 
-export function NewLinesTable({ lines }: NewLinesTableProps) {
+export function NewLinesTable({ lines }: { lines: readonly NewLine[] }) {
   return (
     <DataTable<NewLine>
       columns={COLUMNS}

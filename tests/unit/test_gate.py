@@ -10,49 +10,35 @@ from pullsheet.matching.gate import TIER_STATUS, Decision, decide
 from pullsheet.matching.tiers import Evidence
 
 
-class Row:
-    """A stand-in for an inventory or recall record. decide() reads nothing off
-    these beyond what Evidence already carries -- if a test passes with these
-    """
-
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-
-INV = Row(id=1, raw_description="CHICKEN STRIPS BRD FC FROZEN", gtin=None, lot_code="4829-B")
-REC = Row(id=1, product_description="Frozen Chicken Strips, breaded",
-          source_record_id="FSIS-RC-018-2026", status="active")
-
-
 # The ladder: three rows, three tests
 
 def test_ladder_gtin_equality_is_confirmed_and_pulls():
-    d = decide(INV, REC, Evidence("gtin", "10073803110075", "10073803110075"))
+    d = decide(Evidence("gtin", "10073803110075", "10073803110075"))
     assert (d.tier, d.status) == ("CONFIRMED", "PULL")
 
 
 def test_ladder_upc_equality_is_confirmed_and_pulls():
-    d = decide(INV, REC, Evidence("upc", "041220273355", "41220273355"))
+    d = decide(Evidence("upc", "041220273355", "41220273355"))
     assert (d.tier, d.status) == ("CONFIRMED", "PULL")
 
 
 def test_ladder_lot_agreement_is_probable_and_pulls():
-    d = decide(INV, REC, Evidence(
+    d = decide(Evidence(
         "lot", "4829-B", "LOT 4829B",
         lot_comparison="equal", recall_lot_present=True, inventory_lot_present=True))
     assert (d.tier, d.status) == ("PROBABLE", "PULL")
 
 
 def test_ladder_secondary_code_is_probable_and_pulls():
-    d = decide(INV, REC, Evidence(
+    d = decide(Evidence(
         "secondary_code", "K10635", "Daycode: K10635",
         lot_comparison="equal", recall_lot_present=True, inventory_lot_present=True))
     assert (d.tier, d.status) == ("PROBABLE", "PULL")
 
 
 def test_ladder_name_only_is_possible_and_holds():
-    d = decide(INV, REC, Evidence("name", "CHICKEN STRIPS BRD FC FROZEN",
-                                  "Frozen Chicken Strips, breaded", score=0.857))
+    d = decide(Evidence("name", "CHICKEN STRIPS BRD FC FROZEN",
+                        "Frozen Chicken Strips, breaded", score=0.857))
     assert (d.tier, d.status) == ("POSSIBLE", "HELD")
 
 
@@ -62,7 +48,7 @@ def test_widen_recall_names_a_lot_the_inventory_does_not_track():
     """FR-027. The district does not record lots for this item, so we cannot
     rule it out -- and not being able to rule it out means it stays visible.
     """
-    d = decide(INV, REC, Evidence(
+    d = decide(Evidence(
         "name", "peas & carrots froz 2lb", "Deep-brand PREMIUM Select Peas and Carrots",
         score=0.6, recall_lot_present=True, inventory_lot_present=False))
     assert d.status == "HELD"
@@ -73,7 +59,7 @@ def test_widen_lot_range_or_date_code_cannot_be_parsed():
     """FR-067. 'BEST BY 03/12-04/02' is not a lot code we can compare. Failure
     to parse widens; it must never narrow.
     """
-    d = decide(INV, REC, Evidence(
+    d = decide(Evidence(
         "name", "beef crumbles ckd", "Beef Crumbles, cooked and seasoned",
         score=0.7, lot_comparison="unparseable",
         recall_lot_present=True, inventory_lot_present=True))
@@ -83,7 +69,7 @@ def test_widen_lot_range_or_date_code_cannot_be_parsed():
 
 def test_widen_lot_codes_overlap_partially():
     """FR-066. Recall lot 6112, inventory lot 6112A. Related, not equal."""
-    d = decide(INV, REC, Evidence(
+    d = decide(Evidence(
         "lot", "6112A", "6112", lot_comparison="contained",
         recall_lot_present=True, inventory_lot_present=True))
     assert d.status == "HELD"
@@ -92,18 +78,20 @@ def test_widen_lot_codes_overlap_partially():
 
 
 def test_widen_inventory_has_no_gtin():
-    """FR-026. Produce and USDA commodity foods carry no barcode. Absence of a
-    code is not evidence of absence of a recall.
+    """FR-026. Produce and USDA commodity foods carry no barcode. The gate sees
+    only evidence, so a barcode-less row is enforced upstream instead: see
+    tests/unit/test_screen.py::test_a_row_that_normalizes_to_nothing_is_still_reachable_by_code
+    and ::test_a_row_with_no_barcode_and_no_lot_is_reachable_by_its_supplier.
+    Here the obligation is only that name-only evidence still produces a line.
     """
-    inv = Row(id=2, raw_description="APPLES FRESH 125 CT", gtin=None, lot_code=None)
-    d = decide(inv, REC, Evidence("name", "APPLES FRESH 125 CT",
-                                  "Golden delicious whole fresh apples", score=0.5))
+    d = decide(Evidence("name", "APPLES FRESH 125 CT",
+                        "Golden delicious whole fresh apples", score=0.5))
     assert d.status == "HELD"
     assert d.evidence_kind == "name"
 
 
 def test_widen_recall_code_info_unparsed():
-    d = decide(INV, REC, Evidence(
+    d = decide(Evidence(
         "name", "POTATO WEDGE CRINKLE CUT SAVORY 6 CUT 5 LB", "Crinkle Cut Wedge, Frozen Potatoes",
         score=0.55, recall_codes_unparsed=True))
     assert (d.tier, d.status) == ("POSSIBLE", "HELD")
@@ -112,16 +100,14 @@ def test_widen_recall_code_info_unparsed():
 def test_widen_any_field_absent_or_malformed_still_produces_a_line():
     """FR-025. Empty strings, None, and nonsense all still produce a Decision."""
     for bad in ("", "   ", None):
-        d = decide(Row(id=3, raw_description=bad, gtin=None, lot_code=bad), REC,
-                   Evidence("name", bad or "", "something", score=None))
+        d = decide(Evidence("name", bad or "", "something", score=None))
         assert d.status in {"PULL", "HELD"}
 
 
 def test_widen_terminated_or_amended_recall_is_retained_and_marked():
     """FR-016. A terminated recall is still a recall that was in this kitchen."""
     for status in ("terminated", "amended"):
-        d = decide(INV, Row(id=4, status=status),
-                   Evidence("gtin", "10073803110075", "10073803110075",
+        d = decide(Evidence("gtin", "10073803110075", "10073803110075",
                             recall_status=status))
         assert d.status == "PULL"
         assert d.lot_note and status in d.lot_note.lower()
@@ -129,12 +115,12 @@ def test_widen_terminated_or_amended_recall_is_retained_and_marked():
 
 # Determinism
 
-def test_same_triple_yields_an_identical_decision_across_100_calls():
+def test_the_same_evidence_yields_an_identical_decision_across_100_calls():
     ev = Evidence("lot", "4829-B", "LOT 4829B", score=0.9,
                   lot_comparison="equal", recall_lot_present=True, inventory_lot_present=True)
-    first = decide(INV, REC, ev)
+    first = decide(ev)
     for _ in range(100):
-        assert decide(INV, REC, ev) == first
+        assert decide(ev) == first
 
 
 # SC-003: the explicit auto-clear assertion
@@ -155,9 +141,7 @@ def test_no_input_can_auto_clear():
         kinds, texts, scores, comparisons, statuses, (True, False), (True, False), (True, False)
     ):
         ev = Evidence(kind, text, text[::-1], score, comparison, rlot, ilot, unparsed, rstatus)
-        inv = Row(id=0, raw_description=text, gtin=None, lot_code=text)
-        rec = Row(id=0, product_description=text, status=rstatus)
-        d = decide(inv, rec, ev)                       # must not raise, ever
+        d = decide(ev)                                 # must not raise, ever
         assert isinstance(d, Decision)
         assert d.status in {"PULL", "HELD"}, f"{d.status!r} from {ev!r}"
         assert d.tier in TIER_STATUS
@@ -169,8 +153,8 @@ def test_no_input_can_auto_clear():
     # --- (b) score sweep ----------------------------------------------------
     for step in range(101):
         score = step / 100.0
-        d = decide(INV, REC, Evidence("name", "CHICKEN STRIPS BRD FC FROZEN",
-                                      "Frozen Chicken Strips, breaded", score=score))
+        d = decide(Evidence("name", "CHICKEN STRIPS BRD FC FROZEN",
+                            "Frozen Chicken Strips, breaded", score=score))
         assert d.status == "HELD", f"score {score} promoted a name-only match to {d.status}"
         assert d.tier == "POSSIBLE", f"score {score} promoted a name-only match to {d.tier}"
 

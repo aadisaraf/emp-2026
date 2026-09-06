@@ -8,8 +8,7 @@ const JOINER = " + ";
 /** The verbatim parts of a stored trigger. Never trimmed, never re-cased. */
 export function triggerParts(trigger: string | null | undefined): string[] {
   if (!trigger) return [];
-  const parts = trigger.includes(JOINER) ? trigger.split(JOINER) : [trigger];
-  return parts.filter((part) => part.length > 0);
+  return trigger.split(JOINER).filter((part) => part.length > 0);
 }
 
 type Range = [number, number];
@@ -46,7 +45,7 @@ export interface HighlightedProps {
 
 /**
   The stored text with the stored trigger marked in place. The mark carries a
-  1px rule under it as well as the tint, so it survives a grayscale printout
+  1px rule under it as well as the tint, so it survives a grayscale printout.
 */
 export function Highlighted({ text, parts }: HighlightedProps) {
   const marks = parts.length > 0 ? ranges(text, parts) : [];

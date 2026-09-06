@@ -1,11 +1,11 @@
 import type { MenuProposal } from "@/lib/api";
 import { DataTable, NotRecorded, Panel, type Column } from "@/components";
 import { formatCount } from "@/lib/format";
-import { OutcomeMark } from "./OutcomeMark";
+import { cx } from "@/lib/cx";
 import { SUBSTITUTION, candidatesChecked } from "./copy";
 import styles from "./impact.module.css";
 
-export interface SubstitutionPanelProps {
+interface SubstitutionPanelProps {
   /** Both arms of the union, in the order the server sorted them. */
   proposals: MenuProposal[];
   /** substitute.COMPONENTS_CAVEAT, rendered verbatim. */
@@ -36,7 +36,7 @@ export function SubstitutionPanel({ proposals, caveat }: SubstitutionPanelProps)
 /*
   Unmet has its own column so that all five proofs stack in one vertical
   position and the reader sees at a glance that the same component is missing
-  every time. On a substitute row the cell is not empty and not a dash: every
+  every time.
 */
 const COLUMNS: Column<MenuProposal>[] = [
   {
@@ -65,7 +65,17 @@ const COLUMNS: Column<MenuProposal>[] = [
     header: SUBSTITUTION.columns.outcome,
     width: "124px",
     groupEdge: true,
-    render: (proposal) => <OutcomeMark kind={proposal.kind} />,
+    render: (proposal) => (
+      <span
+        className={cx(
+          styles.chip,
+          proposal.kind === "none" ? styles.chipAttend : styles.chipRecorded,
+        )}
+        data-outcome={proposal.kind}
+      >
+        {proposal.kind === "none" ? SUBSTITUTION.noneWord : SUBSTITUTION.substituteWord}
+      </span>
+    ),
   },
   {
     key: "unmet",

@@ -46,7 +46,7 @@ the only mutations it makes are the three POSTs in the API contract.
 
 ```
 src/styles/tokens.css     every colour, size, space and radius, as custom properties
-src/app/globals.css       the reset, the base type, five type classes, the print rules
+src/app/globals.css       the reset, the base type, the global classes, the print rules
 src/app/layout.tsx        the shell: masthead, nav, status line, stat rail, poller
 src/components/           the shared library, one file and one CSS Module each
 src/lib/types.ts          every type from the API contract
@@ -143,10 +143,9 @@ CSS Modules next to the component, plus the tokens. There is no utility
 framework and no Tailwind: a screen assembled from forty utility classes reads
 as generated, and this one has to read as a logbook.
 
-Use the tokens for every value. `globals.css` also carries five type classes
-(`t-micro`, `t-body`, `t-body-strong`, `t-section`, `t-page`), `mono`, `muted`,
-`secondary`, `sr-only`, `no-print` and `print-only`. That list is the whole set
-of global classes; anything else belongs in a module.
+Use the tokens for every value. `globals.css` also carries `mono`, `sr-only`,
+`no-print`, `money`, `num` and `deadline`. That list is the whole set of global
+classes; anything else belongs in a module.
 
 The scale is five sizes and two weights: 11px uppercase labels, 13px body, 13px
 strong, 15px section headings, 20px page title, at weights 400 and 600. No 14px,

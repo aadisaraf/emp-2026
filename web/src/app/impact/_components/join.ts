@@ -53,22 +53,3 @@ export function brokenMeals(menu: MenuSummary, proposals: MenuProposal[]): Broke
     };
   });
 }
-
-/** How many of the broken meals are actually on this week's menu. */
-export function scheduledMealCount(rows: BrokenMeal[]): number {
-  return rows.filter((row) => row.dates.length > 0).length;
-}
-
-/** The two arms of the proposal union, counted separately. They never overlap. */
-export function proposalCounts(proposals: MenuProposal[]): {
-  substitutes: number;
-  proofs: number;
-} {
-  let substitutes = 0;
-  let proofs = 0;
-  for (const proposal of proposals) {
-    if (proposal.kind === "substitute") substitutes += 1;
-    else proofs += 1;
-  }
-  return { substitutes, proofs };
-}

@@ -10,11 +10,10 @@ import {
   type StatRailItem,
 } from "@/components";
 import { formatCount, formatMoney, formatQuantity } from "@/lib/format";
-import { ExcludedMark } from "./ExcludedMark";
 import { MONEY } from "./copy";
 import styles from "./impact.module.css";
 
-export interface MoneyPanelProps {
+interface MoneyPanelProps {
   claim: CreditClaim;
   runId: number;
 }
@@ -81,7 +80,7 @@ export function MoneyPanel({ claim, runId }: MoneyPanelProps) {
 /*
   Column order is fixed: the identity of the case first, then the three numbers
   that make the arithmetic, then the codes, then who sold it and what recalled
-  it. Measures are right-aligned so magnitudes stack; lot codes and item codes
+  it. Measures are right-aligned so magnitudes stack.
 */
 const LINE_COLUMNS: Column<ClaimLine>[] = [
   {
@@ -129,7 +128,13 @@ const LINE_COLUMNS: Column<ClaimLine>[] = [
     width: "104px",
     render: (line) =>
       line.extended === null ? (
-        <ExcludedMark reason={line.excluded_because} />
+        <span
+          className={`${styles.chip} ${styles.chipAttend}`}
+          title={line.excluded_because ?? undefined}
+          data-excluded=""
+        >
+          {MONEY.excludedWord}
+        </span>
       ) : (
         formatMoney(line.extended)
       ),

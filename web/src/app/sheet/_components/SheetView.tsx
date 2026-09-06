@@ -6,14 +6,12 @@ import { SheetHeaderBlock } from "./SheetHeaderBlock";
 import { PastRunBanner, RunWithoutLines, ZeroMatchNotice } from "./SheetNotices";
 import { SheetSurface } from "./SheetSurface";
 import { StorageSections } from "./StorageSections";
-import type { ClearedFacts } from "./clearedFacts";
 import styles from "./sheet.module.css";
 
 export interface SheetViewProps {
   sheet: SheetResponse;
   /** matching/screen.SCREENING_RULE, or null when the API did not answer. */
   screeningRule: string | null;
-  cleared: ClearedFacts;
   /** The run that is current now, used only to point a past run back at it. */
   currentRunId: number | null;
 }
@@ -24,7 +22,7 @@ export interface SheetViewProps {
   become a different document.
 */
 
-export function SheetView({ sheet, screeningRule, cleared, currentRunId }: SheetViewProps) {
+export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps) {
   const { header, run } = sheet;
   const hasLines = sheet.sections.length > 0;
   const refused = run.status !== "ok";
@@ -48,8 +46,7 @@ export function SheetView({ sheet, screeningRule, cleared, currentRunId }: Sheet
 
         {/*
           Print-only. On screen the corpus and its provenance are already in
-          the status line above, and the counts are already in the stat rail;
-          repeating them here cost 64px on the one page where rows are the
+          the status line above, and the counts are already in the stat rail.
         */}
         <SheetHeaderBlock header={header} />
 
@@ -58,11 +55,9 @@ export function SheetView({ sheet, screeningRule, cleared, currentRunId }: Sheet
         {!refused && header.counts.total === 0 ? <ZeroMatchNotice header={header} /> : null}
 
         {hasLines ? (
-          <div>
-            <SheetSurface>
-              <StorageSections sections={sheet.sections} cleared={cleared} />
-            </SheetSurface>
-          </div>
+          <SheetSurface>
+            <StorageSections sections={sheet.sections} />
+          </SheetSurface>
         ) : null}
 
         <SheetFooter

@@ -1,5 +1,3 @@
-"use client";
-
 import type { StatusResponse } from "@/lib/api";
 import { ClockStrip, EmptyState, Panel } from "@/components";
 import { CLOCKS, EMPTY_NO_RUNS, TIER_LEGEND } from "@/lib/strings";
@@ -8,30 +6,24 @@ import { RunFacts } from "./RunFacts";
 import { NewSincePrevious } from "./NewSincePrevious";
 import { CorpusPanel } from "./CorpusPanel";
 import { RefusedDeliveries } from "./RefusedDeliveries";
-import { useStatusFeed } from "./useStatusFeed";
 import { HOLD_POLICY } from "./strings";
 import styles from "./dashboard.module.css";
 
-export interface TodayBoardProps {
-  /** The server's own fetch, so the first paint is real data, not a skeleton. */
-  initial: StatusResponse;
-}
-
-/** The morning screen, and the live half of it. */
-export function TodayBoard({ initial }: TodayBoardProps) {
-  const { status, reachable } = useStatusFeed(initial);
+/** The morning screen. The shell's poller refreshes this whole tree when the
+ *  run changes, so there is nothing to fetch again from here. */
+export function TodayBoard({ status }: { status: StatusResponse }) {
   const run = status.run;
 
   return (
     <>
-      <StateStatement status={status} reachable={reachable} />
+      <StateStatement status={status} />
 
       <div className={styles.stack}>
         {run ? (
           <>
             <div className={styles.pair}>
               <Panel title={CLOCKS.heading} printBlock>
-                <ClockStrip deadlines={status.deadlines} variant="table" notes />
+                <ClockStrip deadlines={status.deadlines} variant="table" />
               </Panel>
               <RunFacts
                 run={run}
@@ -58,7 +50,7 @@ export function TodayBoard({ initial }: TodayBoardProps) {
               action={EMPTY_NO_RUNS.action}
             />
             <Panel title={CLOCKS.heading} printBlock>
-              <ClockStrip deadlines={status.deadlines} variant="table" notes />
+              <ClockStrip deadlines={status.deadlines} variant="table" />
             </Panel>
           </>
         )}

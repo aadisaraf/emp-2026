@@ -69,10 +69,6 @@ export const STALE_NOTE =
 
 /** The poll stopped answering. State it, do not animate it, and do not replace
  *  a single figure with a placeholder. */
-export function pollUnreachable(asOf: string): string {
-  return `The API did not answer the last poll. Every figure on this page is from ${asOf}.`;
-}
-
 /** The footer. Both sentences are facts the operator cannot derive from the
  *  numbers above, which is the only reason a closing note is here. */
 export const HOLD_POLICY =
@@ -136,8 +132,4 @@ export function corpusTally(records: string, sources: number): string {
   return sources === 1
     ? `${records} records from 1 source`
     : `${records} records across ${sources} sources`;
-}
-
-export function lineTally(lines: number): string {
-  return lines === 1 ? "1 line" : `${lines} lines`;
 }

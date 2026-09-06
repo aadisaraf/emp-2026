@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import type { Decision, MatchCore, RecallSide } from "@/lib/api";
 import {
   EVIDENCE_EXPLANATION,
-  EVIDENCE_LABEL,
   EVIDENCE_UNKNOWN,
   TIER_EXPLANATION,
   TIER_LEGEND,
@@ -57,10 +56,7 @@ export function Verdict({
   clearedCount,
   timeZone,
 }: VerdictProps) {
-  const known = Object.prototype.hasOwnProperty.call(EVIDENCE_LABEL, match.evidence_kind);
-  const evidenceSentence = known
-    ? EVIDENCE_EXPLANATION[match.evidence_kind]
-    : EVIDENCE_UNKNOWN;
+  const evidenceSentence = EVIDENCE_EXPLANATION[match.evidence_kind] ?? EVIDENCE_UNKNOWN;
 
   const amended =
     recall.status !== "active" && recall.prior_status

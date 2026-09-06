@@ -3,24 +3,20 @@ import type { RunHistoryEntry } from "@/lib/api";
 import { DataTable, NotRecorded, StatusBadge, type Column } from "@/components";
 import { formatCount, shortDeliveryRef } from "@/lib/format";
 import { cx } from "@/lib/cx";
+import { channelLabel } from "@/lib/strings";
 import { Tag } from "./Tag";
 import {
+  CHANNEL_EXPLANATION,
+  CURRENT_RUN_TAG_TITLE,
   NO_FILE_ARRIVED,
   NO_FILE_READ,
   REMATCH_ROWS_TITLE,
-  channelExplanation,
-  channelLabel,
   corpusNoteFor,
   hasDelivery,
 } from "./runsMeta";
 import styles from "./RunsTable.module.css";
 
 /* Every run, newest first, refused ones included and refused ones legible. */
-
-export interface RunsTableProps {
-  runs: readonly RunHistoryEntry[];
-  currentRunId: number | null;
-}
 
 function columns(currentRunId: number | null): Column<RunHistoryEntry>[] {
   return [
@@ -43,9 +39,7 @@ function columns(currentRunId: number | null): Column<RunHistoryEntry>[] {
           </Link>
           {run.id === currentRunId ? (
             <span className={styles.stack}>
-              <Tag title="The most recent accepted run. This is the sheet in force.">
-                current
-              </Tag>
+              <Tag title={CURRENT_RUN_TAG_TITLE}>current</Tag>
             </span>
           ) : null}
         </>
@@ -56,7 +50,7 @@ function columns(currentRunId: number | null): Column<RunHistoryEntry>[] {
       header: "Channel",
       width: "132px",
       render: (run) => (
-        <span title={channelExplanation(run.channel)}>{channelLabel(run.channel)}</span>
+        <span title={CHANNEL_EXPLANATION[run.channel]}>{channelLabel(run.channel)}</span>
       ),
     },
     {
@@ -67,7 +61,7 @@ function columns(currentRunId: number | null): Column<RunHistoryEntry>[] {
       render: (run) => {
         if (!hasDelivery(run)) {
           return (
-            <span className={styles.noFile} title={channelExplanation(run.channel)}>
+            <span className={styles.noFile} title={CHANNEL_EXPLANATION[run.channel]}>
               {NO_FILE_ARRIVED}
             </span>
           );
@@ -172,7 +166,13 @@ function columns(currentRunId: number | null): Column<RunHistoryEntry>[] {
   ];
 }
 
-export function RunsTable({ runs, currentRunId }: RunsTableProps) {
+export function RunsTable({
+  runs,
+  currentRunId,
+}: {
+  runs: readonly RunHistoryEntry[];
+  currentRunId: number | null;
+}) {
   return (
     <DataTable<RunHistoryEntry>
       columns={columns(currentRunId)}

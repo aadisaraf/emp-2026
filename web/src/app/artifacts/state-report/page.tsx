@@ -1,5 +1,5 @@
-import type { ReportField, ReportSection } from "@/lib/api";
-import { attempt, getStateReport } from "@/lib/api";
+import type { ReportField } from "@/lib/api";
+import { getStateReport } from "@/lib/api";
 import { DataTable, type Column } from "@/components";
 import { formatCount } from "@/lib/format";
 import { PAGE_TITLES } from "@/lib/strings";
@@ -24,8 +24,7 @@ export default async function StateReportPage({
 }: {
   searchParams?: Promise<ArtifactSearchParams>;
 }) {
-  const params = searchParams ? await searchParams : undefined;
-  const result = await attempt(getStateReport(runParam(params)));
+  const result = await getStateReport(runParam(await searchParams));
 
   if (!result.ok) {
     return <ArtifactUnavailable title={PAGE_TITLES.stateReport} failure={result.error} />;
@@ -48,7 +47,6 @@ export default async function StateReportPage({
       location={report.location}
       runId={report.run_id}
       generatedAt={report.generated_at}
-      run={report.header.run}
       header={report.header}
       footer={
         <SourceList
@@ -77,9 +75,28 @@ export default async function StateReportPage({
         difference that matters.
       </p>
 
-      {report.sections.map((section) => (
-        <ReportSectionBlock key={section.section} section={section} columns={columns} />
-      ))}
+      {report.sections.map((section) => {
+        const unfilled = section.fields.filter((field) => field.kind !== "derived").length;
+        return (
+          <section className={styles.section} key={section.section}>
+            <h2 className={styles.sectionHead}>{section.section}</h2>
+            <p className={styles.sectionNote}>
+              {formatCount(section.fields.length)} fields.{" "}
+              {unfilled === 0
+                ? "All derived from the database."
+                : `${formatCount(unfilled)} need a person.`}
+            </p>
+            <div className={styles.sectionTable}>
+              <DataTable<ReportField>
+                columns={columns}
+                rows={section.fields}
+                rowKey={(field) => field.label}
+                caption={`${section.section} fields`}
+              />
+            </div>
+          </section>
+        );
+      })}
 
       <section className={styles.section}>
         <h2 className={styles.sectionHead}>Structured export</h2>
@@ -99,42 +116,9 @@ export default async function StateReportPage({
   );
 }
 
-function ReportSectionBlock({
-  section,
-  columns,
-}: {
-  section: ReportSection;
-  columns: Column<ReportField>[];
-}) {
-  const unfilled = section.fields.filter((field) => field.kind !== "derived").length;
-
-  return (
-    <section className={styles.section}>
-      <h2 className={styles.sectionHead}>{section.section}</h2>
-      <p className={styles.sectionNote}>
-        {formatCount(section.fields.length)} fields.{" "}
-        {unfilled === 0
-          ? "All derived from the database."
-          : `${formatCount(unfilled)} need a person.`}
-      </p>
-      <div className={styles.sectionTable}>
-        <DataTable<ReportField>
-          columns={columns}
-          rows={section.fields}
-          rowKey={(field) => field.label}
-          caption={`${section.section} fields`}
-          rowClassName={(field) =>
-            field.kind === "derived" ? undefined : reportStyles.unfilledRow
-          }
-        />
-      </div>
-    </section>
-  );
-}
-
 /**
   Three columns and no fourth. The field, what is in it, and where that came
-  from or why it is empty. The third column is the one that makes the document
+  from or why it is empty.
 */
 function fieldColumns(marker: string): Column<ReportField>[] {
   return [
@@ -154,7 +138,7 @@ function fieldColumns(marker: string): Column<ReportField>[] {
         ) : (
           // kind "blank" is a signature: structurally empty by design, and
           // still marked, because "by design" is not visible to a reader.
-          <HumanEntryMark marker={marker} ruled />
+          <HumanEntryMark marker={marker} />
         ),
     },
     {

@@ -1,12 +1,20 @@
 import { EmptyState, ErrorState, PageHeader, Panel, PrintButton } from "@/components";
-import { attempt, getImpact } from "@/lib/api";
+import { getImpact } from "@/lib/api";
 import {
   EMPTY_NO_MENU_PROGRAM,
   EMPTY_NO_RUNS,
   PAGE_TITLES,
   pullSheetSubtitle,
 } from "@/lib/strings";
-import { MenuPanel, MoneyPanel, ProvenancePanel, SubstitutionPanel } from "./_components";
+/*
+  The impact page's own components. They live in ./_components rather than in
+  the shared library because nothing else on the site renders a credit claim
+  line, a cascade row or a substitution proof.
+*/
+import { MenuPanel } from "./_components/MenuPanel";
+import { MoneyPanel } from "./_components/MoneyPanel";
+import { ProvenancePanel } from "./_components/ProvenancePanel";
+import { SubstitutionPanel } from "./_components/SubstitutionPanel";
 import styles from "./_components/impact.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
@@ -15,27 +23,23 @@ import { PRINT_LABEL } from "@/lib/nav";
 export const dynamic = "force-dynamic";
 
 export default async function ImpactPage() {
-  const result = await attempt(getImpact());
+  const result = await getImpact();
 
   if (!result.ok) {
     // No ok run has ever existed. That is not a clear result, and it is not an
     // empty page either: it is the statement that nothing has been compared.
-    if (result.error.code === "no_inventory") {
-      return (
-        <>
-          <PageHeader title={PAGE_TITLES.impact} />
+    return (
+      <>
+        <PageHeader title={PAGE_TITLES.impact} />
+        {result.error.code === "no_inventory" ? (
           <EmptyState
             heading={EMPTY_NO_RUNS.heading}
             body={EMPTY_NO_RUNS.body}
             action={EMPTY_NO_RUNS.action}
           />
-        </>
-      );
-    }
-    return (
-      <>
-        <PageHeader title={PAGE_TITLES.impact} />
-        <ErrorState failure={result.error} />
+        ) : (
+          <ErrorState failure={result.error} />
+        )}
       </>
     );
   }

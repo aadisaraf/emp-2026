@@ -114,31 +114,9 @@ export const PROVENANCE_LEGEND =
 export const FSIS_NOTE =
   "USDA FSIS records are hand-authored. FSIS returns HTTP 403 to programmatic requests, so these records could not be fetched or verified against published notices.";
 
-/** "Matched against openfda (dated snapshot, captured 2026-09-05), 1,000 records, 8h old." */
-export function corpusLine(input: {
-  source: string;
-  provenanceLabel: string;
-  capturedDate: string;
-  records: string;
-  ageHours: string;
-}): string {
-  return `Matched against ${input.source} (${input.provenanceLabel}, captured ${input.capturedDate}), ${input.records} records, ${input.ageHours} old.`;
-}
-
 /* ---------------------------------------------------------------------------
    The pull sheet table.
 --------------------------------------------------------------------------- */
-
-export const SHEET_COLUMNS = [
-  "Status",
-  "Item",
-  "Qty",
-  "Lot",
-  "Class",
-  "Evidence",
-  "Triggered by",
-  "Pulled",
-] as const;
 
 export const UNCLASSIFIED = "unclassified";
 
@@ -157,8 +135,19 @@ export function sectionTally(pull: number, held: number, cleared: number): strin
   return parts.join(" · ");
 }
 
-export function amendedRecallNote(status: string, prior: string, date: string): string {
-  return `Recall ${status} by the agency (was ${prior}) on ${date}. This line stays on the sheet. Clearing it is a human action.`;
+/**
+  A recall the agency has since terminated or amended keeps its line. The
+  clauses the agency did not state are simply absent -- an empty "(was )" would
+  be a claim about a prior status nobody recorded.
+*/
+export function amendedRecallNote(
+  status: string,
+  prior?: string | null,
+  date?: string | null,
+): string {
+  return `Recall ${status} by the agency${prior ? ` (was ${prior})` : ""}${
+    date ? ` on ${date}` : ""
+  }. This line stays on the sheet. Clearing it is a human action.`;
 }
 
 /* ---------------------------------------------------------------------------
@@ -204,15 +193,6 @@ export const EMPTY_NO_RUNS = {
 
 export const EMPTY_ZERO_MATCHES_HEADING = "No inventory line matched a recall.";
 
-export function emptyZeroMatchesBody(input: {
-  rowsRead: number;
-  records: string;
-  source: string;
-  capturedDate: string;
-}): string {
-  return `Checked ${input.rowsRead} rows against ${input.records} ${input.source} records captured ${input.capturedDate}. A zero-line result is a result. This page is the record that the comparison ran.`;
-}
-
 export const EMPTY_NO_MENU_PROGRAM = {
   heading: "Menu",
   body: "This deployment does not run a meal program, so a pull has no planned menu to cascade into. The money figures above still apply.",
@@ -246,7 +226,12 @@ export function clockProvenance(receivedAt: string, records: number): string {
 export const API_UNREACHABLE_HEADING = "The API did not answer.";
 
 export function apiUnreachableBody(detail: string): string {
-  return `${detail} No inventory and no recall record was read, so nothing on this page describes what is in the building.`;
+  return `${detail ? `${detail} ` : ""}No inventory and no recall record was read, so nothing on this page describes what is in the building.`;
+}
+
+/** Said by the shell's poller, on any route, when the API goes quiet. */
+export function pollUnreachable(asOf: string): string {
+  return `The API did not answer the last poll. Every figure on this page is from ${asOf}.`;
 }
 
 export const API_UNREACHABLE_HINT =

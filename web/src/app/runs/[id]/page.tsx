@@ -11,15 +11,17 @@ import {
   type DefinitionItem,
   type StatRailItem,
 } from "@/components";
-import { attempt, getRun, isNotFound } from "@/lib/api";
-import { CLOCKS } from "@/lib/strings";
+import { getRun, isNotFound } from "@/lib/api";
+import { CLOCKS, channelLabel } from "@/lib/strings";
 import { formatCount, formatDateTime, shortDeliveryRef } from "@/lib/format";
 import { CorpusInForce } from "../_components/CorpusInForce";
 import { NewLinesTable } from "../_components/NewLinesTable";
 import { Tag } from "../_components/Tag";
 import {
   BACK_LINK,
+  CHANNEL_EXPLANATION,
   CLOCKS_PANEL_NOTE,
+  CURRENT_RUN_TAG_TITLE,
   NEW_PANEL_NOTE,
   NO_FILE_ARRIVED,
   NO_FILE_READ,
@@ -31,8 +33,6 @@ import {
   RUN_NOT_FOUND_DETAIL,
   RUN_NOT_FOUND_HEADING,
   SHEET_LINK,
-  channelExplanation,
-  channelLabel,
   decidedBeforeNote,
   hasDelivery,
   newAgainst,
@@ -71,7 +71,7 @@ export default async function RunDetailPage({
     );
   }
 
-  const result = await attempt(getRun(runId));
+  const result = await getRun(runId);
 
   if (!result.ok) {
     return (
@@ -96,7 +96,7 @@ export default async function RunDetailPage({
     {
       term: "Channel",
       value: channelLabel(run.channel),
-      hint: channelExplanation(run.channel),
+      hint: CHANNEL_EXPLANATION[run.channel],
     },
     {
       term: "Delivery",
@@ -171,9 +171,7 @@ export default async function RunDetailPage({
             {header.is_current ? (
               <>
                 {" "}
-                <Tag title="The most recent accepted run. This is the sheet in force.">
-                  current
-                </Tag>
+                <Tag title={CURRENT_RUN_TAG_TITLE}>current</Tag>
               </>
             ) : null}
           </>
@@ -224,7 +222,7 @@ export default async function RunDetailPage({
         <CorpusInForce header={header} />
 
         <Panel title={CLOCKS.heading} note={CLOCKS_PANEL_NOTE} printBlock>
-          <ClockStrip deadlines={deadlines} variant="table" notes />
+          <ClockStrip deadlines={deadlines} variant="table" />
         </Panel>
 
         {new_lines.length > 0 ? (

@@ -1,5 +1,6 @@
 // PullSheet API v1 types, transcribed from brief/API.md section 21.
 // Do not edit a field name, a type or a nullability here without editing
+// brief/API.md and pullsheet/api.py to match.
 
 export type Provenance = "live" | "dated-snapshot" | "hand-authored";
 export type RecallSource = "openfda" | "fsis";

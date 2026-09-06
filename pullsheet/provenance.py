@@ -87,12 +87,3 @@ def provenance_of(key: str) -> Provenance:
 def label_for(key: str) -> str:
     """The human label rendered in the UI and on the printed sheet."""
     return LABELS[provenance_of(key)]
-
-
-def path_for(key: str) -> Path:
-    """Absolute path to the file backing this source."""
-    return ROOT / SOURCES[key][1]
-
-
-def describe(key: str) -> str:
-    return SOURCES[key][2]

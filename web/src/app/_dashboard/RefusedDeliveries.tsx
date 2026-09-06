@@ -5,13 +5,8 @@ import { channelLabel } from "@/lib/strings";
 import { PANEL, REFUSED_NOTE } from "./strings";
 import styles from "./dashboard.module.css";
 
-export interface RefusedDeliveriesProps {
-  /** The 5 most recent refused deliveries, newest first. Never rendered empty. */
-  runs: Run[];
-}
-
-/** Deliveries that were refused. */
-export function RefusedDeliveries({ runs }: RefusedDeliveriesProps) {
+/** Deliveries that were refused. The 5 most recent, newest first, never empty. */
+export function RefusedDeliveries({ runs }: { runs: Run[] }) {
   return (
     <Panel title={PANEL.refused} note={REFUSED_NOTE} printBlock>
       <div className={styles.refusedList}>

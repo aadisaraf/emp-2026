@@ -15,11 +15,11 @@ import {
 import { formatCount, formatQuantity } from "@/lib/format";
 import { UNCLASSIFIED } from "@/lib/strings";
 import { PlannedMeals } from "./PlannedMeals";
-import { brokenMeals, proposalCounts, scheduledMealCount, type BrokenMeal } from "./join";
+import { brokenMeals, type BrokenMeal } from "./join";
 import { MENU, cascadeCounts, heldNotCascaded, plannedTitle } from "./copy";
 import styles from "./impact.module.css";
 
-export interface MenuPanelProps {
+interface MenuPanelProps {
   menu: MenuSummary;
   proposals: MenuProposal[];
   runId: number;
@@ -29,7 +29,7 @@ export interface MenuPanelProps {
 /** The cascade: which planned meals a pull takes off the menu. */
 export function MenuPanel({ menu, proposals, runId, servesMealProgram }: MenuPanelProps) {
   const rows = brokenMeals(menu, proposals);
-  const counts = proposalCounts(proposals);
+  const substitutes = proposals.filter((proposal) => proposal.kind === "substitute").length;
 
   const items: StatRailItem[] = [
     {
@@ -39,8 +39,8 @@ export function MenuPanel({ menu, proposals, runId, servesMealProgram }: MenuPan
     },
     { label: MENU.rail.serviceDays, value: formatCount(menu.dates.length) },
     { label: MENU.rail.itemsBroken, value: formatCount(proposals.length) },
-    { label: MENU.rail.substituted, value: formatCount(counts.substitutes) },
-    { label: MENU.rail.noSubstitute, value: formatCount(counts.proofs) },
+    { label: MENU.rail.substituted, value: formatCount(substitutes) },
+    { label: MENU.rail.noSubstitute, value: formatCount(proposals.length - substitutes) },
   ];
 
   return (
@@ -63,7 +63,7 @@ export function MenuPanel({ menu, proposals, runId, servesMealProgram }: MenuPan
         {cascadeCounts({
           brokenLines: menu.broken_items,
           brokenMeals: proposals.length,
-          scheduledMeals: scheduledMealCount(rows),
+          scheduledMeals: rows.filter((row) => row.dates.length > 0).length,
           serviceDays: menu.dates.length,
           plannedMeals: formatCount(menu.planned_meals) ?? String(menu.planned_meals),
         })}
@@ -113,7 +113,7 @@ export function MenuPanel({ menu, proposals, runId, servesMealProgram }: MenuPan
 /*
   One row per broken menu item. A recipe that is not on this week's menu still
   broke, so it keeps its row: the dates cell says it is not scheduled and the
-  meal count is 0 rather than blank, because 0 planned meals is the true answer
+  meal count is 0 rather than blank.
 */
 function mealColumns(caveat: string): Column<BrokenMeal>[] {
   return [
@@ -187,7 +187,7 @@ function mealColumns(caveat: string): Column<BrokenMeal>[] {
 /*
   One row per pulled inventory line that reaches a recipe. This is the evidence
   under the table above: which case in which cooler, which recall named it, and
-  whether a person has already cleared that pairing. A cleared line is not
+  whether a person has already cleared that pairing.
 */
 function entryColumns(caveat: string): Column<MenuEntry>[] {
   return [

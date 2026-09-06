@@ -98,27 +98,22 @@ def held_not_cascaded(conn: sqlite3.Connection, run_id: int) -> int:
     return row["n"] or 0
 
 
-def affected_service_days(entries: list[dict[str, Any]]) -> list[tuple[str, str, int]]:
-    """The distinct (date, recipe_id, planned_meals) set behind the total."""
+def summary(conn: sqlite3.Connection, run_id: int) -> dict[str, Any]:
+    entries = cascade(conn, run_id)
+    # The distinct (date, recipe_id, planned_meals) set behind the total.
     seen: dict[tuple[str, str], int] = {}
     for entry in entries:
         for recipe in entry["recipes"]:
             for day in recipe["service_days"]:
                 seen[(day["date"], recipe["recipe_id"])] = day["planned_meals"]
-    return sorted((d, r, n) for (d, r), n in seen.items())
-
-
-def summary(conn: sqlite3.Connection, run_id: int,
-            statuses: tuple[str, ...] = ("PULL",)) -> dict[str, Any]:
-    entries = cascade(conn, run_id, statuses)
-    days = affected_service_days(entries)
+    days = sorted((d, r, n) for (d, r), n in seen.items())
     return {
         "entries": entries,
         "broken_items": len(entries),
         "recipes": len({d[1] for d in days}),
         "dates": sorted({d[0] for d in days}),
         "service_days": days,
-        # Each service day counted once. See the module docstring, choice 4.
+        # Each service day counted once.
         "planned_meals": sum(d[2] for d in days),
         "caveat": PLANNED_CAVEAT,
         "held_not_cascaded": held_not_cascaded(conn, run_id),

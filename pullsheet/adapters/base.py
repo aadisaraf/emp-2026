@@ -1,5 +1,6 @@
 """The single boundary between the outside world and the matcher.
-changing nothing else (SC-012).
+
+Adding a source means adding a file here and changing nothing else (SC-012).
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ class NormalizedRecord(NamedTuple):
 
     # Supplier identity (FR-069). Kitchens run on purchasing systems, so these
     # are present far more reliably than gtin or lot_code: an item master has to
+    # know who supplies a line to reorder it.
     brand: str | None                    # the label on the case
     manufacturer: str | None             # who made it. Joins to recalling_firm
     manufacturer_item_code: str | None   # the maker's catalog number, quoted in recall notices
@@ -38,7 +40,9 @@ class NormalizedRecord(NamedTuple):
 
 class AdapterRejection(Exception):
     """The whole source is unusable.
-    existing pull sheet intact (FR-006, FR-009). Rejecting loudly is safer than
+
+    Reject the whole file rather than part of it: a rejection is recorded in
+    ``ingest_runs`` and leaves the existing pull sheet intact (FR-006, FR-009).
     """
 
     def __init__(self, filename: str, row_or_column: str | int | None, reason: str):

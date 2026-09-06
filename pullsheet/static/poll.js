@@ -22,12 +22,6 @@
         if (!s) { return; }
         set("[data-poll='word']", s.word);
         set("[data-poll='detail']", s.detail);
-        set("[data-poll='pull']", String(s.pull_count));
-        set("[data-poll='held']", String(s.held_count));
-        set("[data-poll='new']", String(s.new_count));
-        (s.deadlines || []).forEach(function (d) {
-          set("[data-deadline='" + d.key + "'] .clock", d.text);
-        });
 
         /* A new run changes the shape of the page, not just its numbers --
            different lines, a different date, a different corpus. Reload once

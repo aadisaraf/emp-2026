@@ -50,7 +50,6 @@ class DuplicateDelivery(Exception):
 
     def __init__(self, delivery_ref: str, run_id: int):
         super().__init__(f"already ingested as run {run_id}: {delivery_ref}")
-        self.delivery_ref = delivery_ref
         self.run_id = run_id
 
 
@@ -119,13 +118,6 @@ def get_run(conn: sqlite3.Connection, run_id: int) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
 
 
-def recent_runs(conn: sqlite3.Connection, limit: int = 30) -> list[sqlite3.Row]:
-    """Every run, newest first -- rejections included."""
-    return conn.execute(
-        "SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)
-    ).fetchall()
-
-
 # The unit separator, used to join key components. Chosen because it cannot
 # appear in a product description, a firm name or an agency record id.
 SEP = "\u241f"
@@ -137,7 +129,9 @@ def subject_key(identity_key: str, recall_source: str, recall_source_record_id: 
 
 
 # The same key, computed in SQL. The two must agree exactly; if they drift, a
-# cleared line silently comes back. tests/unit/test_clearing_audit.py checks it.
+# cleared line silently comes back. tests/integration/test_ingest_merge.py and
+# tests/integration/test_edge_cases.py check it: each writes a decisions row
+# keyed with subject_key() and reads the clearing back through the SQL form.
 SUBJECT_KEY_SQL = (
     "(i.identity_key || char(9247) || r.source || char(9247) || r.source_record_id)"
 )
@@ -160,13 +154,12 @@ def previously_matched_pairs(conn: sqlite3.Connection, run_id: int) -> set[tuple
 
 
 def finalize_run(conn: sqlite3.Connection, run_id: int, corpus_note: str | None = None,
-                 now: str | None = None) -> dict:
+                 now: str | None = None) -> None:
     """Freeze a run's counts and mark it good."""
     counts = conn.execute(
         """SELECT COUNT(*) AS total,
                   SUM(status = 'PULL') AS pulls,
-                  SUM(status = 'HELD') AS helds,
-                  SUM(is_new) AS news
+                  SUM(status = 'HELD') AS helds
              FROM matches WHERE run_id = ?""",
         (run_id,),
     ).fetchone()
@@ -178,9 +171,6 @@ def finalize_run(conn: sqlite3.Connection, run_id: int, corpus_note: str | None 
          counts["pulls"] or 0, counts["helds"] or 0, run_id),
     )
     conn.commit()
-    return {"run_id": run_id, "previous_run_id": previous_ok_run(conn, run_id),
-            "match_count": counts["total"] or 0, "pull_count": counts["pulls"] or 0,
-            "held_count": counts["helds"] or 0, "new_count": counts["news"] or 0}
 
 
 def identity_key(location: str | None, gtin: str | None,
@@ -195,13 +185,6 @@ def identity_key(location: str | None, gtin: str | None,
     else:
         product_identity = normalized_description
     return SEP.join([location or "", product_identity, lot_code or ""])
-
-
-def _digits(value: str | None) -> str | None:
-    if not value:
-        return None
-    kept = "".join(c for c in value if c.isdigit())
-    return kept or None
 
 
 def load_inventory_fixture(conn: sqlite3.Connection, now: str | None = None) -> int:
@@ -305,6 +288,8 @@ def main(argv: list[str] | None = None) -> int:
 def persist_records(conn: sqlite3.Connection, run_id: int, records: list) -> dict:
     """Write one delivery's rows into an open run: merges, then supersession.
     FR-064/FR-065 (merge): rows sharing an identity within a single export are
+    written as one inventory_records row with their quantities summed, and every
+    contributing source row is kept in merged_from.
     """
     merged: dict[str, dict] = {}
     for rec in records:
@@ -344,7 +329,8 @@ def persist_records(conn: sqlite3.Connection, run_id: int, records: list) -> dic
         new_ids[key] = cur.lastrowid
 
     # Supersession. A later export replaces the rows it has a counterpart for,
-    # and the old rows are RETAINED with superseded_by set -- so a pull sheet can
+    # and the old rows are RETAINED with superseded_by set -- so a past run's
+    # sheet can still be reprinted exactly as it was printed.
     superseded = 0
     for old in conn.execute(
         """SELECT id, identity_key FROM inventory_records
@@ -363,7 +349,7 @@ def persist_records(conn: sqlite3.Connection, run_id: int, records: list) -> dic
     )
     conn.commit()
     return {"run_id": run_id, "rows_read": len(records), "records_written": len(merged),
-            "merged_away": len(records) - len(merged), "superseded": superseded}
+            "superseded": superseded}
 
 
 def ingest_file(conn: sqlite3.Connection, path: Path, adapter,
@@ -379,6 +365,7 @@ def ingest_file(conn: sqlite3.Connection, path: Path, adapter,
     except DuplicateDelivery as dup:
         # Not an error and not a new run. Re-reading a file already ingested
         # would make it the baseline tomorrow's "new since" diff is measured
+        # against, which would make a genuinely new line look carried over.
         return {"status": "duplicate", "run_id": dup.run_id, "filename": path.name,
                 "reason": str(dup)}
 
@@ -391,7 +378,7 @@ def ingest_file(conn: sqlite3.Connection, path: Path, adapter,
 
     result = persist_records(conn, run_id, records)
     result["matches"] = run_matcher(conn, run_id, now=now)
-    result.update(finalize_run(conn, run_id, corpus_note(conn), now))
+    finalize_run(conn, run_id, corpus_note(conn), now)
     result["status"] = "ok"
     result["filename"] = path.name
     return result

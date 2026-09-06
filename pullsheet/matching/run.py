@@ -9,20 +9,11 @@ import sqlite3
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
+from pullsheet.db import SUBJECT_KEY_SQL, previously_matched_pairs
 from pullsheet.matching.gate import decide
 from pullsheet.matching.screen import ScreenRecord, build_indexes, generate_candidates
 from pullsheet.matching.tiers import build_evidence
 from pullsheet.recalls.corpus import active_records
-
-# FR-032. The trailing `id` guarantees a total order, so two runs cannot
-# differ on ties (SC-011).
-MATCH_ORDER = """
-    ORDER BY r.class_rank,
-             CASE m.tier WHEN 'CONFIRMED' THEN 1 WHEN 'PROBABLE' THEN 2 ELSE 3 END,
-             m.score IS NULL,
-             m.score DESC,
-             m.id
-"""
 
 
 def _recall_objects(rows) -> list[SimpleNamespace]:
@@ -67,8 +58,6 @@ def _inventory_objects(conn) -> list[SimpleNamespace]:
 def run_matcher(conn: sqlite3.Connection, run_id: int,
                 now: datetime | str | None = None) -> dict[str, int]:
     """Match every active inventory row against the loaded corpus, for one run."""
-    from pullsheet.db import previously_matched_pairs
-
     if isinstance(now, str):
         created_at = now
     else:
@@ -98,7 +87,7 @@ def run_matcher(conn: sqlite3.Connection, run_id: int,
                 # Screening let the pair through but nothing links it. Recording
                 # no match here is not a clearing path: no line ever existed to
                 continue
-            decision = decide(inv, rec, evidence)
+            decision = decide(evidence)
             # The first run has no predecessor to be new against. Flagging its
             # whole sheet would bury the one line that matters on every run
             is_new = int(has_predecessor
@@ -125,8 +114,6 @@ def run_matcher(conn: sqlite3.Connection, run_id: int,
 def ordered_matches(conn: sqlite3.Connection, run_id: int,
                     decided_before: str | None = None) -> list[sqlite3.Row]:
     """One run's sheet, in the one deterministic order the whole application uses."""
-    from pullsheet.db import SUBJECT_KEY_SQL
-
     return list(conn.execute("""
         SELECT m.*, i.storage_location, i.raw_description, i.quantity,
                i.unit, i.pack_size, i.lot_code, i.unit_cost, i.identity_key,
@@ -146,4 +133,11 @@ def ordered_matches(conn: sqlite3.Connection, run_id: int,
           JOIN inventory_records i ON i.id = m.inventory_record_id
           JOIN recall_records   r ON r.id = m.recall_record_id
          WHERE m.run_id = :run
-    """ + MATCH_ORDER, {"run": run_id, "before": decided_before}))
+         -- FR-032. The trailing `id` guarantees a total order, so two runs
+         -- cannot differ on ties (SC-011).
+         ORDER BY r.class_rank,
+                  CASE m.tier WHEN 'CONFIRMED' THEN 1 WHEN 'PROBABLE' THEN 2 ELSE 3 END,
+                  m.score IS NULL,
+                  m.score DESC,
+                  m.id
+    """, {"run": run_id, "before": decided_before}))

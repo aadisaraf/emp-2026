@@ -9,7 +9,7 @@ import { cx } from "@/lib/cx";
 import styles from "./ErrorState.module.css";
 
 export interface ErrorStateProps {
-  /** The failure from attempt(). Its message is safe to display verbatim. */
+  /** The failure from . Its message is safe to display verbatim. */
   failure?: ApiFailure | null;
   /** Override the heading when the page knows something more specific. */
   heading?: string;

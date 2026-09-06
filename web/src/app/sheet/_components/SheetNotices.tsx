@@ -51,7 +51,7 @@ export interface RunWithoutLinesProps {
 
 /**
   A rejected delivery, or one still being read. Either way there are no lines,
-  and the plainest available sentence says so. A refused delivery never
+  and the plainest available sentence says so.
 */
 export function RunWithoutLines({ run, showCurrentLink }: RunWithoutLinesProps) {
   const rejected = run.status === "rejected";

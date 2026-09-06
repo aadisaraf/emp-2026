@@ -8,22 +8,17 @@ export interface PrintButtonProps {
   label?: string;
   /** primary is the green button; plain is the bordered one. */
   variant?: "primary" | "plain";
-  className?: string;
 }
 
 /**
  * Print. The printed sheet is the legal artefact, so this is not an
  * afterthought action tucked into a menu.
  */
-export function PrintButton({
-  label = "Print sheet",
-  variant = "plain",
-  className,
-}: PrintButtonProps) {
+export function PrintButton({ label = "Print sheet", variant = "plain" }: PrintButtonProps) {
   return (
     <button
       type="button"
-      className={cx(styles.button, styles[variant], "no-print", className)}
+      className={cx(styles.button, variant === "primary" && styles.primary, "no-print")}
       onClick={() => window.print()}
     >
       {label}

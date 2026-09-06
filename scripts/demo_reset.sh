@@ -12,9 +12,9 @@ PY="${PY:-.venv/bin/python}"
 [ -x "$PY" ] || PY=python3
 
 # A "Refresh source" during a rehearsal writes a new snapshot next to the two
-# committed ones, and load_snapshots reads every file in that directory. Left in
-# place it silently changes the record counts the next rehearsal reports, so the
-# reset removes anything git does not track. The committed pair is never touched.
+# committed ones. load_snapshots only ever reads the two committed paths, so the
+# stray file changes no count -- it just leaves the working tree dirty between
+# rehearsals. The reset removes anything git does not track; the pair stays.
 echo "removing snapshots written since the last commit"
 if git rev-parse --git-dir >/dev/null 2>&1; then
   git ls-files --others --ignored --exclude-standard -- pullsheet/recalls/snapshots \

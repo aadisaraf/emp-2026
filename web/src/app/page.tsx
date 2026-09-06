@@ -1,5 +1,5 @@
 import { ErrorState } from "@/components";
-import { attempt, getStatus } from "@/lib/api";
+import { getStatus } from "@/lib/api";
 import { TodayBoard } from "./_dashboard/TodayBoard";
 
 /* Today. */
@@ -7,11 +7,11 @@ import { TodayBoard } from "./_dashboard/TodayBoard";
 export const dynamic = "force-dynamic";
 
 export default async function TodayPage() {
-  const result = await attempt(getStatus());
+  const result = await getStatus();
 
   if (!result.ok) {
     return <ErrorState failure={result.error} />;
   }
 
-  return <TodayBoard initial={result.data} />;
+  return <TodayBoard status={result.data} />;
 }

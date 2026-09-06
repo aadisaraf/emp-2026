@@ -24,7 +24,7 @@ const CHANNELS = [
     /*
       Deliberately not described as working mail. The reader is real and
       tested, and an attachment parses into exactly the same record as a
-      dropped file. What does not exist is a mail server: nothing here
+      dropped file.
     */
     term: "Email",
     detail:

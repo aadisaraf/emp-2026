@@ -6,7 +6,7 @@ import { cx } from "@/lib/cx";
 import { COUNT_LABELS, FIRST_RUN_NOTE, NEW_COUNT_TITLE, RUN_TERMS, runTitle } from "./strings";
 import styles from "./dashboard.module.css";
 
-export interface RunFactsProps {
+interface RunFactsProps {
   run: Run;
   counts: Counts;
   /** The run new_count is measured against. null on the first run here. */

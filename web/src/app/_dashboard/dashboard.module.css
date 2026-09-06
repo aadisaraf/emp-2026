@@ -167,13 +167,6 @@
   text-transform: uppercase;
 }
 
-.unreachable {
-  margin-top: var(--space-2);
-  color: var(--alert-ink);
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-}
-
 .neverNote {
   margin-top: var(--space-2);
   color: var(--text-secondary);
@@ -280,10 +273,6 @@
   font-weight: var(--weight-strong);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
-}
-
-.item {
-  color: var(--text-primary);
 }
 
 .itemLink {

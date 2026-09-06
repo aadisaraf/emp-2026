@@ -1,8 +1,9 @@
 import type { RunHistoryEntry } from "@/lib/api";
 import { Panel } from "@/components";
-import { formatDate } from "@/lib/format";
+import { formatDate, plural } from "@/lib/format";
 import { cx } from "@/lib/cx";
-import { STRIP_LEGEND, STRIP_NOTE, STRIP_TITLE, channelLabel, countWord } from "./runsMeta";
+import { channelLabel } from "@/lib/strings";
+import { STRIP_LEGEND, STRIP_NOTE, STRIP_TITLE } from "./runsMeta";
 import styles from "./RunDayStrip.module.css";
 
 /* The shape of the operation, one cell per calendar day. */
@@ -12,7 +13,7 @@ const DAY_MS = 86_400_000;
 /** Past this, the strip stops being readable and the table is the record. */
 const MAX_DAYS = 45;
 
-export interface RunDayStripProps {
+interface RunDayStripProps {
   /** Newest first, as the API returns them. */
   runs: readonly RunHistoryEntry[];
   /** The API's generated_at. "Today" comes from the server, never the browser. */
@@ -50,7 +51,7 @@ function kindOf(runs: RunHistoryEntry[]): DayKind {
 }
 
 /** Build one entry per calendar day between the first run and today. */
-export function buildDays(
+function buildDays(
   runs: readonly RunHistoryEntry[],
   today: string | null,
 ): { days: Day[]; truncated: boolean } {
@@ -124,7 +125,7 @@ function summarise(days: Day[], truncated: boolean): string {
 
   const head = truncated
     ? `The last ${span} days, ${days[0].date} to ${days[span - 1].date}.`
-    : `${countWord(span, "day", "days")}, ${days[0].date} to ${days[span - 1].date}.`;
+    : `${plural(span, "day", "days")}, ${days[0].date} to ${days[span - 1].date}.`;
 
   const middle =
     gaps === 0
@@ -134,7 +135,7 @@ function summarise(days: Day[], truncated: boolean): string {
   const tail =
     refused === 0
       ? ""
-      : ` A delivery was refused on ${countWord(refused, "day", "days")}.`;
+      : ` A delivery was refused on ${plural(refused, "day", "days")}.`;
 
   return `${head}${middle}${tail}`;
 }
@@ -151,21 +152,24 @@ export function RunDayStrip({ runs, generatedAt, className }: RunDayStripProps) 
         <p className={styles.summary}>{summarise(days, truncated)}</p>
         <div className={styles.scroll}>
           <ol className={styles.days}>
-            {days.map((day) => (
-              <li
-                key={day.date}
-                className={cx(styles.day, styles[day.kind])}
-                title={describe(day)}
-              >
-                <span className={styles.mark} aria-hidden="true">
-                  {mark(day)}
-                </span>
-                <span className={styles.dayNumber} aria-hidden="true">
-                  {day.date.slice(8)}
-                </span>
-                <span className="sr-only">{describe(day)}</span>
-              </li>
-            ))}
+            {days.map((day) => {
+              const text = describe(day);
+              return (
+                <li
+                  key={day.date}
+                  className={cx(styles.day, styles[day.kind])}
+                  title={text}
+                >
+                  <span className={styles.mark} aria-hidden="true">
+                    {mark(day)}
+                  </span>
+                  <span className={styles.dayNumber} aria-hidden="true">
+                    {day.date.slice(8)}
+                  </span>
+                  <span className="sr-only">{text}</span>
+                </li>
+              );
+            })}
           </ol>
         </div>
         <p className={styles.legend}>{STRIP_LEGEND}</p>

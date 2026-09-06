@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import urllib.error
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from fastapi.testclient import TestClient
@@ -28,11 +29,20 @@ SAMPLE_MATCH = 559
 
 @pytest.fixture
 def loaded(tmp_path, bind_app):
-    """The committed fixtures, loaded through the real ingestion path."""
+    """The committed fixtures, loaded through the real ingestion path.
+
+    The snapshots are re-stamped to an hour ago. Everywhere else ``now`` is
+    injected, but a request through the HTTP layer reads the real clock, so
+    without this the committed capture date ages past the 24-hour window and
+    these tests start failing on the calendar rather than on the code.
+    """
     path = bind_app(tmp_path / "api.db")
     db.reset(path)
     db.load_fixtures(path)
     conn = db.connect(path)
+    fresh = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat(timespec="seconds")
+    conn.execute("UPDATE recall_snapshots SET captured_at = ?", (fresh,))
+    conn.commit()
     yield conn
     conn.close()
 

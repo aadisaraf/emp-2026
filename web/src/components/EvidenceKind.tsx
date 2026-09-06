@@ -8,7 +8,6 @@ export interface EvidenceKindProps {
   kind: EvidenceKindValue | string;
   /** Show the raw key after the label, for a detail pane. */
   showRaw?: boolean;
-  className?: string;
 }
 
 function isKnown(kind: string): kind is EvidenceKindValue {
@@ -19,16 +18,16 @@ function isKnown(kind: string): kind is EvidenceKindValue {
   What agreed, in words. The column is called Evidence, not "Match type", and
   the value is the kind of evidence, not a quality rating.
 */
-export function EvidenceKind({ kind, showRaw, className }: EvidenceKindProps) {
+export function EvidenceKind({ kind, showRaw }: EvidenceKindProps) {
   if (!isKnown(kind)) {
     return (
-      <span className={cx(styles.kind, styles.unknown, className)} title={EVIDENCE_UNKNOWN}>
+      <span className={cx(styles.kind, styles.unknown)} title={EVIDENCE_UNKNOWN}>
         <code className={styles.raw}>{kind}</code>
       </span>
     );
   }
   return (
-    <span className={cx(styles.kind, className)} title={EVIDENCE_EXPLANATION[kind]}>
+    <span className={styles.kind} title={EVIDENCE_EXPLANATION[kind]}>
       {EVIDENCE_LABEL[kind]}
       {showRaw ? <code className={styles.raw}> {kind}</code> : null}
     </span>

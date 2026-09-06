@@ -19,7 +19,7 @@ export interface SheetHeaderBlockProps {
   froze when it finalized.
 */
 
-export function CorpusValue({ header }: { header: SheetHeader }) {
+function CorpusValue({ header }: { header: SheetHeader }) {
   if (header.corpora.length > 0) {
     return (
       <span className={styles.corpusList}>

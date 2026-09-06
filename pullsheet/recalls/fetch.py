@@ -7,11 +7,11 @@ import socket
 import sqlite3
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pullsheet.recalls.corpus import SNAPSHOT_DIR
+SNAPSHOT_DIR = Path(__file__).resolve().parent / "snapshots"
 
 # Seconds. Deliberately short: this is a convenience, not a dependency.
 TIMEOUT = 5.0
@@ -20,15 +20,11 @@ ENDPOINT = ("https://api.fda.gov/food/enforcement.json"
             "?search=report_date:[20260101+TO+20261231]&limit=1000")
 
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def cached_snapshot(conn: sqlite3.Connection, source: str = "openfda") -> dict[str, Any] | None:
-    """The most recent committed snapshot for this source, or None."""
+def cached_snapshot(conn: sqlite3.Connection) -> dict[str, Any] | None:
+    """The most recent committed openFDA snapshot, or None."""
     row = conn.execute(
-        """SELECT * FROM recall_snapshots WHERE source = ?
-            ORDER BY captured_at DESC, id DESC LIMIT 1""", (source,)).fetchone()
+        """SELECT * FROM recall_snapshots WHERE source = 'openfda'
+            ORDER BY captured_at DESC, id DESC LIMIT 1""").fetchone()
     return dict(row) if row else None
 
 
@@ -38,12 +34,10 @@ def fetch(url: str = ENDPOINT, timeout: float = TIMEOUT) -> dict[str, Any]:
         return json.loads(response.read().decode("utf-8"))
 
 
-def refresh(conn: sqlite3.Connection, url: str = ENDPOINT,
-            timeout: float = TIMEOUT, now: datetime | None = None) -> dict[str, Any]:
+def refresh(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
     """Poll openFDA, or fall back. Always returns; never raises past the caller."""
-    at = now or _now()
     try:
-        doc = fetch(url, timeout)
+        doc = fetch()
         results = doc.get("results", [])
         if not results:
             raise ValueError("the agency answered with zero records")
@@ -62,16 +56,17 @@ def refresh(conn: sqlite3.Connection, url: str = ENDPOINT,
         }
 
     # Never overwrite a committed snapshot. Two refreshes on one day must not
-    # be able to destroy the corpus a rehearsal was verified against -- and
-    stamp = at.strftime("%Y-%m-%d")
+    # be able to destroy the corpus a rehearsal was verified against, so the
+    # second one is serialised onto a new filename.
+    stamp = now.strftime("%Y-%m-%d")
     path = SNAPSHOT_DIR / f"openfda-{stamp}.json"
     serial = 2
     while path.exists():
         path = SNAPSHOT_DIR / f"openfda-{stamp}.{serial}.json"
         serial += 1
     path.write_text(json.dumps(doc, indent=1))
-    meta = {"captured_at": at.isoformat(timespec="seconds"), "provenance": "dated-snapshot",
-            "source": "openfda", "endpoint": url, "record_count": len(results)}
+    meta = {"captured_at": now.isoformat(timespec="seconds"), "provenance": "dated-snapshot",
+            "source": "openfda", "endpoint": ENDPOINT, "record_count": len(results)}
     path.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2))
 
     return {

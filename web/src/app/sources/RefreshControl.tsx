@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { refreshRecalls, toFailure, type RefreshResponse } from "@/lib/api";
+import { refreshRecalls, type RefreshResponse } from "@/lib/api";
 import { ProvenanceLabel } from "@/components";
 import { formatDateTime } from "@/lib/format";
 import styles from "./sources.module.css";
@@ -18,18 +18,19 @@ export function RefreshControl() {
   async function ask() {
     setAsking(true);
     setFailed(null);
-    try {
-      const response = await refreshRecalls();
-      setResult(response);
-      // The corpus ages move, so the shell's status line is now behind. The
-      // sheet is not refetched: nothing on it changed.
-      startTransition(() => router.refresh());
-    } catch (thrown) {
+    const response = await refreshRecalls();
+    setAsking(false);
+
+    if (!response.ok) {
       setResult(null);
-      setFailed(toFailure(thrown).message);
-    } finally {
-      setAsking(false);
+      setFailed(response.error.message);
+      return;
     }
+
+    setResult(response.data);
+    // The corpus ages move, so the shell's status line is now behind. The
+    // sheet is not refetched: nothing on it changed.
+    startTransition(() => router.refresh());
   }
 
   const busy = asking || pending;

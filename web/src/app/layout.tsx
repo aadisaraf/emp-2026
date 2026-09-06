@@ -9,7 +9,7 @@ import {
   StatusPoller,
   type StatRailItem,
 } from "@/components";
-import { attempt, getStatus } from "@/lib/api";
+import { getStatus } from "@/lib/api";
 import { statusSignature } from "@/lib/status";
 import { formatCount } from "@/lib/format";
 import { COUNT_LABELS, NEW_COUNT_TITLE } from "./_dashboard/strings";
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const result = await attempt(getStatus());
+  const result = await getStatus();
   const status = result.ok ? result.data : null;
   const failure = result.ok ? null : result.error;
 
@@ -53,10 +53,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <SideNav servesMealProgram={status?.location.serves_meal_program ?? true} />
         <div className={styles.content} data-role="content">
           <StatusLine status={status} failure={failure} />
+          {status ? (
+            <StatusPoller
+              signature={statusSignature(status)}
+              asOf={status.generated_at}
+            />
+          ) : null}
           {status ? <StatRail items={items} deadlines={status.deadlines} /> : null}
           <main className={styles.main}>{children}</main>
         </div>
-        <StatusPoller signature={status ? statusSignature(status) : null} />
       </body>
     </html>
   );

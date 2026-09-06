@@ -6,21 +6,18 @@ import sqlite3
 from datetime import datetime, timedelta
 from typing import Any
 
+from pullsheet.recalls.corpus import _parse_ts
+
 DEADLINES: tuple[tuple[str, str, int], ...] = (
     ("distributor_notification", "Notify distributor", 24),
     ("inventory_assessment", "Complete inventory assessment", 48),
 )
 
 
-def _parse(value: str) -> datetime:
-    from pullsheet.recalls.corpus import _parse_ts
-    return _parse_ts(value)
-
-
 def _phrase(delta: timedelta) -> tuple[str, bool]:
     """Human text for a remaining or elapsed interval, and whether it overran."""
     # Round to whole minutes FIRST, then split. Splitting first and rounding the
-    # remainder produces "23h 60m", which reads like a broken clock on the one
+    # remainder produces "23h 60m", which reads like a broken clock.
     total_minutes = int(round(delta.total_seconds() / 60.0))
     hours, minutes = divmod(abs(total_minutes), 60)
     if total_minutes >= 0:
@@ -41,7 +38,7 @@ def clocks(conn: sqlite3.Connection, run_id: int, now: datetime) -> list[dict[st
     if not row or not row["first_seen"]:
         return []
 
-    received = _parse(row["first_seen"])
+    received = _parse_ts(row["first_seen"])
     out = []
     for key, label, hours in DEADLINES:
         due = received + timedelta(hours=hours)

@@ -112,51 +112,11 @@ hr {
   margin: var(--space-4) 0;
 }
 
-/* ---------------------------------------------------------------------------
-   The five type roles, as classes, for the places a CSS Module would be noise.
-   Five sizes and two weights is the whole scale. Do not add a sixth.
---------------------------------------------------------------------------- */
-
-.t-micro {
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-}
-
-.t-body {
-  font-size: var(--fs-body);
-  line-height: var(--lh-body);
-  font-weight: var(--weight-normal);
-}
-
-.t-body-strong {
-  font-size: var(--fs-body);
-  line-height: var(--lh-body);
-  font-weight: var(--weight-strong);
-}
-
-.t-section {
-  font-size: var(--fs-section);
-  line-height: var(--lh-section);
-  font-weight: var(--weight-strong);
-}
-
-.t-page {
-  font-size: var(--fs-page);
-  line-height: var(--lh-page);
-  font-weight: var(--weight-strong);
-}
-
 /* Identifiers are names spelled with digits: mono, left, never right-aligned. */
 .mono {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
 }
-
-.muted { color: var(--text-muted); }
-.secondary { color: var(--text-secondary); }
 
 .sr-only {
   position: absolute;
@@ -169,8 +129,6 @@ hr {
   white-space: nowrap;
   border: 0;
 }
-
-.print-only { display: none; }
 
 /* ---------------------------------------------------------------------------
    Print. The printed sheet is the legal artefact, so it is a first-class
@@ -224,8 +182,6 @@ hr {
   [data-print-block] {
     break-inside: avoid;
   }
-
-  .print-only { display: revert; }
 
   a {
     color: #000000;

@@ -23,7 +23,7 @@ from pullsheet.artifacts import credit_claim, hold_record, pull_sheet, state_rep
 from pullsheet.matching.screen import SCREENING_RULE
 from pullsheet.menu import cascade as menu_cascade
 from pullsheet.menu import substitute as menu_substitute
-from pullsheet.provenance import LABELS, SOURCES, describe, label_for, provenance_of
+from pullsheet.provenance import LABELS, SOURCES, label_for, provenance_of
 from pullsheet.recalls import corpus
 from pullsheet.recalls import fetch as recalls_fetch
 
@@ -45,18 +45,11 @@ class ApiError(HTTPException):
     def __init__(self, status: int, code: str, message: str):
         super().__init__(status_code=status, detail=message)
         self.code = code
-        self.message = message
-
-
-# Fallbacks for an ``HTTPException`` raised by a reused route in ``app.py``,
-# which carries a status and a sentence but no token of its own.
-_FALLBACK_CODES = {400: "invalid_request", 404: "not_found", 422: "invalid_request"}
 
 
 class _Json(JSONResponse):
-    """Always ``application/json; charset=utf-8``. The client polls this API and
-    parses every response the same way; a bare ``application/json`` on some
-    """
+    """Always ``application/json; charset=utf-8``. Every response carries the
+    charset, so a client never has to guess an encoding to parse one."""
 
     media_type = "application/json; charset=utf-8"
 
@@ -76,17 +69,11 @@ class _ApiRoute(APIRoute):
             try:
                 response = await original(request)
             except ApiError as err:
-                response = _error(err.status_code, err.code, err.message)
+                response = _error(err.status_code, err.code, str(err.detail))
             except RequestValidationError as err:
                 response = _error(422, "invalid_request", _validation_message(err))
-            except HTTPException as err:
-                response = _error(
-                    err.status_code,
-                    _FALLBACK_CODES.get(err.status_code, "internal"),
-                    str(err.detail))
             except Exception:                                        # noqa: BLE001
-                # Logged with its traceback, reported as one sentence. A stack
-                # trace rendered into a nutrition director's browser is not an
+                # Logged with its traceback, reported as one sentence.
                 log.exception("unhandled error serving %s", request.url.path)
                 response = _error(500, "internal",
                                   "the server could not complete this request")
@@ -94,6 +81,25 @@ class _ApiRoute(APIRoute):
             return response
 
         return handler
+
+
+def adapter_table() -> list[dict[str, Any]]:
+    """Every ingestion channel and what it can honestly read, straight from
+    ``declares()``. Both the JSON surface and the Jinja page render this.
+    """
+    rows = []
+    for adapter in (SftpDropAdapter(), SpreadsheetUploadAdapter(), EmailDropAdapter()):
+        declared = adapter.declares()
+        rows.append({
+            "name": adapter.name,
+            "channel": adapter.channel,
+            "provenance": adapter.provenance,
+            "provenance_label": LABELS[adapter.provenance],
+            "declares": sorted(declared),
+            "cannot": sorted(DECLARABLE - declared),
+            "doc": (adapter.__class__.__doc__ or "").strip().split("\n")[0],
+        })
+    return rows
 
 
 def _validation_message(err: RequestValidationError) -> str:
@@ -108,11 +114,6 @@ router = APIRouter(prefix="/api/v1", route_class=_ApiRoute, default_response_cla
 
 # Serializers. The only place JSON shaping happens.
 
-def _row(row: Any) -> dict[str, Any]:
-    """A ``sqlite3.Row`` (or anything mapping-shaped) as a plain dict."""
-    return dict(row)
-
-
 def _parse(text: Any, default: Any = None) -> Any:
     """A column holding JSON text, as a real JSON value."""
     if text is None or text == "":
@@ -123,15 +124,14 @@ def _parse(text: Any, default: Any = None) -> Any:
 
 
 def _run(row: Any) -> dict[str, Any]:
-    out = _row(row)
+    out = dict(row)
     out["column_map"] = _parse(out.get("column_map"))
     return out
 
 
 def _location() -> dict[str, Any]:
     """The location block, plus the two facts the JSON clients need that the
-    printed block does not carry: which calendar a business date belongs to, and
-    """
+    printed block does not carry: the timezone and whether meals are served."""
     return {**location.summary(),
             "timezone_name": location.TIMEZONE_NAME,
             "serves_meal_program": location.serves_meal_program()}
@@ -140,11 +140,7 @@ def _location() -> dict[str, Any]:
 def _source_ref(key: str) -> dict[str, Any]:
     return {"key": key, "provenance": provenance_of(key),
             "provenance_label": label_for(key),
-            "path": SOURCES[key][1], "description": describe(key)}
-
-
-def _sources(keys) -> list[dict[str, Any]]:
-    return [_source_ref(k) for k in keys]
+            "path": SOURCES[key][1], "description": SOURCES[key][2]}
 
 
 def _snapshot(entry: dict[str, Any]) -> dict[str, Any]:
@@ -162,19 +158,11 @@ def _provenance_of_source(entry: dict[str, Any]) -> dict[str, Any]:
 
 def _line(row: sqlite3.Row) -> dict[str, Any]:
     """One sheet line."""
-    out = _row(row)
+    out = dict(row)
     out["is_new"] = bool(out["is_new"])
     out["merged_from"] = _parse(out.get("merged_from"))
     out["cleared"] = bool(out.get("cleared_count"))
     return _provenance_of_source(out)
-
-
-def _section(section: dict[str, Any]) -> dict[str, Any]:
-    return {**section, "lines": [_line(r) for r in section["lines"]]}
-
-
-def _new_line(row: sqlite3.Row) -> dict[str, Any]:
-    return _provenance_of_source(_row(row))
 
 
 def _header(conn: sqlite3.Connection, run: Any, at: datetime) -> dict[str, Any]:
@@ -199,13 +187,6 @@ def _iso(at: datetime) -> str:
 
 # Resolving a run
 
-def _current_or_404(conn: sqlite3.Connection) -> sqlite3.Row:
-    run = db.latest_ok_run(conn)
-    if run is None:
-        raise ApiError(404, "no_inventory", "no inventory has been ingested yet")
-    return run
-
-
 def _run_or_404(conn: sqlite3.Connection, run_id: int) -> sqlite3.Row:
     run = db.get_run(conn, run_id)
     if run is None:
@@ -214,7 +195,13 @@ def _run_or_404(conn: sqlite3.Connection, run_id: int) -> sqlite3.Row:
 
 
 def _resolve(conn: sqlite3.Connection, run_id: int | None) -> sqlite3.Row:
-    return _run_or_404(conn, run_id) if run_id else _current_or_404(conn)
+    """The run named by id, or the latest good one."""
+    if run_id:
+        return _run_or_404(conn, run_id)
+    run = db.latest_ok_run(conn)
+    if run is None:
+        raise ApiError(404, "no_inventory", "no inventory has been ingested yet")
+    return run
 
 
 # Location and status
@@ -253,10 +240,10 @@ def api_status() -> dict[str, Any]:
                        {"pull_count": 0, "held_count": 0, "new_count": 0, "total": 0}),
             "deadlines": deadlines.clocks(conn, run["id"], at) if run else [],
             # Present even with no run at all: the corpus is loaded whether or
-            # not an export ever arrived, and saying so is how a blank page
+            # not an export ever arrived.
             "corpus": [_snapshot(c) for c in corpus.corpus_summary(conn, at)],
             "run_count": conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0],
-            "new_lines": ([_new_line(r) for r in
+            "new_lines": ([_provenance_of_source(dict(r)) for r in
                            runs_module.new_since_previous(conn, run["id"])] if run else []),
             "rejections": [_run(r) for r in pull_sheet.rejections(conn)],
         }
@@ -300,7 +287,8 @@ def api_run_detail(run_id: int) -> dict[str, Any]:
             "header": _header(conn, run, at),
             "previous_run_id": db.previous_ok_run(conn, run_id),
             "decided_before": app._decided_before(conn, run),
-            "new_lines": [_new_line(r) for r in runs_module.new_since_previous(conn, run_id)],
+            "new_lines": [_provenance_of_source(dict(r))
+                          for r in runs_module.new_since_previous(conn, run_id)],
             "deadlines": deadlines.clocks(conn, run_id, at),
         }
     finally:
@@ -309,8 +297,12 @@ def api_run_detail(run_id: int) -> dict[str, Any]:
 
 # The sheet
 
-def _sheet(run_id: int | None) -> dict[str, Any]:
-    """The pull sheet for one run, current or past."""
+@router.get("/sheet")
+@router.get("/sheet/{run_id}")
+def api_sheet(run_id: int | None = None) -> dict[str, Any]:
+    """The pull sheet for one run: the latest good one, or a past run exactly as
+    it was printed. 404 ``no_inventory`` when no run exists.
+    """
     app = _app()
     conn = app._conn()
     try:
@@ -318,7 +310,8 @@ def _sheet(run_id: int | None) -> dict[str, Any]:
         run = _resolve(conn, run_id)
         before = app._decided_before(conn, run)
         header = _header(conn, run, at)
-        sections = [_section(s) for s in pull_sheet.by_storage(conn, run["id"], before)]
+        sections = [{**s, "lines": [_line(r) for r in s["lines"]]}
+                    for s in pull_sheet.by_storage(conn, run["id"], before)]
         return {
             "generated_at": _iso(at),
             "run": _run(run),
@@ -332,23 +325,11 @@ def _sheet(run_id: int | None) -> dict[str, Any]:
         conn.close()
 
 
-@router.get("/sheet")
-def api_sheet() -> dict[str, Any]:
-    """The latest good run's sheet. 404 ``no_inventory`` when none exists."""
-    return _sheet(None)
-
-
-@router.get("/sheet/{run_id}")
-def api_sheet_for_run(run_id: int) -> dict[str, Any]:
-    """A past run's sheet exactly as it was printed."""
-    return _sheet(run_id)
-
-
 # One match
 
-# The same projection ``app.match_detail`` reads for the Jinja page: both source
-# records verbatim, with the triggering substrings. A read, with no narrowing in
-_MATCH_DETAIL = """
+# Both source records verbatim, with the triggering substrings. One match by
+# primary key, so it narrows nothing. ``app.match_detail`` reads it too.
+MATCH_DETAIL = """
     SELECT m.*, i.storage_location, i.raw_description, i.quantity,
            i.unit, i.pack_size, i.gtin, i.lot_code, i.unit_cost,
            i.brand, i.manufacturer, i.manufacturer_item_code,
@@ -383,12 +364,12 @@ def _match_payload(conn: sqlite3.Connection, match_id: int, at: datetime) -> dic
     """One match, both sides verbatim, and every decision ever taken about this
     food and this recall.
     """
-    row = conn.execute(_MATCH_DETAIL, (match_id,)).fetchone()
+    row = conn.execute(MATCH_DETAIL, (match_id,)).fetchone()
     if row is None:
         raise ApiError(404, "no_match", f"no match {match_id}")
 
     subject = db.subject_key(row["identity_key"], row["source"], row["source_record_id"])
-    decisions = [_row(d) for d in conn.execute(
+    decisions = [dict(d) for d in conn.execute(
         "SELECT * FROM decisions WHERE subject_key = ? ORDER BY id", (subject,))]
     run = db.get_run(conn, row["run_id"])
 
@@ -441,7 +422,7 @@ def _claim(conn: sqlite3.Connection, run_id: int, at: datetime) -> dict[str, Any
     for line in claim["lines"]:
         for recall in line["recalls"]:
             _provenance_of_source(recall)
-    claim["sources"] = _sources(claim["source_keys"])
+    claim["sources"] = [_source_ref(k) for k in claim["source_keys"]]
     return claim
 
 
@@ -454,7 +435,7 @@ def api_impact() -> dict[str, Any]:
     conn = app._conn()
     try:
         at = app.now()
-        run = _current_or_404(conn)
+        run = _resolve(conn, None)
         payload = {
             "generated_at": _iso(at),
             "run": _run(run),
@@ -467,9 +448,6 @@ def api_impact() -> dict[str, Any]:
             "components_caveat": menu_substitute.COMPONENTS_CAVEAT,
             "planned_caveat": menu_cascade.PLANNED_CAVEAT,
         }
-        # The impact response already carries a header at the top level.
-        payload["claim"].pop("header", None)
-
         if location.serves_meal_program():
             menu = menu_cascade.summary(conn, run["id"])
             for entry in menu["entries"]:
@@ -493,7 +471,8 @@ def api_impact() -> dict[str, Any]:
 @router.get("/artifacts/hold")
 def api_hold_record(run: int | None = None) -> dict[str, Any]:
     """The custody record. Both PULL and HELD lines appear: a held case is off
-    the menu while a person decides, and leaving it off the custody record would
+    the menu while a person decides, and leaving it off the custody record
+    would put a case in the freezer that no paperwork accounts for.
     """
     app = _app()
     conn = app._conn()
@@ -506,9 +485,7 @@ def api_hold_record(run: int | None = None) -> dict[str, Any]:
                 _provenance_of_source(recall)
         record["location"] = _location()
         record["header"] = _header(conn, row, at)
-        record["signature_fields"] = list(record["signature_fields"])
-        record["source_keys"] = list(record["source_keys"])
-        record["sources"] = _sources(record["source_keys"])
+        record["sources"] = [_source_ref(k) for k in record["source_keys"]]
         return record
     finally:
         conn.close()
@@ -525,7 +502,6 @@ def api_credit_claim(run: int | None = None) -> dict[str, Any]:
         at = app.now()
         row = _resolve(conn, run)
         claim = _claim(conn, row["id"], at)
-        claim["source_keys"] = list(claim["source_keys"])
         claim["header"] = _header(conn, row, at)
         return claim
     finally:
@@ -558,8 +534,8 @@ def api_state_report(run: int | None = None) -> dict[str, Any]:
             "unfilled": [_field(f) for f in report["unfilled"]],
             "human_marker": report["human_marker"],
             "caveat": report["caveat"],
-            "source_keys": list(report["source_keys"]),
-            "sources": _sources(report["source_keys"]),
+            "source_keys": report["source_keys"],
+            "sources": [_source_ref(k) for k in report["source_keys"]],
             "export": [{"label": label, "value": value}
                        for label, value in report["export"].items()],
         }
@@ -572,24 +548,14 @@ def api_state_report(run: int | None = None) -> dict[str, Any]:
 @router.get("/sources")
 def api_sources() -> dict[str, Any]:
     """Every channel and corpus with its provenance label, and each adapter's
-    field coverage read from ``declares()`` rather than from a hand-kept list
+    field coverage read from ``declares()``, so this page cannot claim a field
+    an adapter does not actually carry.
     """
     app = _app()
     conn = app._conn()
     try:
         at = app.now()
-        adapters = []
-        for adapter in (SftpDropAdapter(), SpreadsheetUploadAdapter(), EmailDropAdapter()):
-            declared = adapter.declares()
-            adapters.append({
-                "name": adapter.name,
-                "channel": adapter.channel,
-                "provenance": adapter.provenance,
-                "provenance_label": LABELS[adapter.provenance],
-                "declares": sorted(declared),
-                "cannot": sorted(DECLARABLE - declared),
-                "doc": (adapter.__class__.__doc__ or "").strip().split("\n")[0],
-            })
+        adapters = adapter_table()
         run = db.latest_ok_run(conn)
         return {
             "generated_at": _iso(at),
@@ -610,7 +576,8 @@ def api_sources() -> dict[str, Any]:
 
 class ClearRequest(BaseModel):
     """``actor`` defaults to the empty string rather than being required, so a
-    body that omits it is refused by the same check the HTML form is refused by
+    body that omits it is refused by the same check the HTML form is refused
+    by: ``app.clear_match`` rejects an empty actor with a 400.
     """
 
     actor: str = ""

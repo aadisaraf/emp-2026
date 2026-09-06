@@ -11,18 +11,15 @@ import {
   OPEN_SHEET,
   STATE_LABEL,
   deliveriesWithoutARun,
-  pollUnreachable,
 } from "./strings";
 import styles from "./dashboard.module.css";
 
-export interface StateStatementProps {
+interface StateStatementProps {
   status: StatusResponse;
-  /** false once a poll stops answering. The figures stay; a line says so. */
-  reachable: boolean;
 }
 
 /** The state of this location, in the largest text on the page. */
-export function StateStatement({ status, reachable }: StateStatementProps) {
+export function StateStatement({ status }: StateStatementProps) {
   const action =
     status.state === "overdue" && status.run_age_hours !== null
       ? overdueAction(status.run_age_hours)
@@ -74,10 +71,6 @@ export function StateStatement({ status, reachable }: StateStatementProps) {
           ) : null}
         </>
       ) : null}
-
-      {reachable ? null : (
-        <p className={styles.unreachable}>{pollUnreachable(asOf)}</p>
-      )}
 
       <div className={styles.nextRow}>
         <span className={styles.nextLabel}>{NEXT_LABEL}</span>

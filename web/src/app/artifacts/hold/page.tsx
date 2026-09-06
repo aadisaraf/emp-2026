@@ -1,5 +1,5 @@
-import type { HoldLine, HoldRecordResponse } from "@/lib/api";
-import { attempt, getHoldRecord } from "@/lib/api";
+import type { HoldLine } from "@/lib/api";
+import { getHoldRecord } from "@/lib/api";
 import {
   ClearedMark,
   DataTable,
@@ -30,8 +30,7 @@ export default async function HoldRecordPage({
 }: {
   searchParams?: Promise<ArtifactSearchParams>;
 }) {
-  const params = searchParams ? await searchParams : undefined;
-  const result = await attempt(getHoldRecord(runParam(params)));
+  const result = await getHoldRecord(runParam(await searchParams));
 
   if (!result.ok) {
     return <ArtifactUnavailable title={PAGE_TITLES.holdRecord} failure={result.error} />;
@@ -54,7 +53,6 @@ export default async function HoldRecordPage({
       location={record.location}
       runId={record.run_id}
       generatedAt={record.generated_at}
-      run={record.header.run}
       header={record.header}
       footer={<SourceList sources={record.sources} />}
     >
@@ -90,7 +88,13 @@ export default async function HoldRecordPage({
             rows={record.lines}
             rowKey={(line) => line.id}
             caption="Every inventory line held or pulled on this run"
-            empty={<EmptyRecord record={record} />}
+            empty={
+              <>
+                No inventory line on run #{record.run_id} matched a recall, so there is
+                nothing to hold. The comparison ran and produced no line. This page is the
+                record that it ran.
+              </>
+            }
           />
         </div>
       </section>
@@ -101,15 +105,6 @@ export default async function HoldRecordPage({
         fields={record.signature_fields}
       />
     </DocumentSheet>
-  );
-}
-
-function EmptyRecord({ record }: { record: HoldRecordResponse }) {
-  return (
-    <>
-      No inventory line on run #{record.run_id} matched a recall, so there is nothing to
-      hold. The comparison ran and produced no line. This page is the record that it ran.
-    </>
   );
 }
 

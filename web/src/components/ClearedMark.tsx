@@ -1,4 +1,3 @@
-import { cx } from "@/lib/cx";
 import styles from "./ClearedMark.module.css";
 
 export interface ClearedMarkProps {
@@ -8,15 +7,14 @@ export interface ClearedMarkProps {
   when?: string | null;
   /** cleared_count, when more than one decision exists for this pair. */
   count?: number;
-  className?: string;
 }
 
 /** A cleared line, marked in place. */
-export function ClearedMark({ actor, when, count, className }: ClearedMarkProps) {
+export function ClearedMark({ actor, when, count }: ClearedMarkProps) {
   const who = actor ? `cleared by ${actor}` : "cleared by a named person";
   const extra = count && count > 1 ? ` (${count} decisions)` : "";
   return (
-    <span className={cx(styles.mark, className)}>
+    <span className={styles.mark}>
       {who}
       {when ? ` ${when}` : ""}
       {extra}

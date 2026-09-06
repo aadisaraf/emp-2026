@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import re
 from typing import Callable, Literal, NamedTuple, Optional
+
+from pullsheet.matching.firm import agrees
+from pullsheet.matching.lot import LotComparison
+from pullsheet.matching.lot import compare as compare_lots
+from pullsheet.matching.normalize import tokens
+from pullsheet.matching.screen import code_key, significant_tokens
+from pullsheet.matching.similarity import dice
 
 EvidenceKind = Literal["gtin", "upc", "mfr_item", "lot", "secondary_code",
                        "firm_and_name", "name"]
-LotComparison = Literal["equal", "contained", "none", "unparseable"]
 
 # Kinds whose evidence is two things agreeing rather than one. Their trigger
 # text is the two components joined by ``JOINER``, and each component is a
@@ -39,14 +46,6 @@ class Evidence(NamedTuple):
 
 
 # Evidence construction
-
-import re  # noqa: E402
-
-from pullsheet.matching.firm import agrees  # noqa: E402
-from pullsheet.matching.lot import compare as compare_lots  # noqa: E402
-from pullsheet.matching.normalize import tokens  # noqa: E402
-from pullsheet.matching.screen import code_key, significant_tokens  # noqa: E402
-from pullsheet.matching.similarity import dice  # noqa: E402
 
 # Labels that mean "this is a code, but not the lot code". A match on one of
 # these is real evidence and is worth a PULL, but calling it a lot match would

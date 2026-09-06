@@ -23,7 +23,3 @@
 .primary:hover {
   background: var(--green-900);
 }
-
-.plain {
-  background: var(--surface-page);
-}

@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import type { Location, Run, SheetHeader } from "@/lib/api";
+import type { Location, SheetHeader } from "@/lib/api";
 import { DefinitionList, PrintButton, type DefinitionItem } from "@/components";
 import { formatDateTime, shortDeliveryRef } from "@/lib/format";
 import { channelLabel } from "@/lib/strings";
 import styles from "./document.module.css";
 
-export interface DocumentSheetProps {
+interface DocumentSheetProps {
   /** The document's own name, as it reads on the filed copy. */
   title: string;
   /** What the screen says above the paper. Never printed. */
@@ -15,9 +15,7 @@ export interface DocumentSheetProps {
   location: Location;
   runId: number;
   generatedAt: string;
-  /** The run this document describes, for the business date and the delivery. */
-  run?: Run | null;
-  /** Drives the past-run and stale-corpus notes. */
+  /** The run this document describes, and the past-run and stale-corpus notes. */
   header?: SheetHeader | null;
   /** The sources block, built by SourceList. */
   footer?: ReactNode;
@@ -32,11 +30,11 @@ export function DocumentSheet({
   location,
   runId,
   generatedAt,
-  run,
   header,
   footer,
   children,
 }: DocumentSheetProps) {
+  const run = header?.run;
   const stamp: DefinitionItem[] = [
     { term: "Inventory run", value: `#${runId}` },
   ];

@@ -1,11 +1,11 @@
-import type { CorpusSnapshot, MenuSummary, Provenance, SourceRef } from "@/lib/api";
+import type { CorpusSnapshot, MenuSummary, SourceRef } from "@/lib/api";
 import { DataTable, Panel, ProvenanceLabel, type Column } from "@/components";
 import { PROVENANCE_LEGEND } from "@/lib/strings";
 import { formatCount, formatHours } from "@/lib/format";
 import { PROVENANCE_PANEL } from "./copy";
 import styles from "./impact.module.css";
 
-export interface ProvenancePanelProps {
+interface ProvenancePanelProps {
   /** claim.sources, already expanded from source_keys by the server. */
   sources: SourceRef[];
   /** header.corpora, populated because impact is always the current run. */
@@ -23,11 +23,13 @@ export function ProvenancePanel({
   corpusNote,
   menu,
 }: ProvenancePanelProps) {
-  const menuProvenance = menu ? menuProvenanceValues(menu) : [];
+  const menuProvenance = menu
+    ? [...new Set(menu.entries.flatMap((entry) => entry.recipes.map((recipe) => recipe.provenance)))]
+    : [];
 
   return (
     <Panel id="sources" title={PROVENANCE_PANEL.title} note={PROVENANCE_LEGEND} printBlock>
-      {menu && menuProvenance.length > 0 ? (
+      {menuProvenance.length > 0 ? (
         <p className={styles.note}>
           {PROVENANCE_PANEL.menuLead}{" "}
           {menuProvenance.map((value, index) => (
@@ -70,15 +72,6 @@ export function ProvenancePanel({
       </div>
     </Panel>
   );
-}
-
-/** The distinct provenance values the menu fixtures actually carry. */
-function menuProvenanceValues(menu: MenuSummary): Provenance[] {
-  const seen = new Set<Provenance>();
-  for (const entry of menu.entries) {
-    for (const recipe of entry.recipes) seen.add(recipe.provenance);
-  }
-  return [...seen];
 }
 
 const COLUMNS: Column<SourceRef>[] = [

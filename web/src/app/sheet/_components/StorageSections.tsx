@@ -1,13 +1,11 @@
 import { DataTable } from "@/components";
 import type { SheetLine, SheetSection } from "@/lib/api";
 import { sectionTally } from "@/lib/strings";
-import { sheetColumns } from "./sheetColumns";
-import type { ClearedFacts } from "./clearedFacts";
+import { SHEET_COLUMNS } from "./sheetColumns";
 import styles from "./sheet.module.css";
 
 export interface StorageSectionsProps {
   sections: SheetSection[];
-  cleared: ClearedFacts;
 }
 
 /*
@@ -15,9 +13,7 @@ export interface StorageSectionsProps {
   cooler with the recalled chicken before the dry store with a maybe.
 */
 
-export function StorageSections({ sections, cleared }: StorageSectionsProps) {
-  const columns = sheetColumns(cleared);
-
+export function StorageSections({ sections }: StorageSectionsProps) {
   return (
     <>
       {sections.map((section) => (
@@ -30,7 +26,7 @@ export function StorageSections({ sections, cleared }: StorageSectionsProps) {
           </h2>
           <DataTable<SheetLine>
             className={styles.sheetTable}
-            columns={columns}
+            columns={SHEET_COLUMNS}
             rows={section.lines}
             rowKey={(line) => line.id}
             /*

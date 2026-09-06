@@ -2,7 +2,7 @@ import type { Provenance, RecallSource, RecallStatus } from "@/lib/api";
 import { ProvenanceLabel } from "@/components";
 import styles from "./RecallRefs.module.css";
 
-export interface RecallRef {
+interface RecallRef {
   source: RecallSource;
   source_provenance: Provenance;
   source_provenance_label: string;
@@ -10,7 +10,7 @@ export interface RecallRef {
   recall_status?: RecallStatus;
 }
 
-export interface RecallRefsProps {
+interface RecallRefsProps {
   refs: RecallRef[];
 }
 

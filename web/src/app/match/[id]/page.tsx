@@ -9,7 +9,7 @@ import {
   ProvenanceLabel,
   type DefinitionItem,
 } from "@/components";
-import { attempt, getMatch, isNotFound } from "@/lib/api";
+import { getMatch, isNotFound } from "@/lib/api";
 import {
   formatDate,
   formatDateTime,
@@ -78,7 +78,7 @@ export default async function MatchPage({
     );
   }
 
-  const result = await attempt(getMatch(matchId));
+  const result = await getMatch(matchId);
 
   if (!result.ok) {
     return (

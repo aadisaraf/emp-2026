@@ -1,5 +1,5 @@
 import type { ClaimLine, VendorTotal } from "@/lib/api";
-import { attempt, getCreditClaim } from "@/lib/api";
+import { getCreditClaim } from "@/lib/api";
 import { DataTable, NotRecorded, type Column } from "@/components";
 import { formatCount, formatMoney, formatQuantity } from "@/lib/format";
 import { PAGE_TITLES } from "@/lib/strings";
@@ -24,8 +24,7 @@ export default async function CreditClaimPage({
 }: {
   searchParams?: Promise<ArtifactSearchParams>;
 }) {
-  const params = searchParams ? await searchParams : undefined;
-  const result = await attempt(getCreditClaim(runParam(params)));
+  const result = await getCreditClaim(runParam(await searchParams));
 
   if (!result.ok) {
     return <ArtifactUnavailable title={PAGE_TITLES.creditClaim} failure={result.error} />;
@@ -48,7 +47,6 @@ export default async function CreditClaimPage({
       location={claim.location}
       runId={claim.run_id}
       generatedAt={claim.generated_at}
-      run={claim.header?.run}
       header={claim.header}
       footer={
         <SourceList
@@ -147,7 +145,7 @@ export default async function CreditClaimPage({
 
 /**
   The submission block. It is not a field on any API payload, and it is not a
-  distributor's own form: it is the part of a printed claim a person signs. The
+  distributor's own form: it is the part of a printed claim a person signs.
 */
 const SUBMISSION_FIELDS = [
   "Submitted by (print name)",

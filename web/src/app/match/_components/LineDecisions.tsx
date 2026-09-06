@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import type { Decision, DecisionKind, MatchDetailResponse } from "@/lib/api";
-import { clearMatch, confirmPulled, toFailure } from "@/lib/api";
+import type { DecisionKind, MatchDetailResponse } from "@/lib/api";
+import { clearMatch, confirmPulled } from "@/lib/api";
 import {
   CLEAR_FORM,
   CONFIRM_PULLED_FORM,
@@ -64,89 +64,57 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
   const [pulledDone, setPulledDone] = useState<string | null>(null);
   const pulledActorRef = useRef<HTMLInputElement>(null);
 
-  function stamp(response: MatchDetailResponse, kind: DecisionKind): Decision | null {
-    let latest: Decision | null = null;
-    for (const decision of response.decisions) {
-      if (decision.kind === kind) latest = decision;
-    }
-    return latest;
-  }
-
-  async function submitClear(event: FormEvent<HTMLFormElement>) {
+  /*
+    Both actions are the same shape: name a person, POST, then show what the
+    server actually wrote rather than what was typed. Only the endpoint and
+    the wording differ, so they share one path -- a clear and a pulled
+    confirmation that drifted apart would be two different audit trails.
+  */
+  async function submit(kind: DecisionKind, event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const actor = clearActor.trim();
+    const clearing = kind === "clear_match";
+    const form = clearing ? CLEAR_FORM : CONFIRM_PULLED_FORM;
+    const actorRef = clearing ? clearActorRef : pulledActorRef;
+    const setError = clearing ? setClearError : setPulledError;
+    const actor = (clearing ? clearActor : pulledActor).trim();
+
     if (actor.length === 0) {
-      setClearError(CLEAR_FORM.actorMissing);
-      clearActorRef.current?.focus();
+      setError(form.actorMissing);
+      actorRef.current?.focus();
       return;
     }
-    setPending("clear_match");
-    setClearError(null);
-    try {
-      const note = clearNote.trim();
-      const response = await clearMatch(detail.match.id, {
-        actor,
-        note: note.length > 0 ? note : null,
-      });
-      const decision = stamp(response, "clear_match");
-      setWritten(response);
-      setClearDone(
-        clearConfirmation(
-          decision?.actor ?? actor,
-          decision
-            ? (formatDateTime(decision.created_at, timeZone) ?? decision.created_at)
-            : "",
-        ),
-      );
+
+    setPending(kind);
+    setError(null);
+    const note = clearNote.trim();
+    const response = clearing
+      ? await clearMatch(detail.match.id, { actor, note: note.length > 0 ? note : null })
+      : await confirmPulled(detail.match.id, { actor });
+    setPending(null);
+
+    if (!response.ok) {
+      const missing = response.error.code === "actor_required";
+      setError(missing ? form.actorMissing : response.error.message);
+      if (missing) actorRef.current?.focus();
+      return;
+    }
+
+    // The confirmation quotes the row that was written, not the form.
+    const decisions = response.data.decisions;
+    const decision = decisions[decisions.length - 1] ?? null;
+    const at = decision
+      ? (formatDateTime(decision.created_at, timeZone) ?? decision.created_at)
+      : "";
+    setWritten(response.data);
+    if (clearing) {
+      setClearDone(clearConfirmation(decision?.actor ?? actor, at));
       setClearActor("");
       setClearNote("");
-      router.refresh();
-    } catch (thrown) {
-      const failure = toFailure(thrown);
-      setClearError(
-        failure.code === "actor_required" ? CLEAR_FORM.actorMissing : failure.message,
-      );
-      if (failure.code === "actor_required") clearActorRef.current?.focus();
-    } finally {
-      setPending(null);
-    }
-  }
-
-  async function submitPulled(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const actor = pulledActor.trim();
-    if (actor.length === 0) {
-      setPulledError(CONFIRM_PULLED_FORM.actorMissing);
-      pulledActorRef.current?.focus();
-      return;
-    }
-    setPending("confirm_pulled");
-    setPulledError(null);
-    try {
-      const response = await confirmPulled(detail.match.id, { actor });
-      const decision = stamp(response, "confirm_pulled");
-      setWritten(response);
-      setPulledDone(
-        confirmPulledConfirmation(
-          decision?.actor ?? actor,
-          decision
-            ? (formatDateTime(decision.created_at, timeZone) ?? decision.created_at)
-            : "",
-        ),
-      );
+    } else {
+      setPulledDone(confirmPulledConfirmation(decision?.actor ?? actor, at));
       setPulledActor("");
-      router.refresh();
-    } catch (thrown) {
-      const failure = toFailure(thrown);
-      setPulledError(
-        failure.code === "actor_required"
-          ? CONFIRM_PULLED_FORM.actorMissing
-          : failure.message,
-      );
-      if (failure.code === "actor_required") pulledActorRef.current?.focus();
-    } finally {
-      setPending(null);
     }
+    router.refresh();
   }
 
   return (
@@ -182,7 +150,7 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
 
       <div className={styles.actions}>
         <Panel title={CLEAR_FORM.heading} note={CLEAR_FORM.help} printBlock>
-          <form className={styles.form} noValidate onSubmit={submitClear}>
+          <form className={styles.form} noValidate onSubmit={(event) => submit("clear_match", event)}>
             <label className={styles.field} htmlFor="clear-actor">
               <span className={styles.label}>{CLEAR_FORM.actorLabel}</span>
               <input
@@ -243,7 +211,7 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
         </Panel>
 
         <Panel title={CONFIRM_PULLED_FORM.heading} note={CONFIRM_PULLED_FORM.help} printBlock>
-          <form className={styles.form} noValidate onSubmit={submitPulled}>
+          <form className={styles.form} noValidate onSubmit={(event) => submit("confirm_pulled", event)}>
             <label className={styles.field} htmlFor="pulled-actor">
               <span className={styles.label}>{CLEAR_FORM.actorLabel}</span>
               <input

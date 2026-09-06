@@ -13,12 +13,8 @@ import {
 } from "./strings";
 import styles from "./dashboard.module.css";
 
-export interface CorpusPanelProps {
-  snapshots: CorpusSnapshot[];
-}
-
 /** Where every recall record on this screen came from. */
-export function CorpusPanel({ snapshots }: CorpusPanelProps) {
+export function CorpusPanel({ snapshots }: { snapshots: CorpusSnapshot[] }) {
   if (snapshots.length === 0) {
     return (
       <Panel title={PANEL.corpus} printBlock>
