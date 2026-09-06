@@ -4,6 +4,9 @@
 */
 
 import type { RunChannel, RunStatus } from "@/lib/api";
+/* Re-exported so the runs routes keep importing their vocabulary from one
+   place, while the label itself has a single definition in lib/strings. */
+export { channelLabel } from "@/lib/strings";
 
 /* What each channel means, in a sentence. */
 
@@ -28,6 +31,10 @@ export const NO_FILE_READ = "no file";
 export const REMATCH_ROWS_TITLE =
   "A rematch run reads no file. The corpus changed and the inventory did not.";
 
+export function channelExplanation(channel: RunChannel): string {
+  return CHANNEL_EXPLANATION[channel] ?? channel;
+}
+
 /** A rematch run has no delivery behind it, whatever delivery_ref holds. */
 export function hasDelivery(run: { channel: RunChannel }): boolean {
   return run.channel !== "rematch";
@@ -49,34 +56,17 @@ export function corpusNoteFor(run: { corpus_note: string | null; status: RunStat
   frozen: boolean;
 } {
   if (run.corpus_note) return { text: run.corpus_note, frozen: true };
-  return { text: CORPUS_NOT_FROZEN[run.status], frozen: false };
+  return { text: CORPUS_NOT_FROZEN[run.status] ?? CORPUS_NOT_FROZEN.ok, frozen: false };
 }
 
 /* ---------------------------------------------------------------------------
    Page copy.
 --------------------------------------------------------------------------- */
 
-export const RUNS_CONTEXT =
-  "Every delivery this location has made, newest first, including the ones that were refused.";
-
-export const RUNS_REJECTION_NOTE =
-  "Listing only the runs that succeeded would make a week of failed drops look like a quiet week.";
-
-export const RUNS_FOOTER =
-  "A run is written once and never edited. Opening a past run shows what it produced that morning, matched against the recall records that existed then, not re-run against today's.";
-
-export const STRIP_LEGEND =
-  "One cell per day. A number is that day's PULL count. REJ is a delivery that was refused. A hatched cell is a day with no run at all.";
-
 export const STRIP_TITLE = "Runs by day";
 
-export const STRIP_NOTE =
-  "A run every day is the ordinary pattern at this location. A date with no run is the thing worth noticing.";
-
-export const TABLE_TITLE = "Every delivery";
-
 export const CURRENT_RUN_TAG_TITLE =
-  "The most recent accepted run. This is the sheet in force.";
+  "The most recent accepted run. Its sheet is the one /sheet shows.";
 
 export const RUN_NOT_FOUND_HEADING = "That run is not in the run log.";
 
@@ -128,4 +118,9 @@ export function decidedBeforeNote(whenText: string): string {
 
 export function showingNote(shown: number, total: number): string {
   return `Showing the ${shown} most recent of ${total} runs.`;
+}
+
+/** "1 day" / "12 days". Digits always, including under ten. */
+export function countWord(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`;
 }

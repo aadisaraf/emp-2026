@@ -1,11 +1,11 @@
-import { PageHeader, StatusBadge } from "@/components";
+import { Facts, Jumps, PageHero, Pill, Tag } from "@/components";
 import type { SheetResponse } from "@/lib/api";
-import { PAGE_TITLES, pullSheetSubtitle } from "@/lib/strings";
+import { formatCount, formatDate } from "@/lib/format";
 import { SheetFooter } from "./SheetFooter";
 import { SheetHeaderBlock } from "./SheetHeaderBlock";
 import { PastRunBanner, RunWithoutLines, ZeroMatchNotice } from "./SheetNotices";
 import { SheetSurface } from "./SheetSurface";
-import { StorageSections } from "./StorageSections";
+import { StorageSections, locationId } from "./StorageSections";
 import styles from "./sheet.module.css";
 
 export interface SheetViewProps {
@@ -26,47 +26,77 @@ export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps
   const { header, run } = sheet;
   const hasLines = sheet.sections.length > 0;
   const refused = run.status !== "ok";
+  const counts = header.counts;
 
   return (
     <>
-      <PageHeader
-        title={PAGE_TITLES.pullSheet}
-        context={pullSheetSubtitle(run.id, run.business_date)}
-        actions={refused ? <StatusBadge value={run.status} /> : undefined}
+      <PageHero
+        figure={formatCount(counts.pull_count) ?? "0"}
+        word={counts.pull_count === 1 ? "line to pull" : "lines to pull"}
+        alert={counts.pull_count > 0}
+        actions={
+          <>
+            {refused ? <Tag tone="alert">refused</Tag> : <Tag>run #{run.id}</Tag>}
+            <Pill href={`/artifacts/hold?run=${run.id}`} tone="primary">
+              Hold record
+            </Pill>
+            <Pill href={`/artifacts/credit-claim?run=${run.id}`}>Credit claim</Pill>
+          </>
+        }
       />
 
-      <div className={styles.stack}>
-        {sheet.is_current ? null : (
-          <PastRunBanner
-            header={header}
-            decidedBefore={sheet.decided_before}
-            currentRunId={currentRunId}
-          />
-        )}
+      <Facts
+        items={[
+          {
+            label: "held",
+            value: formatCount(counts.held_count) ?? "0",
+            tone: counts.held_count > 0 ? "attend" : "plain",
+          },
+          { label: "lines", value: formatCount(counts.total) ?? "0" },
+          { label: "new", value: formatCount(counts.new_count) ?? "0" },
+          { label: "inventory of", value: formatDate(run.business_date) ?? run.business_date },
+          {
+            label: "corpus",
+            value: header.stale ? "stale" : "in force",
+            tone: header.stale ? "attend" : "plain",
+          },
+        ]}
+      />
 
-        {/*
-          Print-only. On screen the corpus and its provenance are already in
-          the status line above, and the counts are already in the stat rail.
-        */}
-        <SheetHeaderBlock header={header} />
-
-        {refused ? <RunWithoutLines run={run} showCurrentLink={!sheet.is_current} /> : null}
-
-        {!refused && header.counts.total === 0 ? <ZeroMatchNotice header={header} /> : null}
-
-        {hasLines ? (
-          <SheetSurface>
-            <StorageSections sections={sheet.sections} />
-          </SheetSurface>
-        ) : null}
-
-        <SheetFooter
-          coverage={header.coverage}
-          screeningRule={screeningRule}
-          runId={sheet.is_current ? run.id : null}
-          servesMealProgram={header.location.serves_meal_program}
+      {sheet.is_current ? null : (
+        <PastRunBanner
+          header={header}
+          decidedBefore={sheet.decided_before}
+          currentRunId={currentRunId}
         />
-      </div>
+      )}
+
+      {/* Print-only: on screen these facts are already in the row above. */}
+      <SheetHeaderBlock header={header} />
+
+      {refused ? <RunWithoutLines run={run} showCurrentLink={!sheet.is_current} /> : null}
+
+      {!refused && counts.total === 0 ? <ZeroMatchNotice header={header} /> : null}
+
+      {hasLines ? (
+        <>
+          <Jumps
+            items={sheet.sections.map((section) => ({
+              href: `#${locationId(section.storage_location)}`,
+              label: section.storage_location,
+              count: formatCount(section.pull + section.held),
+            }))}
+          />
+
+          <SheetSurface>
+            <div className={styles.sections}>
+              <StorageSections sections={sheet.sections} />
+            </div>
+          </SheetSurface>
+        </>
+      ) : null}
+
+      <SheetFooter coverage={header.coverage} screeningRule={screeningRule} />
     </>
   );
 }

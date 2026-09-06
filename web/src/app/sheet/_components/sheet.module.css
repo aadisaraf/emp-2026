@@ -1,23 +1,4 @@
-/*
-  The pull sheet's own styles. Everything here is downstream of one fact: this
-  screen is printed and carried into a walk-in cooler, so the screen and the
-  paper have to be the same document.
 
-  Nothing in this file styles a status by hue alone, moves a line, or hides
-  one. PULL and HELD are interleaved in the order the API sent them, and the
-  only thing that separates them visually is the fill-versus-outline chip in
-  the status cell, which survives a mono laser and a photocopy.
-*/
-
-/* ---------------------------------------------------------------------------
-   Page scaffolding
---------------------------------------------------------------------------- */
-
-.stack {
-  display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
-}
 
 /*
   The letterhead. Paper only.
@@ -39,7 +20,6 @@
   padding: var(--space-3);
   background: var(--surface-page);
 }
-
 
 .corpusList {
   display: grid;
@@ -76,10 +56,6 @@
   line-height: var(--lh-micro);
   color: var(--text-secondary);
   overflow-wrap: anywhere;
-}
-
-.plain {
-  font-family: var(--font-ui);
 }
 
 /* ---------------------------------------------------------------------------
@@ -143,171 +119,6 @@
   min-width: 0;
 }
 
-/* ---------------------------------------------------------------------------
-   Storage sections. Storage location is the only grouping on this sheet,
-   because it is the physical walking order through the kitchen.
---------------------------------------------------------------------------- */
-
-.section + .section {
-  margin-top: var(--space-5);
-}
-
-.sectionHead {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  padding-bottom: var(--space-2);
-  margin-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border-strong);
-}
-
-.sectionName {
-  font-size: var(--fs-section);
-  line-height: var(--lh-section);
-  font-weight: var(--weight-strong);
-  color: var(--text-primary);
-}
-
-.sectionTally {
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-/* ---------------------------------------------------------------------------
-   The table. Fixed layout so the column order is the same on every section,
-   on every run, and on paper.
---------------------------------------------------------------------------- */
-
-.sheetTable {
-  table-layout: fixed;
-}
-
-/* One line per row, on screen.
-
-   A sheet is scanned before it is read: an operator wants to see how far the
-   list runs and where in the kitchen it starts, and a table whose rows are
-   four lines tall answers neither question without scrolling. So on screen a
-   cell that overflows is clipped, and the full text is one click away in the
-   pane, which is 420px wide and was built to hold it.
-
-   On paper it wraps in full. The printed sheet is the record, it leaves the
-   building, and a truncated line there would be a document that lies about
-   what is in the cooler. Screen and paper differ here on purpose, and only
-   here. */
-.sheetTable th,
-.sheetTable td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media print {
-  .sheetTable th,
-  .sheetTable td {
-    overflow: visible;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-}
-
-/* Seven fixed columns; Item and Triggered by split whatever is left.
-
-   Status is 152 because it carries two words that must both be readable, and
-   CONFIRMED plus PULL is the widest pair either of them makes.
-
-   The two text columns are deliberately NOT pinned. Under table-layout: fixed
-   the sum of the pinned widths is the table's floor, and opening the 420px
-   detail pane takes 220px out of the row. Pinned wide, the table pushed past
-   the viewport and put a horizontal scrollbar under the whole page, which is
-   the one thing an operations table may not do. Sharing the remainder, it
-   narrows instead: the pane is open because that line is being read, and the
-   line being read is in the pane. */
-.sheetTable col:nth-child(1) { width: 152px; }
-.sheetTable col:nth-child(3) { width: 100px; }
-.sheetTable col:nth-child(4) { width: 68px; }
-.sheetTable col:nth-child(5) { width: 104px; }
-.sheetTable col:nth-child(6) { width: 72px; }
-.sheetTable col:nth-child(7) { width: 120px; }
-.sheetTable col:nth-child(9) { width: 76px; }
-
-/* While the pane is open, the table keeps the columns an operator walks by --
-   what it is, where it is, how much, and whether it has been pulled -- and
-   gives up the four the pane is already showing in full for the open line.
-
-   The alternative was 48px of Item, which is not a column. No row is removed,
-   no row moves and the order is untouched; closing the pane brings the columns
-   straight back. This is the one place the sheet shows less than everything,
-   and it does it only while a person is reading one line in detail. */
-.surface[data-pane="open"] .sheetTable col:nth-child(5),
-.surface[data-pane="open"] .sheetTable col:nth-child(6),
-.surface[data-pane="open"] .sheetTable col:nth-child(7),
-.surface[data-pane="open"] .sheetTable col:nth-child(8),
-.surface[data-pane="open"] .sheetTable th:nth-child(5),
-.surface[data-pane="open"] .sheetTable th:nth-child(6),
-.surface[data-pane="open"] .sheetTable th:nth-child(7),
-.surface[data-pane="open"] .sheetTable th:nth-child(8),
-.surface[data-pane="open"] .sheetTable td:nth-child(5),
-.surface[data-pane="open"] .sheetTable td:nth-child(6),
-.surface[data-pane="open"] .sheetTable td:nth-child(7),
-.surface[data-pane="open"] .sheetTable td:nth-child(8) {
-  display: none;
-}
-
-/* Arriving by #match-N with a sticky header above: stop below it, not under. */
-.sheetTable tbody tr {
-  scroll-margin-top: 96px;
-}
-
-.surface .sheetTable tr[data-selected="true"] > td {
-  background: var(--surface-selected);
-}
-
-/* Tier, status and the new mark on one line. The tier badge reads left of the
-   status word because it is the reason for it. */
-.status,
-.statusRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  flex-wrap: nowrap;
-}
-
-.item {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-/* The description, verbatim, and the control that opens the line. A button,
-   not a card, and it prints as plain text. */
-.itemButton {
-  appearance: none;
-  background: none;
-  border: 0;
-  border-radius: var(--radius-flat);
-  padding: 0;
-  margin: 0;
-  text-align: left;
-  color: var(--green-700);
-  font-weight: var(--weight-normal);
-  cursor: pointer;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.itemButton:hover {
-  color: var(--green-800);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
 /* A caveat under a value in the pane: what the export did not carry, what a
    decision was recorded against, the lot note the agency published. */
 .note {
@@ -315,32 +126,6 @@
   line-height: var(--lh-micro);
   color: var(--text-muted);
   overflow-wrap: anywhere;
-}
-
-/* The agency has terminated or amended this recall and the line stays anyway.
-   A word, not a colour alone, so it survives grayscale and a photocopier. */
-.amendedFlag {
-  flex: none;
-  font-size: var(--fs-micro);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-  color: var(--attend-ink);
-  text-decoration: none;
-  border-bottom: 1px dotted var(--attend-ink);
-}
-
-.triggerPair {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-1);
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-
-@media print {
-  .triggerPair {
-    flex-wrap: wrap;
-  }
 }
 
 .code {
@@ -358,41 +143,7 @@
     overflow: visible;
     white-space: normal;
     overflow-wrap: anywhere;
-  }
-}
-
-.arrow {
-  color: var(--text-muted);
-}
-
-/* The evidence labels are words, and some of them are five words. On paper
-   they wrap; on screen the column is fixed and the pane has the full label. */
-@media print {
-  .classCell,
-  .evidence,
-  .evidence > span {
-    white-space: normal;
-  }
-}
-
-.pulledBox {
-  font-size: var(--fs-section);
-  line-height: var(--lh-body);
-  color: var(--text-primary);
-}
-
-/* A cleared line stays on the sheet and says so. A chip rather than a colour,
-   because the sheet is photocopied and a colour alone does not survive that. */
-.pulledCleared {
-  display: inline-block;
-  padding: 0 4px;
-  border: 1px solid var(--cleared-ink);
-  border-radius: var(--radius-flat);
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  color: var(--cleared-ink);
-  cursor: help;
-}
+  }}
 
 /* ---------------------------------------------------------------------------
    The detail pane. 420px, right side, opaque, one hairline edge, no overlay
@@ -574,8 +325,7 @@
     margin-top: var(--space-4);
     border-left: 0;
     border-top: 1px solid var(--border-strong);
-  }
-}
+  }}
 
 /* ---------------------------------------------------------------------------
    Print. Letter portrait, every column intact, every provenance label on the
@@ -584,10 +334,6 @@
 --------------------------------------------------------------------------- */
 
 @media print {
-  .stack {
-    gap: var(--space-3);
-    margin-top: var(--space-2);
-  }
 
   .surface {
     display: block;
@@ -602,61 +348,15 @@
   }
 
   .headerBlock,
-  .notice {
+.notice {
     border: 1px solid #000000;
     background: #FFFFFF;
     break-inside: avoid;
   }
 
-  .section {
-    break-inside: auto;
-  }
-
-  .section + .section {
-    margin-top: var(--space-4);
-  }
-
-  .sectionHead {
-    break-after: avoid;
-    border-bottom: 1px solid #000000;
-  }
-
-  .sheetTable {
-    font-size: 8.5pt;
-    line-height: 11pt;
-  }
-
-  .sheetTable thead {
-    display: table-header-group;
-  }
-
-  .sheetTable tr {
-    break-inside: avoid;
-  }
-
-  .sheetTable th,
-  .sheetTable td {
-    padding: 2px 4px;
-  }
-
-  /* Millimetres, because the target is 216mm of Letter with 12mm margins.
-     Six columns are pinned and take 87mm: Status 17, Where 12, Qty 16, Lot 14,
-     Class 20, Triggered by 8. Item, Evidence and Pulled share the 105mm left. */
-  .sheetTable col:nth-child(1) { width: 17mm; }
-  .sheetTable col:nth-child(3) { width: 12mm; }
-  .sheetTable col:nth-child(4) { width: 16mm; }
-  .sheetTable col:nth-child(5) { width: 14mm; }
-  .sheetTable col:nth-child(6) { width: 20mm; }
-  .sheetTable col:nth-child(8) { width: 8mm; }
-
-  .itemButton {
-    color: #000000;
-    text-decoration: none;
-  }
-
   .note,
-  .code,
-  .age {
+.code,
+.age {
     font-size: 7.5pt;
     line-height: 9.5pt;
   }
@@ -668,5 +368,48 @@
 
   .artifactLinks {
     display: none;
+  }}
+
+/* The pinned column widths above total 592px. Below that the two unpinned
+   text columns get whatever is left, which on a phone is nothing: the item
+   description rendered one letter per line. The sheet keeps its real column
+   widths and scrolls sideways inside its own body instead, which is what a
+   wide table should do -- the page itself never moves. */
+@media (max-width: 720px) {
+
+  .surface {
+    max-width: 100%;
   }
+
+  .body {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }}
+/* ---------------------------------------------------------------------------
+   The sections. One folder-tab card per storage location, in the order the
+   API sent them, which is the walking order through the kitchen.
+--------------------------------------------------------------------------- */
+
+.sections {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/*
+  With the detail pane open the sheet has 420px less to work in. The three
+  columns the pane already shows in full step aside rather than squeeze: the
+  lot, the evidence kind, and who recorded the pull.
+*/
+.surface[data-pane="open"] [data-sheet] col:nth-child(3),
+.surface[data-pane="open"] [data-sheet] col:nth-child(4),
+.surface[data-pane="open"] [data-sheet] col:nth-child(6),
+.surface[data-pane="open"] [data-sheet] th:nth-child(3),
+.surface[data-pane="open"] [data-sheet] th:nth-child(4),
+.surface[data-pane="open"] [data-sheet] th:nth-child(6),
+.surface[data-pane="open"] [data-sheet] td:nth-child(3),
+.surface[data-pane="open"] [data-sheet] td:nth-child(4),
+.surface[data-pane="open"] [data-sheet] td:nth-child(6) {
+  display: none;
 }

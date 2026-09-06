@@ -4,20 +4,14 @@
   animation, and nothing behind the cells.
 */
 
-/* The strip always sits inside a Panel, which supplies the border and the
-   heading band. Two stacked header bands would be chrome arguing with itself. */
+/* The strip sits inside a folder-tab card, which supplies the ground. */
 .strip {
-  background: var(--surface-page);
-}
-
-.summary {
-  padding: var(--space-3) var(--space-3) 0;
-  color: var(--text-primary);
+  display: grid;
+  gap: var(--space-3);
 }
 
 .scroll {
   overflow-x: auto;
-  padding: var(--space-3) var(--space-3) var(--space-2);
 }
 
 .days {
@@ -55,7 +49,7 @@
   display: block;
   padding-bottom: 2px;
   border-top: 1px solid var(--border-hairline);
-  background: var(--surface-page);
+  background: var(--surface-card);
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
   font-weight: var(--weight-normal);
@@ -72,7 +66,7 @@
    of the same event look like the same event. */
 .rejected {
   border: 2px solid var(--alert-outline);
-  background: var(--surface-page);
+  background: var(--surface-card);
 }
 
 .rejected .mark {
@@ -106,9 +100,3 @@
   -webkit-print-color-adjust: exact;
 }
 
-.legend {
-  padding: 0 var(--space-3) var(--space-3);
-  color: var(--text-muted);
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-}

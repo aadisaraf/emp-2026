@@ -10,15 +10,13 @@
 }
 
 .head {
-  padding: var(--space-1) var(--cell-pad-x);
-  background: var(--surface-header);
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-2) var(--cell-pad-x);
+  background: none;
+  border-bottom: 1px solid var(--border-hairline);
   color: var(--text-muted);
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
+  font-weight: var(--weight-normal);
   text-align: left;
   white-space: nowrap;
   vertical-align: bottom;
@@ -60,13 +58,25 @@
   text-align: left;
 }
 
-/* A rule between column groups, not between every column. */
+/* Column groups are separated by their spacing, not by a rule. */
 .groupEdge {
-  border-left: 1px solid var(--border);
+  border-left: 0;
 }
 
 .emptyCell {
   padding: var(--space-3) var(--cell-pad-x);
   border-bottom: 1px solid var(--border-hairline);
   color: var(--text-primary);
+}
+
+/* On a phone a table scrolls inside its own panel rather than pushing the page
+   sideways. The `scroll` prop does this at the call sites that ask for it; this
+   covers the ones that do not, because a body that scrolls horizontally loses
+   the left edge of every row above it. */
+@media (max-width: 720px) {
+  .table:not(.sticky) {
+    display: block;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
 }

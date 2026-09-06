@@ -43,6 +43,14 @@ export function formatDateTime(
   return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
 }
 
+/** "09:34". Empty for a date-only value, which carries no time to show. */
+export function formatTime(
+  value: string | null | undefined,
+  timeZone: string = DEFAULT_TIME_ZONE,
+): string | null {
+  return formatDateTime(value, timeZone)?.slice(11) || null;
+}
+
 /** "1,012". Counts are measures: right-align them. */
 export function formatCount(value: number | null | undefined): string | null {
   if (value === null || value === undefined || Number.isNaN(value)) return null;

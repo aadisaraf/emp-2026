@@ -1,44 +1,53 @@
-/*
-  Today.
-
-  Every value here is a token from styles/tokens.css. There is no gradient, no
-  shadow, no radius above 3px, no entrance animation and no icon: the only
-  motion on this page is the 100ms row hover the shared table already owns, and
-  the only thing that moves on its own is the numbers, because the poller
-  replaced them.
-
-  Green appears once, on the primary link, and it means "this is the recall
-  system", not "you are fine".
-*/
-
 /* ---------------------------------------------------------------------------
-   The statement. The status word is this page's title: the operator did not
-   open a recall tool to read the word "Today", and the nav already says it.
+   Today. One figure, two clocks, three columns, and a bar to drop the next
+   export into. Structure is space and shape; there are no rules.
 --------------------------------------------------------------------------- */
 
-.statement {
-  padding: var(--space-4) 0 var(--space-3);
-  border-bottom: 1px solid var(--border);
-}
+/* ---- hero ---------------------------------------------------------------- */
 
-.eyebrow {
+.hero {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 22px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-3) 0 var(--space-5);
 }
 
-.eyebrowLabel {
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-  color: var(--text-muted);
+.figureBlock {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
-.spacer {
-  flex: 1 1 auto;
+.figure {
+  font-size: 84px;
+  line-height: 84px;
+  letter-spacing: -0.04em;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-primary);
+}
+
+.figure[data-state="action"],
+.figure[data-state="overdue"],
+.figure[data-state="rejected"] {
+  color: var(--alert-ink);
+}
+
+.word {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.stale {
+  color: var(--attend-ink);
+}
+
+.staleText {
+  color: var(--attend-ink);
 }
 
 .actions {
@@ -48,333 +57,562 @@
   flex: none;
 }
 
-.primary {
-  padding: 3px var(--space-3);
-  border: 1px solid var(--green-800);
-  border-radius: var(--radius-chip);
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+  text-decoration: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pillPrimary {
   background: var(--green-800);
   color: var(--text-inverse);
   font-weight: var(--weight-strong);
-  text-decoration: none;
-  white-space: nowrap;
 }
 
-.primary:hover {
-  background: var(--green-900);
-  border-color: var(--green-900);
+.pillSecondary {
+  background: var(--alert-fill);
   color: var(--text-inverse);
-}
-
-/* Same shape, no fill. For the way in on a location that has never received an
-   export: there is nothing to act on yet, so nothing here should look urgent. */
-.secondary {
-  padding: 3px var(--space-3);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-chip);
-  background: var(--surface);
-  color: var(--text-primary);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.secondary:hover {
-  border-color: var(--green-800);
-  color: var(--green-800);
-}
-
-.word {
-  margin-top: var(--space-2);
-  font-size: var(--fs-page);
-  line-height: var(--lh-page);
   font-weight: var(--weight-strong);
-  color: var(--text-primary);
 }
 
-/* Act now: there are lines to pull, the sheet is old, or a delivery was
-   refused. Red is under 2% of the pixels on this screen and this is where it
-   is spent. */
-.word[data-state="action"],
-.word[data-state="overdue"],
-.word[data-state="rejected"] {
+.pillAlert {
+  background: var(--alert-tint);
   color: var(--alert-ink);
 }
 
-/* Never and clear are stated in words and left in the text colour. A location
-   that has never delivered is not a success, and neither is a clear run: the
-   claim is scoped to a corpus with a capture date, which is on this page. */
-.word[data-state="never"],
-.word[data-state="clear"] {
+.roundAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--surface-control);
   color: var(--text-primary);
+  text-decoration: none;
 }
 
-/* Staleness gates this one word. It gains a tint, a dotted underline and an
-   age; not one line on the sheet moves. */
-.word[data-state="stale"],
-.stale {
-  color: var(--attend-ink);
+.pill:focus-visible,
+.roundAction:focus-visible,
+.checkbox:focus-visible,
+.lineMore:focus-visible,
+.tabsPill:focus-visible,
+.docCard:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
-.stale .mark {
-  background: var(--attend-tint);
-  padding: 0 var(--space-1);
-  text-decoration: underline dotted currentColor;
-  text-underline-offset: 4px;
-  print-color-adjust: exact;
-  -webkit-print-color-adjust: exact;
+/* ---- stage bar ----------------------------------------------------------- */
+
+.stage {
+  padding-bottom: var(--space-6);
 }
 
-.detail {
-  margin-top: var(--space-1);
-  color: var(--text-secondary);
-  max-width: 84ch;
-}
-
-.nextRow {
+.stageHead {
   display: flex;
+  justify-content: space-between;
   align-items: baseline;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--border-hairline);
-}
-
-.nextLabel {
-  flex: none;
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.next {
-  color: var(--text-primary);
-}
-
-.asOf {
-  margin-left: auto;
-  flex: none;
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
-.asOfLabel {
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-}
-
-.neverNote {
-  margin-top: var(--space-2);
+  margin-bottom: var(--space-2);
   color: var(--text-secondary);
-  max-width: 84ch;
+  font-size: var(--fs-body);
 }
 
-/* ---------------------------------------------------------------------------
-   The page body. Two columns where two things are read together, full width
-   where a table needs the room. Not three cards in a row, and not centred.
---------------------------------------------------------------------------- */
-
-.stack {
-  display: grid;
-  gap: var(--space-5);
-  margin-top: var(--space-4);
+.stageDate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
 }
 
-.pair {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-@media (max-width: 1080px) {
-  .pair {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* ---------------------------------------------------------------------------
-   The counts, in the stat-rail grammar: label over value, 1px verticals, no
-   box per number. 42 against 814 is two integers, not a donut, and neither of
-   them counts up.
---------------------------------------------------------------------------- */
-
-.counts {
+.segments {
   display: flex;
-  align-items: stretch;
-  border-bottom: 1px solid var(--border);
-  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) var(--space-3);
-  background: var(--surface-page);
-  font-variant-numeric: tabular-nums lining-nums;
+  gap: var(--space-2);
 }
 
-.count {
+.segment {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-2) var(--space-3);
-  border-left: 1px solid var(--border);
+  align-items: center;
+  gap: var(--space-3);
+  height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: 12px;
+  font-size: var(--fs-body);
+  white-space: nowrap;
+  overflow: hidden;
   min-width: 0;
 }
 
-.count:first-child {
-  border-left: 0;
+.segment > svg {
+  margin-left: auto;
+  flex: none;
 }
 
-.countLabel {
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-  color: var(--text-muted);
-  white-space: nowrap;
+.segmentText {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.countValue {
+.segmentLeft {
+  color: inherit;
+  opacity: 0.8;
+  font-variant-numeric: tabular-nums;
+}
+
+.segmentDone {
+  background: var(--green-800);
+  color: var(--text-inverse);
+}
+
+/* The clock that is running: a tint with its ink on it, the same treatment as
+   a HELD chip, so it is the soft version of "attend" rather than a solid. */
+.segmentCurrent {
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+}
+
+/* Not yet started: a hatch, not a fill. The only pattern on the screen. */
+.segmentLater {
+  color: var(--text-secondary);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--surface-control) 0 2px,
+    var(--surface-page) 2px 6px
+  );
+}
+
+.segmentAlert {
+  background: var(--alert-fill);
+  color: var(--text-inverse);
+}
+
+/* ---- the three columns --------------------------------------------------- */
+
+.body {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr) 280px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.side {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* A folder-tab card: the heading is a tab that grows out of the card's top
+   left, and the card's top-left corner is square where the tab meets it. */
+
+.tabCard {
+  display: grid;
+}
+
+.tabHead {
+  display: flex;
+  align-items: flex-end;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: 14px 14px 0 0;
   font-size: var(--fs-body);
-  line-height: var(--lh-body);
   font-weight: var(--weight-strong);
+}
+
+.tabBody {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border-radius: 0 var(--radius-card) var(--radius-card) var(--radius-card);
+}
+
+.tonePlain .tab,
+.tonePlain .tabBody {
+  background: var(--surface-card);
   color: var(--text-primary);
 }
 
-.countPull .countValue {
-  color: var(--alert-ink);
+.toneAccent .tab,
+.toneAccent .tabBody {
+  background: var(--card-accent);
+  color: var(--card-accent-ink);
 }
 
-/* ---------------------------------------------------------------------------
-   Panel innards.
---------------------------------------------------------------------------- */
-
-.note {
-  color: var(--text-secondary);
-  max-width: 84ch;
+.kv {
+  display: grid;
+  gap: 2px;
 }
 
-.note + .note {
-  margin-top: var(--space-2);
-}
-
-.fine {
-  margin-top: var(--space-3);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--border-hairline);
-  color: var(--text-muted);
+.kvTerm {
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
+  opacity: 0.66;
+}
+
+.kvValue {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
   overflow-wrap: anywhere;
 }
 
-.fineLabel {
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-}
+/* ---- lines --------------------------------------------------------------- */
 
-.itemLink {
-  color: var(--green-700);
-}
-
-.sub {
-  display: block;
-  color: var(--text-muted);
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-}
-
-.staleFlag {
-  display: inline-block;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--attend-outline);
-  border-radius: var(--radius-chip);
-  background: var(--attend-tint);
-  color: var(--attend-ink);
-  font-size: var(--fs-micro);
-  line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
-  print-color-adjust: exact;
-  -webkit-print-color-adjust: exact;
-}
-
-.source {
-  font-family: var(--font-mono);
-}
-
-/* ---------------------------------------------------------------------------
-   Refused deliveries. A rejection reason is a sentence, so these are blocks
-   rather than a table cell that would clip it. The 2px outline is the second
-   channel: the word REJECTED carries the same fact for a mono printout.
---------------------------------------------------------------------------- */
-
-.refusedList {
+.lines {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-5);
+  min-width: 0;
 }
 
-.refused {
-  border: 2px solid var(--alert-outline);
-  border-radius: var(--radius-flat);
-  padding: var(--space-2) var(--space-3);
-  background: var(--surface-page);
-}
-
-.refusedHead {
+.tabs {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   gap: var(--space-2);
   flex-wrap: wrap;
 }
 
-.refusedRef {
-  font-family: var(--font-mono);
+.tabsFolder {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: 14px 14px 0 0;
+  background: var(--surface-card);
   color: var(--text-primary);
-  overflow-wrap: anywhere;
+  font-weight: var(--weight-strong);
+  margin-right: var(--space-2);
 }
 
-.refusedMeta {
+.tabsPill {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  margin-bottom: 2px;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tabsPillActive {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+.group {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.groupTitle {
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  font-weight: var(--weight-normal);
+  color: var(--text-primary);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.lineRow {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+/* The gutter: the recall class in a circle, and where the case is. */
+.gutter {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  padding-top: var(--space-2);
+}
+
+.gutterDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  font-weight: var(--weight-strong);
+}
+
+.gutterDot[data-rank="1"] {
+  background: var(--alert-tint);
+  color: var(--alert-ink);
+}
+
+.gutterLabel {
+  font-size: 10px;
+  line-height: 12px;
   color: var(--text-muted);
+  text-align: center;
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineCard {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto 28px;
+  grid-template-areas:
+    "box title chip more"
+    "box meta  meta more";
+  column-gap: var(--space-3);
+  row-gap: 2px;
+  align-items: center;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: 16px;
+  background: var(--surface-card);
+}
+
+.checkbox {
+  grid-area: box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-strong);
+  color: var(--text-inverse);
+  text-decoration: none;
+  align-self: center;
+}
+
+.checkboxDone {
+  background: var(--green-800);
+  border-color: var(--green-800);
+}
+
+.lineTitle {
+  grid-area: title;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lineChip {
+  grid-area: chip;
+  padding: 2px var(--space-3);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.lineChip[data-status="PULL"] {
+  background: var(--alert-fill);
+  color: var(--text-inverse);
+}
+
+.lineChip[data-status="HELD"] {
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+}
+
+.lineMore {
+  grid-area: more;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.lineMore:hover {
+  background: var(--surface-control);
+  color: var(--text-primary);
+}
+
+.lineMeta {
+  grid-area: meta;
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
-  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.refusedReason {
-  margin-top: var(--space-1);
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  justify-self: start;
   color: var(--text-secondary);
+  font-size: var(--fs-body);
+  text-decoration: none;
+  padding-left: calc(44px + var(--space-3));
 }
 
-/* ---------------------------------------------------------------------------
-   The footer states the hold policy, which is the one thing on this screen an
-   operator cannot work out from the numbers above it.
---------------------------------------------------------------------------- */
-
-.footer {
-  margin-top: var(--space-5);
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--border);
+.more:hover {
+  color: var(--text-primary);
 }
 
-.footerNote {
+.empty {
+  padding-left: calc(44px + var(--space-3));
+  color: var(--text-muted);
+}
+
+/* ---- documents ----------------------------------------------------------- */
+
+.docs {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.docTitle {
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  font-weight: var(--weight-normal);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.docCard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3);
+  border-radius: 16px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.docHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.docHead > span:first-child {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.docDate {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--text-muted);
+}
+
+.docName {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.docOpen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--surface-control);
   color: var(--text-secondary);
-  max-width: 84ch;
+  flex: none;
 }
 
-.footerNote + .footerNote {
-  margin-top: var(--space-2);
+/* A paper thumbnail, drawn: the document's own figures on a white sheet. */
+.thumb {
+  display: grid;
+  gap: 6px;
+  padding: 12px 12px 14px;
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--paper-ink);
+  border: 1px solid var(--border-hairline);
+}
+
+.thumbBar {
+  font-size: 10px;
+  line-height: 12px;
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.02em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--paper-ink);
+}
+
+.thumbLine {
+  font-size: 10px;
+  line-height: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- narrow ------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .side {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+
+  .figure {
+    font-size: 64px;
+    line-height: 64px;
+  }
+
+  .segments {
+    flex-wrap: wrap;
+  }
+
+  .segment {
+    flex: 1 1 100% !important;
+  }
+
+  .side {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media print {
-  .actions {
+  .actions,
+  .tabs,
+  .lineMore {
     display: none;
-  }
-
-  .pair {
-    grid-template-columns: minmax(0, 1fr);
   }
 }

@@ -1,0 +1,135 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  height: var(--masthead-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) 0 var(--space-3);
+  background: var(--surface-page);
+}
+
+.mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--green-800);
+  color: var(--text-inverse);
+  font-size: 20px;
+  font-weight: var(--weight-strong);
+  text-decoration: none;
+  flex: none;
+  margin-right: var(--space-2);
+}
+
+.ghost,
+.round {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: none;
+  flex: none;
+}
+
+.ghost:hover,
+.round:hover {
+  color: var(--text-primary);
+}
+
+.ghost:focus-visible,
+.round:focus-visible,
+.search:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.round {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+.title {
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  font-weight: var(--weight-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.chip {
+  padding: 3px var(--space-3);
+  border-radius: 999px;
+  background: var(--green-100);
+  color: var(--green-900);  /* sage on pale sage measured 3.9:1; the deep sage is 7.4 */
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  white-space: nowrap;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 300px;
+  height: 36px;
+  margin-left: var(--space-5);
+  padding: 0 var(--space-3);
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-muted);
+}
+
+.search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--text-muted);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--card-second);
+  color: var(--card-second-ink);
+  font-size: var(--fs-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.04em;
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .search,
+  .chip {
+    display: none;
+  }
+}

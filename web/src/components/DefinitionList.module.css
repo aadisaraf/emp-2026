@@ -1,7 +1,7 @@
 .list {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3) var(--space-5);
+  gap: var(--space-4) var(--space-6);
 }
 
 .two {
@@ -12,12 +12,13 @@
   min-width: 0;
 }
 
+/* Sentence case, not tracked uppercase. Eight shouted labels in one panel is
+   most of what made this screen feel loud: uppercase reads as emphasis, and a
+   label that is emphasised competes with the value it is labelling. */
 .term {
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
+  font-weight: var(--weight-normal);
   color: var(--text-muted);
 }
 

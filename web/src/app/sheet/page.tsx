@@ -1,4 +1,4 @@
-import { EmptyState, ErrorState, PageHeader } from "@/components";
+import { EmptyState, ErrorState, PageHero } from "@/components";
 import { getSheet, getSources } from "@/lib/api";
 import { EMPTY_NO_RUNS, PAGE_TITLES } from "@/lib/strings";
 import { SheetView } from "./_components/SheetView";
@@ -14,19 +14,22 @@ export default async function PullSheetPage() {
   const [sheet, sources] = await Promise.all([getSheet(), getSources()]);
 
   if (!sheet.ok) {
-    const missing = sheet.error.code === "no_inventory" || sheet.error.status === 404;
-    return (
-      <>
-        <PageHeader title={PAGE_TITLES.pullSheet} />
-        {missing ? (
+    if (sheet.error.code === "no_inventory" || sheet.error.status === 404) {
+      return (
+        <>
+          <PageHero figure="0" word={PAGE_TITLES.pullSheet} />
           <EmptyState
             heading={EMPTY_NO_RUNS.heading}
             body={EMPTY_NO_RUNS.body}
             action={EMPTY_NO_RUNS.action}
           />
-        ) : (
-          <ErrorState failure={sheet.error} />
-        )}
+        </>
+      );
+    }
+    return (
+      <>
+        <PageHero figure="—" word={PAGE_TITLES.pullSheet} />
+        <ErrorState failure={sheet.error} />
       </>
     );
   }
