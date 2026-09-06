@@ -6,14 +6,13 @@ import { Icon } from "./Icon";
 import { cx } from "@/lib/cx";
 import styles from "./IconRail.module.css";
 
-/* Six places to go, as icons. The artifacts live on Today as documents. */
+/* Four places to go, as icons. Sources and adding inventory are one press away
+   in the bar above; the artifacts live on Today as documents. */
 const ITEMS = [
   { href: "/", label: "Today", icon: "home" },
   { href: "/sheet", label: "Pull sheet", icon: "sheet" },
   { href: "/runs", label: "Run history", icon: "history" },
   { href: "/impact", label: "Impact", icon: "impact" },
-  { href: "/sources", label: "Sources", icon: "sources" },
-  { href: "/ingest", label: "Add inventory", icon: "add" },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
