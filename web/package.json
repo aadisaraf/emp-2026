@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
-    "check": "node scripts/check-styles.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.3.4",

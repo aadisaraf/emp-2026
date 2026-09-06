@@ -29,17 +29,26 @@ export function TodayBoard({ initial }: TodayBoardProps) {
       <div className={styles.stack}>
         {run ? (
           <>
+            {/*
+              The clocks and the diff share the left column so the run's
+              provenance on the right does not leave a hole beneath them. The
+              two columns are different kinds of reading: what is owed and what
+              changed on the left, where the numbers came from on the right.
+            */}
             <div className={styles.pair}>
-              <Panel title={CLOCKS.heading} printBlock>
-                <ClockStrip deadlines={status.deadlines} variant="table" notes />
-              </Panel>
+              <div className={styles.column}>
+                <Panel title={CLOCKS.heading} printBlock>
+                  <ClockStrip deadlines={status.deadlines} variant="table" notes />
+                </Panel>
+
+                <NewSincePrevious
+                  lines={status.new_lines}
+                  previousRunId={status.previous_run_id}
+                />
+              </div>
+
               <RunFacts run={run} />
             </div>
-
-            <NewSincePrevious
-              lines={status.new_lines}
-              previousRunId={status.previous_run_id}
-            />
           </>
         ) : (
           <>
