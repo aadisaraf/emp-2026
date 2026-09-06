@@ -75,7 +75,7 @@
   padding: 3px var(--space-3);
   border-radius: 999px;
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--green-900);  /* sage on pale sage measured 3.9:1; the deep sage is 7.4 */
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
   white-space: nowrap;
@@ -119,8 +119,8 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: var(--card-slate);
-  color: var(--card-slate-ink);
+  background: var(--card-second);
+  color: var(--card-second-ink);
   font-size: var(--fs-micro);
   font-weight: var(--weight-strong);
   letter-spacing: 0.04em;

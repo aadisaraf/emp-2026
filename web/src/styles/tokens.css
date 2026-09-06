@@ -1,68 +1,70 @@
 /*
   PullSheet design tokens. A page uses these values or none.
 
-  Dark on screen, white on paper. The screen is a console someone watches; the
-  sheet is a document someone carries into a cooler, and @media print keeps its
-  own light surface. Red means act now, ochre unresolved, green recorded.
+  Cream and sage. The screen is paper-coloured because the product's output is
+  paper; the chrome is sage because that is the institution's colour. Nothing
+  here is saturated: red means act now, ochre unresolved, green recorded, and
+  each is the soft version of itself so the count, not the palette, is loud.
 
-  The two card accents -- lavender and slate blue -- are deliberately OUTSIDE
-  that status vocabulary. A card is an identity, not a state, and a yellow card
-  next to a yellow HELD chip would make the chip mean nothing.
+  The card accent is a pale sage, which is an identity colour and never a
+  state -- it sits well away from the ochre that means HELD.
 */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* ---- surfaces ---------------------------------------------------- */
-  --surface-page:      #101215;  /* the canvas */
-  --surface-sunken:    #16191D;  /* panels, cards, table ground */
-  --surface-header:    #1C2026;  /* raised rows, table head, chips */
-  --surface-selected:  #232830;  /* the currently selected line */
-  --surface-card:      #181B20;  /* a card on the canvas */
-  --surface-control:   #22262D;  /* search field, ghost buttons */
-  --surface-masthead:  #0A0C0E;  /* fixed top bar, darker than the canvas */
+  --surface-page:      #F5F2E9;  /* cream: the canvas */
+  --surface-sunken:    #EEEADF;  /* ground behind a table; row hover */
+  --surface-header:    #E7E2D4;  /* table head, chips */
+  --surface-selected:  #DFE7DC;  /* the currently selected line: a breath of sage */
+  --surface-masthead:  #F5F2E9;  /* the top bar is the canvas */
+  --surface-card:      #FFFDF8;  /* a card: paper, a shade lighter than the canvas */
+  --surface-control:   #E7E2D4;  /* search field, ghost buttons, pills */
 
   /* ---- borders: barely there. Structure is space, not ink. --------- */
-  --border-hairline:   #1F2329;
-  --border:            #272C33;
-  --border-strong:     #343A43;
-  --focus-ring:        #7FE3B0;
+  --border-hairline:   #E4DFD1;
+  --border:            #D5CFBE;
+  --border-strong:     #B6AF9D;
+  --focus-ring:        #4F7A5E;
 
   /* ---- text -------------------------------------------------------- */
-  --text-primary:      #F2F4F6;
-  --text-secondary:    #A6ADB6;
-  --text-muted:        #6E7681;
-  --text-inverse:      #101215;  /* on filled bright chips */
-  --text-inverse-muted: #A6ADB6;
-  --masthead-rule:     #23282F;
+  --text-primary:      #26302A;  /* deep green-grey, not black */
+  --text-secondary:    #55625A;
+  --text-muted:        #626E66;  /* 4.7:1 on cream; the lighter grey measured 3.2 */
+  --text-inverse:      #FBFAF5;  /* on filled sage, rose and dark pills */
+  --text-inverse-muted: #D9DED6;
+  --masthead-rule:     #E4DFD1;
 
   /* ---- card accents: identity, never status ------------------------ */
-  --card-lavender:     #CBC0F0;
-  --card-lavender-ink: #1B1630;
-  --card-slate:        #AEC8E8;
-  --card-slate-ink:    #101D2B;
+  --card-accent:       #D5E3D2;  /* pale sage */
+  --card-accent-ink:   #22362A;
+  --card-second:       #DCE4DD;  /* the operator's initials */
+  --card-second-ink:   #22362A;
+  --paper:             #FFFFFF;  /* a document thumbnail */
+  --paper-ink:         #26302A;
 
-  /* ---- green: institutional chrome, and "recorded" ------------------ */
-  --green-900:         #0C2C21;
-  --green-800:         #7FE3B0;  /* primary fill, active nav, focus */
-  --green-700:         #8FE9BC;  /* links */
-  --green-100:         #1B2E27;  /* active-nav fill, selected-row tint */
-  --green-050:         #161D1A;
+  /* ---- green: sage. Institutional chrome, and "recorded" ------------ */
+  --green-900:         #2F4A3B;
+  --green-800:         #4F7A5E;  /* primary fill, active nav, focus */
+  --green-700:         #3F6A50;  /* links */
+  --green-100:         #DCE7DD;  /* active-nav fill, selected-row tint */
+  --green-050:         #ECF1EA;
 
   /* ---- semantic: act now (PULL / OVERRUN / REJECTED) ---------------- */
-  --alert-ink:         #FF9A93;  /* the word */
-  --alert-fill:        #F87A72;  /* filled chip, dark label */
-  --alert-tint:        #2A1618;
-  --alert-outline:     #7A3B3B;
+  --alert-ink:         #A6483F;  /* terracotta */
+  --alert-fill:        #B5544A;  /* filled chip, cream label */
+  --alert-tint:        #F4E3DE;
+  --alert-outline:     #D8A69E;
 
   /* ---- semantic: unresolved / attend (HELD / STALE) ---------------- */
-  --attend-ink:        #F2CE5C;
-  --attend-outline:    #6A5620;
-  --attend-tint:       #2A2413;
+  --attend-ink:        #7E5F14;  /* soft mustard; 4.8:1 on its own tint, the lighter one measured 4.3 */
+  --attend-outline:    #CBAA5E;
+  --attend-tint:       #F5ECD4;
 
   /* ---- semantic: recorded / cleared -------------------------------- */
-  --cleared-ink:       #8A929C;
-  --cleared-outline:   #2F353D;
+  --cleared-ink:       #6E7A72;
+  --cleared-outline:   #D5CFBE;
 
   /* ---- type: the OS, never the network ----------------------------- */
   --font-ui:

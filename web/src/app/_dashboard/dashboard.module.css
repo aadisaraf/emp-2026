@@ -173,9 +173,11 @@
   color: var(--text-inverse);
 }
 
+/* The clock that is running: a tint with its ink on it, the same treatment as
+   a HELD chip, so it is the soft version of "attend" rather than a solid. */
 .segmentCurrent {
-  background: var(--attend-ink);
-  color: var(--text-inverse);
+  background: var(--attend-tint);
+  color: var(--attend-ink);
 }
 
 /* Not yet started: a hatch, not a fill. The only pattern on the screen. */
@@ -245,8 +247,8 @@
 
 .toneAccent .tab,
 .toneAccent .tabBody {
-  background: var(--card-lavender);
-  color: var(--card-lavender-ink);
+  background: var(--card-accent);
+  color: var(--card-accent-ink);
 }
 
 .kv {
@@ -548,8 +550,9 @@
   gap: 6px;
   padding: 12px 12px 14px;
   border-radius: 6px;
-  background: #ffffff;
-  color: #16211d;
+  background: var(--paper);
+  color: var(--paper-ink);
+  border: 1px solid var(--border-hairline);
 }
 
 .thumbBar {
@@ -558,7 +561,7 @@
   font-weight: var(--weight-strong);
   letter-spacing: 0.02em;
   padding-bottom: 6px;
-  border-bottom: 1px solid #16211d;
+  border-bottom: 1px solid var(--paper-ink);
 }
 
 .thumbLine {
