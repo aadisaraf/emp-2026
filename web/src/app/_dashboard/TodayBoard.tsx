@@ -1,108 +1,59 @@
 "use client";
 
-import type { StatusResponse } from "@/lib/api";
-import { ClockStrip, DefinitionList, EmptyState, Panel } from "@/components";
-import { cx } from "@/lib/cx";
-import { CLOCKS, EMPTY_NO_RUNS, TIER_LEGEND } from "@/lib/strings";
-import { StateStatement } from "./StateStatement";
-import { RunFacts } from "./RunFacts";
-import { NewSincePrevious } from "./NewSincePrevious";
-import { CorpusPanel } from "./CorpusPanel";
-import { RefusedDeliveries } from "./RefusedDeliveries";
+import type { SheetResponse, StatusResponse } from "@/lib/types";
 import { useStatusFeed } from "./useStatusFeed";
-import { HOLD_POLICY } from "./strings";
+import { Hero, StageBar } from "./Hero";
+import { DocumentsColumn, LinesColumn, LocationCard, RunCard } from "./Columns";
+import { FloatingBar } from "./FloatingBar";
 import styles from "./dashboard.module.css";
 
-export interface TodayBoardProps {
-  /** The server's own fetch, so the first paint is real data, not a skeleton. */
-  initial: StatusResponse;
+export interface ArtifactFacts {
+  credit: { total: number; counted: number } | null;
+  report: { derived: number; toEnter: number } | null;
 }
 
-/** The morning screen, and the live half of it. */
-export function TodayBoard({ initial }: TodayBoardProps) {
-  const { status, reachable } = useStatusFeed(initial);
+export interface Filters {
+  q: string;
+  loc: string;
+  show: string;
+}
+
+export interface TodayBoardProps {
+  initial: StatusResponse;
+  sheet: SheetResponse | null;
+  artifacts: ArtifactFacts;
+  filters: Filters;
+}
+
+/* The morning screen. One figure, two clocks, three columns. */
+export function TodayBoard({ initial, sheet, artifacts, filters }: TodayBoardProps) {
+  const { status } = useStatusFeed(initial);
   const run = status.run;
 
   return (
     <>
-      <StateStatement status={status} reachable={reachable} />
+      <Hero status={status} />
+      {run ? <StageBar run={run} deadlines={status.deadlines} /> : null}
 
-      <div className={styles.stack}>
-        {run ? (
-          <>
-            {/*
-              The clocks and the diff share the left column so the run's
-              provenance on the right does not leave a hole beneath them. The
-              two columns are different kinds of reading: what is owed and what
-              changed on the left, where the numbers came from on the right.
-            */}
-            <div className={styles.pair}>
-              <div className={styles.column}>
-                <Panel title={CLOCKS.heading} printBlock>
-                  <ClockStrip deadlines={status.deadlines} variant="table" notes />
-                </Panel>
+      {run ? (
+        <div className={styles.body}>
+          <div className={styles.side}>
+            <LocationCard location={status.location} />
+            <RunCard run={run} corpus={status.corpus} />
+          </div>
 
-                <NewSincePrevious
-                  lines={status.new_lines}
-                  previousRunId={status.previous_run_id}
-                />
+          <LinesColumn sheet={sheet} filters={filters} />
 
-                <CorpusPanel snapshots={status.corpus} />
-              </div>
+          <DocumentsColumn
+            run={run}
+            sheet={sheet}
+            artifacts={artifacts}
+            servesMealProgram={status.location.serves_meal_program}
+          />
+        </div>
+      ) : null}
 
-              <div className={styles.column}>
-                {/*
-                  Whose kitchen this is. It was only ever in the masthead, at
-                  the size of a breadcrumb, on a screen whose entire subject is
-                  one location.
-                */}
-                <Panel
-                  title={status.location.name}
-                  className={cx(styles.card, styles.cardLavender)}
-                  printBlock
-                >
-                  <DefinitionList
-                    columns={1}
-                    items={[
-                      { term: "Operator", value: status.location.operator },
-                      { term: "Address", value: status.location.address },
-                      { term: "Contact", value: status.location.contact },
-                    ]}
-                  />
-                </Panel>
-
-                <RunFacts run={run} />
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {/*
-              Nothing has ever been read here, so the argument that silence is
-              not an answer is the widest thing on the page, not a note in a
-              side column. There are no counts to show and none are invented:
-            */}
-            <EmptyState
-              heading={EMPTY_NO_RUNS.heading}
-              body={EMPTY_NO_RUNS.body}
-              action={EMPTY_NO_RUNS.action}
-            />
-            <Panel title={CLOCKS.heading} printBlock>
-              <ClockStrip deadlines={status.deadlines} variant="table" notes />
-            </Panel>
-          </>
-        )}
-
-
-        {status.rejections.length > 0 ? (
-          <RefusedDeliveries runs={status.rejections} />
-        ) : null}
-      </div>
-
-      <footer className={styles.footer} data-print-block="">
-        <p className={styles.footerNote}>{TIER_LEGEND}</p>
-        <p className={styles.footerNote}>{HOLD_POLICY}</p>
-      </footer>
+      <FloatingBar hasRun={run !== null} />
     </>
   );
 }

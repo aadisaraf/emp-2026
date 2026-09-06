@@ -24,9 +24,6 @@ export type { ErrorStateProps } from "./ErrorState";
 export { EvidenceKind } from "./EvidenceKind";
 export type { EvidenceKindProps } from "./EvidenceKind";
 
-export { Masthead } from "./Masthead";
-export type { MastheadProps } from "./Masthead";
-
 export { NewMark } from "./NewMark";
 export type { NewMarkProps } from "./NewMark";
 
@@ -45,20 +42,22 @@ export type { PrintButtonProps } from "./PrintButton";
 export { ProvenanceLabel } from "./ProvenanceLabel";
 export type { ProvenanceLabelProps } from "./ProvenanceLabel";
 
-export { SideNav } from "./SideNav";
-export type { SideNavProps } from "./SideNav";
-
 export { StatRail } from "./StatRail";
 export type { StatRailItem, StatRailProps } from "./StatRail";
 
 export { StatusBadge } from "./StatusBadge";
 export type { StatusBadgeProps, StatusValue } from "./StatusBadge";
 
-export { StatusLine } from "./StatusLine";
-export type { StatusLineProps } from "./StatusLine";
-
 export { StatusPoller } from "./StatusPoller";
 export type { StatusPollerProps } from "./StatusPoller";
 
 export { TierBadge } from "./TierBadge";
 export type { TierBadgeProps } from "./TierBadge";
+
+export { Icon } from "./Icon";
+export type { IconProps } from "./Icon";
+
+export { IconRail } from "./IconRail";
+
+export { TopBar } from "./TopBar";
+export type { TopBarProps } from "./TopBar";

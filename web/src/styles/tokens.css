@@ -18,6 +18,8 @@
   --surface-sunken:    #16191D;  /* panels, cards, table ground */
   --surface-header:    #1C2026;  /* raised rows, table head, chips */
   --surface-selected:  #232830;  /* the currently selected line */
+  --surface-card:      #181B20;  /* a card on the canvas */
+  --surface-control:   #22262D;  /* search field, ghost buttons */
   --surface-masthead:  #0A0C0E;  /* fixed top bar, darker than the canvas */
 
   /* ---- borders: barely there. Structure is space, not ink. --------- */
@@ -105,8 +107,9 @@
   /* ---- structure --------------------------------------------------- */
   --page-pad:          20px;   /* side padding, fluid to the viewport */
   --page-max:          1680px; /* optional cap, never a centred marketing measure */
-  --masthead-h:        48px;
-  --nav-w:             200px;
+  --masthead-h:        64px;   /* the top bar; body padding and sticky heads key off it */
+  --nav-w:             64px;   /* the icon rail */
+  --floating-h:        56px;   /* the bar that floats at the foot of Today */
   --row-h:             28px;
   --cell-pad-y:        5px;
   --cell-pad-x:        10px;

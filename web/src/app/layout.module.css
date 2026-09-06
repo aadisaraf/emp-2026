@@ -4,18 +4,15 @@
 }
 
 .main {
-  padding: var(--space-2) var(--page-pad) var(--space-6);
+  padding: var(--space-4) var(--space-6) calc(var(--floating-h) + var(--space-7));
 }
 
-/* Below this width the fixed 200px rail is over half the screen, so it stops
-   being a rail and becomes a strip above the content (see SideNav.module.css)
-   and the content reclaims the full width. */
 @media (max-width: 720px) {
   .content {
     margin-left: 0;
   }
 
   .main {
-    padding: var(--space-2) var(--space-2) var(--space-5);
+    padding: var(--space-3) var(--space-3) calc(56px + var(--floating-h) + var(--space-6));
   }
 }
