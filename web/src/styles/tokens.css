@@ -111,7 +111,6 @@
   --page-max:          1680px; /* optional cap, never a centred marketing measure */
   --masthead-h:        64px;   /* the top bar; body padding and sticky heads key off it */
   --nav-w:             64px;   /* the icon rail */
-  --floating-h:        56px;   /* the bar that floats at the foot of Today */
   --row-h:             28px;
   --cell-pad-y:        5px;
   --cell-pad-x:        10px;

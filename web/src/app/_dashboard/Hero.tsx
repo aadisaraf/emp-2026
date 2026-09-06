@@ -27,11 +27,11 @@ export function Hero({ status }: { status: StatusResponse }) {
             {nearest.text}
           </span>
         ) : null}
-        <Link href="/ingest" className={styles.roundAction} aria-label="Add inventory">
-          <Icon name="plus" />
-        </Link>
         {run ? (
           <>
+            <Link href="/ingest" className={styles.roundAction} aria-label="Add inventory">
+              <Icon name="plus" />
+            </Link>
             <Link href="/sheet" className={cx(styles.pill, styles.pillPrimary)}>
               Open sheet
             </Link>
@@ -39,7 +39,11 @@ export function Hero({ status }: { status: StatusResponse }) {
               Impact
             </Link>
           </>
-        ) : null}
+        ) : (
+          <Link href="/ingest" className={cx(styles.pill, styles.pillPrimary)}>
+            Add inventory
+          </Link>
+        )}
       </div>
     </section>
   );

@@ -7,7 +7,6 @@ const PATHS: Record<string, string> = {
   sheet: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
   history: "M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l3 2",
   impact: "M12 2v20M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 3 5 3 5 1.1 5 3-2.2 3-5 3-5-1.1-5-3",
-  add: "M12 16V4m0 0-4 4m4-4 4 4M4 20h16",
   search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm9 16-4-4",
   plus: "M12 5v14M5 12h14",
   back: "M15 5l-7 7 7 7",

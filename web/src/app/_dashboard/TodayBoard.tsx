@@ -4,7 +4,6 @@ import type { SheetResponse, StatusResponse } from "@/lib/types";
 import { useStatusFeed } from "./useStatusFeed";
 import { Hero, StageBar } from "./Hero";
 import { DocumentsColumn, LinesColumn, LocationCard, RunCard } from "./Columns";
-import { FloatingBar } from "./FloatingBar";
 import styles from "./dashboard.module.css";
 
 export interface ArtifactFacts {
@@ -52,8 +51,6 @@ export function TodayBoard({ initial, sheet, artifacts, filters }: TodayBoardPro
           />
         </div>
       ) : null}
-
-      <FloatingBar hasRun={run !== null} />
     </>
   );
 }
