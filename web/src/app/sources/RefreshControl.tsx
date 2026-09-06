@@ -7,23 +7,7 @@ import { ProvenanceLabel } from "@/components";
 import { formatDateTime } from "@/lib/format";
 import styles from "./sources.module.css";
 
-/**
- * Ask the agency for a fresh corpus, and say what actually happened.
- *
- * Three things this control refuses to do.
- *
- * It does not claim the sheet changed, because it did not. A refresh writes a
- * dated snapshot and stops. Re-matching is a separate deliberate act that makes
- * a new run, and re-deciding lines underneath somebody who is holding a printout
- * is exactly the surprise this system exists to avoid.
- *
- * It does not treat an unreachable agency as an error. The demo runs with the
- * network off and the honest answer is the cached snapshot plus the reason the
- * fetch failed, printed in full rather than swallowed.
- *
- * It does not celebrate. The message comes from the server and is rendered
- * word for word.
- */
+/** Ask the agency for a fresh corpus, and say what actually happened. */
 export function RefreshControl() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();

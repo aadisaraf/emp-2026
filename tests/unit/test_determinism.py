@@ -1,9 +1,4 @@
-"""SC-011. Two runs over the same inputs produce byte-identical results.
-
-Not approximately identical. A matcher that reorders its own output between runs
-cannot be reviewed, cannot be diffed, and cannot be trusted to have found the
-same thing twice.
-"""
+"""SC-011. Two runs over the same inputs produce byte-identical results."""
 
 from __future__ import annotations
 
@@ -56,7 +51,8 @@ def test_the_order_is_identical_not_merely_the_contents(two_runs):
 
 def test_ties_are_broken_deterministically(two_runs):
     """The ORDER BY ends in `id`, so two rows that tie on class, tier and score
-    still have exactly one possible ordering."""
+    still have exactly one possible ordering.
+    """
     first, _ = two_runs
     scored = [(r[3], r[8]) for r in first]
     assert len(scored) == len(first)
@@ -64,7 +60,8 @@ def test_ties_are_broken_deterministically(two_runs):
 
 def test_class_one_lines_come_first(two_runs):
     """FR-032. The most serious class is at the top of the sheet, where an
-    operator with thirty seconds will actually read it."""
+    operator with thirty seconds will actually read it.
+    """
     from pullsheet.matching.gate import TIER_STATUS
     first, _ = two_runs
     tiers = [r[3] for r in first]

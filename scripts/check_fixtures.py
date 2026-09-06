@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """Fixture sanity checks. Run before trusting a demo.
-
-`--menu` proves two things about the hand-authored menu fixtures:
-
-  1. At least one recipe is reachable from `expected_matches.json` -- i.e. the
-     menu cascade has something real to cascade from.
-  2. At least one broken recipe has an *unsatisfiable* component set, so
-     FR-041's "no substitute exists" is demonstrable rather than theoretical.
-     Substitution is scoped to what this kitchen actually has on hand: you
-     cannot serve from a cooler you do not have.
+FR-041's "no substitute exists" is demonstrable rather than theoretical.
 """
 
 from __future__ import annotations
@@ -77,9 +69,6 @@ def check_menu() -> int:
 
 def check_seeds() -> int:
     """Every seeded recall id must resolve against the committed corpus.
-
-    The corpus spans two agencies, so the check is against the union of both
-    snapshots. A seed pointing at a recall that is not in the corpus would make
     SC-005 unfalsifiable.
     """
     ids = set()
@@ -93,7 +82,6 @@ def check_seeds() -> int:
 
     # Every rung of the ladder needs a fixture behind it. Reading the ladder
     # itself rather than a copied list means adding a rung and forgetting to
-    # seed it fails here, not in a demo.
     from pullsheet.matching.gate import _LADDER
     kinds = {s["expected_evidence_kind"] for s in seeds}
     unseeded = sorted(set(_LADDER) - kinds)

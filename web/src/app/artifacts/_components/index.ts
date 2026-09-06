@@ -2,7 +2,6 @@
   The three artifacts are printed documents, so they share a paper frame rather
   than a dashboard layout. These components are local to /artifacts on purpose:
   nothing else on the site is a document, and putting a letterhead in the shared
-  library would invite a screen to grow one.
 */
 
 export { ArtifactUnavailable } from "./ArtifactUnavailable";

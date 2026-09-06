@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: User description: "Build PullSheet: a food-recall response system for K-12 school district nutrition departments." (full description retained in `SPECKIT-PROMPTS.md`), amended 2026-09-05 to one location per deployment on a daily cadence — see Clarifications, amendment 3.
+**Input**: User description: "Build PullSheet: a food-recall response system for K-12 school district nutrition departments.", amended 2026-09-05 to one location per deployment on a daily cadence — see Clarifications, amendment 3.
 
 ## Problem Context
 

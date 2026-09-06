@@ -1,21 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import styles from "./highlight.module.css";
 
-/*
-  The highlight.
-
-  The rule this file exists to keep: what gets marked is the value the matcher
-  stored on the match row, found inside the text the export and the agency
-  stored. Nothing is re-derived here. There is no fuzzy match, no case folding,
-  no stemming and no second opinion; if the stored trigger is not a verbatim
-  substring of the stored text, nothing is marked and the page says so, because
-  an operator comparing the screen against the case in their hands needs to
-  know which of the two happened.
-
-  Compound evidence kinds (mfr_item, firm_and_name) store two verbatim parts
-  joined by " + ", which is matching/tiers.JOINER. Those are split and searched
-  separately, or the whole trigger would simply miss.
-*/
+/* The highlight. */
 
 const JOINER = " + ";
 
@@ -59,10 +45,9 @@ export interface HighlightedProps {
 }
 
 /**
- * The stored text with the stored trigger marked in place. The mark carries a
- * 1px rule under it as well as the tint, so it survives a grayscale printout
- * and a photocopy, which is where this page ends up.
- */
+  The stored text with the stored trigger marked in place. The mark carries a
+  1px rule under it as well as the tint, so it survives a grayscale printout
+*/
 export function Highlighted({ text, parts }: HighlightedProps) {
   const marks = parts.length > 0 ? ranges(text, parts) : [];
   if (marks.length === 0) return <>{text}</>;

@@ -7,9 +7,8 @@
   <p class="generated">Run #{{ run.id }}, inventory of {{ run.business_date }}
     &mdash; generated {{ header.generated_at }}</p>
 
-  {# ------------------------------------------------------------------ #}
   {# Money. Applies to any kitchen, school or restaurant.                 #}
-  {# ------------------------------------------------------------------ #}
+  
   <section class="money">
     <h2>Money</h2>
     <div class="tally">
@@ -39,11 +38,10 @@
     </p>
   </section>
 
-  {# ------------------------------------------------------------------ #}
   {# Menu. Child nutrition only -- a restaurant deployment has no meal    #}
   {# pattern and no planned service days, so this half is simply absent   #}
   {# rather than reworded into something it does not compute.             #}
-  {# ------------------------------------------------------------------ #}
+  
   {% if not menu %}
   <section class="note">
     <h2>Menu</h2>

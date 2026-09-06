@@ -15,19 +15,7 @@ import {
 } from "./runsMeta";
 import styles from "./RunsTable.module.css";
 
-/*
-  Every run, newest first, refused ones included and refused ones legible.
-
-  A rejected row is drawn as an incident rather than as a row with a red word
-  in it: a 2px box around the whole row, the token REJECTED, and the rejection
-  reason spelled out in the cell beside it. Three channels for one fact, none
-  of them hue alone, so it survives a mono laser and a photocopy.
-
-  Two columns carry a claim that is easy to get wrong. On a rematch run the
-  delivery cell says no file arrived, not "not recorded", because nothing was
-  missing from a file; and the rows cell says so too rather than printing 0,
-  which would describe a file that arrived empty.
-*/
+/* Every run, newest first, refused ones included and refused ones legible. */
 
 export interface RunsTableProps {
   runs: readonly RunHistoryEntry[];
@@ -87,7 +75,6 @@ function columns(currentRunId: number | null): Column<RunHistoryEntry>[] {
         if (!run.delivery_ref) return <NotRecorded />;
         // Name on one line, hash on the next. The hash is what an operator
         // compares against the file they re-sent, so it is not allowed to
-        // break in the middle of itself.
         const hash = run.delivery_ref.indexOf("#");
         const name = hash === -1 ? run.delivery_ref : run.delivery_ref.slice(0, hash);
         return (

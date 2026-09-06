@@ -17,19 +17,7 @@ export interface CorpusPanelProps {
   snapshots: CorpusSnapshot[];
 }
 
-/**
- * Where every recall record on this screen came from.
- *
- * Provenance is load-bearing, not decoration. Each source carries one of three
- * labels, its capture date, how many records it holds and how old it is, and
- * none of that is behind a tooltip, faded out or dropped because the row felt
- * busy. The FSIS corpus is hand-authored, which is said here in full rather
- * than implied by a label a reader has to look up.
- *
- * A stale snapshot is marked, and the mark is a word. Staleness gates the
- * status word at the top of this page and nothing else: not one line on the
- * sheet is different because a snapshot passed 24 hours.
- */
+/** Where every recall record on this screen came from. */
 export function CorpusPanel({ snapshots }: CorpusPanelProps) {
   if (snapshots.length === 0) {
     return (

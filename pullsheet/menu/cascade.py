@@ -1,37 +1,4 @@
-"""US2. What was this case going to become?
-
-A recalled item is not just a case in a freezer. It is a meal that was going to
-be served on a specific day, to a specific number of children. This module walks
-that chain:
-
-    inventory line -> recipes using it -> service days -> planned meals
-
-Four deliberate choices:
-
-1. **The join is exact-normalized-name equality.** A recipe's ingredient row and
-   an inventory row are the kitchen's own catalog strings for the same product,
-   normalized by the SAME function the matcher uses. There is no fuzzy matching
-   here on purpose: a near-miss on a menu is a wrong count on a screen, and a
-   wrong count is worse than a missing one.
-
-2. **Only PULL lines cascade.** A HELD line is undecided by definition, and
-   cascading undecided lines would bury the decided ones. The count of held
-   lines is reported alongside so the omission is stated, never silent.
-
-3. **The count is planned, never measured.** ``service_days.planned_meals`` is
-   what the kitchen planned to serve. Nothing here knows what was eaten, and
-   every surface that shows the number says so.
-
-4. **The total counts each service day once.** One inventory line can carry
-   several recall matches, and two lots of the same product can sit in two
-   coolers -- but Tuesday's taco bar is one Tuesday taco bar. Totals are summed
-   over the distinct (recipe, date) set, not per match. Getting this wrong
-   inflates the number an operator would repeat to a superintendent.
-
-This is a child-nutrition surface. A restaurant deployment runs the same recall
-pipeline and has no meal pattern; ``location.serves_meal_program()`` is what
-decides whether this is shown.
-"""
+"""US2. What was this case going to become?"""
 
 from __future__ import annotations
 
@@ -40,20 +7,14 @@ from typing import Any
 
 from pullsheet.db import SUBJECT_KEY_SQL
 
-#: Every count this module produces is planned, not served. Rendered verbatim
-#: wherever the number appears, so the caveat cannot be styled off the page.
+# Every count this module produces is planned, not served. Rendered verbatim
+# wherever the number appears, so the caveat cannot be styled off the page.
 PLANNED_CAVEAT = "planned, not served"
 
 
 def _broken_lines(conn: sqlite3.Connection, run_id: int,
                   statuses: tuple[str, ...]) -> list[sqlite3.Row]:
-    """This run's inventory lines carrying a match in one of ``statuses``.
-
-    Cleared lines are still returned. Clearing is a human decision recorded
-    against a match; it is not this module's business to act on it, and a menu
-    that quietly un-breaks itself is exactly the disappearance Principle I
-    forbids. The cleared count travels with the row so the page can say so.
-    """
+    """This run's inventory lines carrying a match in one of ``statuses``."""
     placeholders = ",".join("?" * len(statuses))
     return list(conn.execute(
         f"""SELECT i.id, i.raw_description, i.normalized_description,
@@ -84,11 +45,7 @@ def _recipes_using(conn: sqlite3.Connection, normalized: str) -> list[sqlite3.Ro
 
 
 def _service_days(conn: sqlite3.Connection, recipe_id: str) -> list[sqlite3.Row]:
-    """Service days on which this recipe is planned.
-
-    The whole calendar belongs to this location, so there is nothing to scope
-    it to beyond the recipe itself.
-    """
+    """Service days on which this recipe is planned."""
     return list(conn.execute(
         """SELECT date, planned_meals FROM service_days
             WHERE recipe_id = ? ORDER BY date""", (recipe_id,)))
@@ -96,13 +53,7 @@ def _service_days(conn: sqlite3.Connection, recipe_id: str) -> list[sqlite3.Row]
 
 def cascade(conn: sqlite3.Connection, run_id: int,
             statuses: tuple[str, ...] = ("PULL",)) -> list[dict[str, Any]]:
-    """One entry per broken inventory LINE that reaches at least one recipe.
-
-    Several recall records can hit one line; they are listed on that one entry
-    rather than producing several. A line that reaches no recipe is omitted --
-    it has no menu consequence, and the pull sheet already carries it. Nothing
-    is omitted for being *unclear*; only for having no menu to break.
-    """
+    """One entry per broken inventory LINE that reaches at least one recipe."""
     entries: dict[int, dict[str, Any]] = {}
     for row in _broken_lines(conn, run_id, statuses):
         entry = entries.get(row["id"])
@@ -138,7 +89,8 @@ def cascade(conn: sqlite3.Connection, run_id: int,
 
 def held_not_cascaded(conn: sqlite3.Connection, run_id: int) -> int:
     """How many held lines were left out, so the omission is stated rather than
-    inferred from an absence."""
+    inferred from an absence.
+    """
     row = conn.execute(
         """SELECT COUNT(DISTINCT inventory_record_id) AS n
              FROM matches WHERE run_id = ? AND status = 'HELD'""", (run_id,)
@@ -147,11 +99,7 @@ def held_not_cascaded(conn: sqlite3.Connection, run_id: int) -> int:
 
 
 def affected_service_days(entries: list[dict[str, Any]]) -> list[tuple[str, str, int]]:
-    """The distinct (date, recipe_id, planned_meals) set behind the total.
-
-    Exposed rather than kept private so a hostile question about the headline
-    number has an answer that is a list, not an assurance.
-    """
+    """The distinct (date, recipe_id, planned_meals) set behind the total."""
     seen: dict[tuple[str, str], int] = {}
     for entry in entries:
         for recipe in entry["recipes"]:

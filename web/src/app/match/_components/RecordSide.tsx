@@ -23,18 +23,7 @@ export interface RecordSideProps {
   missing: string[];
 }
 
-/**
- * One of the two source records, in full.
- *
- * Both sides are the same shape on purpose: the long verbatim string first, in
- * its own bordered block, then the fields, then the trigger this side was
- * matched on. An operator reading the screen against the case in their hands
- * should find the same fact in the same place on both sides.
- *
- * The trigger is printed at the bottom whether or not it was found in the text
- * above, because "the stored trigger does not appear here" is a fact about the
- * match, not a rendering gap to hide.
- */
+/** One of the two source records, in full. */
 export function RecordSide({
   title,
   note,

@@ -8,14 +8,7 @@ export interface MastheadProps {
   status: StatusResponse | null;
 }
 
-/**
- * The fixed 48px bar: which location this is, which business date, which run.
- *
- * This is the only place green covers a large area, and it is chrome, not a
- * verdict. There is no greeting, no tagline, no logo lockup, and no site
- * switcher: one deployment serves one location, so there is nothing to switch
- * between.
- */
+/** The fixed 48px bar: which location this is, which business date, which run. */
 export function Masthead({ status }: MastheadProps) {
   const run = status?.run ?? null;
   return (

@@ -30,18 +30,9 @@ export interface LineDecisionsProps {
 }
 
 /**
- * Every decision ever taken about this food and this recall, and the two
- * actions a person can take now.
- *
- * The pair lives in one client component because a write changes both: the
- * clearing is written, the log gains a row in place, and the sheet keeps the
- * line. Nothing is removed from anything, so there is nothing to animate out
- * and no toast to fire. The audit row appears where the audit rows are.
- *
- * The server is the authority on what happened. Both actions POST, take the
- * full match detail back, render from that, and then refresh the server tree
- * so the verdict block above and the counts in the shell agree with the log.
- */
+  Every decision ever taken about this food and this recall, and the two
+  actions a person can take now.
+*/
 export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
   const router = useRouter();
 
@@ -56,15 +47,7 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
 
   const [pending, setPending] = useState<DecisionKind | null>(null);
 
-  /*
-    Neither action is offered until this component is running.
-
-    Without the gate, a click before hydration is a native form submission: the
-    browser reloads the page as a GET and puts the typed name in the query
-    string, so the operator sees a page that did not change, no audit row, and
-    their own name in the address bar. A button that looks like it cleared a
-    line and did not is the one failure this screen cannot have.
-  */
+  /* Neither action is offered until this component is running. */
   const [ready, setReady] = useState(false);
   useEffect(() => {
     setReady(true);
@@ -251,9 +234,11 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
             </p>
           ) : null}
 
-          {/* One standing paragraph, not three. The panel note says who may
-              clear and how long it lasts; this says what the system cannot do,
-              which is the part no other sentence on the page carries. */}
+          {/*
+            One standing paragraph, not three. The panel note says who may
+            clear and how long it lasts; this says what the system cannot do,
+            which is the part no other sentence on the page carries.
+          */}
           <p className={styles.standing}>{CLEAR_IS_A_HUMAN_ACT}</p>
         </Panel>
 

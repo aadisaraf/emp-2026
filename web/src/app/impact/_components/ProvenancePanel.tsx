@@ -16,15 +16,7 @@ export interface ProvenancePanelProps {
   menu: MenuSummary | null;
 }
 
-/**
- * Every source behind the numbers above, with its label attached.
- *
- * The unit costs, the recipes, the meal-pattern components and the planned
- * counts on this page were written by the build team. That is a fact about the
- * numbers, not a disclaimer to be shrunk: it decides what a director may do
- * with a substitution proposal and what a business office may put on a claim.
- * So it is on the page, at readable contrast, and it prints.
- */
+/** Every source behind the numbers above, with its label attached. */
 export function ProvenancePanel({
   sources,
   corpora,

@@ -48,19 +48,7 @@ import {
 import styles from "./page.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
-/*
-  One match, in full.
-
-  This is the page that gets opened when somebody asks how the system knows.
-  So it shows both stored records side by side, verbatim and complete, with the
-  stored trigger marked in place on each side; the tier and the evidence kind
-  in words; every decision ever taken about this food and this recall, with the
-  person who took it and when; and the two things a person can do next.
-
-  What it deliberately does not have: a bulk action, a dismiss, a mark as false
-  positive, a third status, or any number that reads as a confidence. Clearing
-  is one line at a time, by a person who names themselves, and the line stays.
-*/
+/* One match, in full. */
 
 export const dynamic = "force-dynamic";
 

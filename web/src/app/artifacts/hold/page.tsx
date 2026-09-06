@@ -21,17 +21,7 @@ import {
 import styles from "../_components/document.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
-/*
-  The hold and destruction record.
-
-  One row per case in the kitchen: what came off the shelf, how much of it, the
-  lot on the carton, where it is being held, and which recall notices name it.
-  Held cases are on it as well as pulled ones, because a case sitting in a
-  freezer while somebody decides is a case no other piece of paper accounts for.
-
-  Everything a person has to attest to is blank. That is the design, not an
-  omission, and the document says so in the body rather than only in a comment.
-*/
+/* The hold and destruction record. */
 
 export const dynamic = "force-dynamic";
 

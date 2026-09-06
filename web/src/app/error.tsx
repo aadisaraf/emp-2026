@@ -5,10 +5,9 @@ import { ErrorState } from "@/components";
 import { toFailure } from "@/lib/api";
 
 /**
- * The boundary of last resort. A page that fetches through attempt() never
- * reaches here; this catches the rest, and it still refuses to invent a number
- * or apologise for the backend.
- */
+  The boundary of last resort. A page that fetches through attempt() never
+  reaches here; this catches the rest, and it still refuses to invent a number
+*/
 export default function RouteError({
   error,
   retry,

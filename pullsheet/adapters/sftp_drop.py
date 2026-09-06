@@ -1,23 +1,4 @@
-"""The primary ingestion path and the demo centrepiece.
-
-The location's inventory software writes an export to an SFTP drop on a
-schedule, once a day. Nobody logs into anything; the file simply appears. This
-adapter watches the drop directory, reads CSV and XLSX through ``column_map``,
-and moves each processed file to ``data/archive/``.
-
-It is a directory watcher, not an SFTP client: the SFTP server writes into the
-directory and this reads it. That is the same shape a real deployment has, and
-it keeps the credential handling outside the application entirely.
-
-**Archive on success only.** A rejected file stays exactly where it landed, so
-the person who dropped it can see that it is still there. A rejection that
-quietly tidies the evidence away is worse than no rejection at all.
-
-**Only settled files are read.** An SFTP write is not atomic, so a file still
-being uploaded can be read as a complete short export -- indistinguishable from
-a kitchen that genuinely holds less food. ``pending()`` skips anything modified
-in the last few seconds.
-"""
+"""Directory watcher for the SFTP drop: reads CSV/XLSX, archives on success."""
 
 from __future__ import annotations
 
@@ -44,11 +25,7 @@ def _digits(value: str | None) -> str | None:
 
 
 def _number(value: str | None) -> float | None:
-    """Parse a number, or return None. Never guesses.
-
-    A blank quantity stays blank. Defaulting it to 1 would invent a case of food
-    that may not exist, and the operator would have no way to tell.
-    """
+    """Parse a number, or return None. Never guesses: a blank quantity stays blank."""
     if value is None:
         return None
     text = str(value).strip().replace(",", "").replace("$", "")
@@ -68,16 +45,13 @@ class SftpDropAdapter(InventoryAdapter):
     channel = "sftp_drop"
 
     def declares(self) -> frozenset[str]:
-        """Everything an inventory export normally carries. Honest by construction:
-        anything a given file omits comes back in ``unpopulated`` per row."""
+        """Everything an export normally carries; omissions come back in ``unpopulated``."""
         return frozenset({
             "storage_location", "raw_description", "quantity", "unit",
             "pack_size", "gtin", "lot_code", "brand", "manufacturer",
             "manufacturer_item_code", "vendor_name", "vendor_item_code",
             "unit_cost", "received_date",
         })
-
-    # -- reading -----------------------------------------------------------
 
     def read(self, source, column_map: dict[str, str] | None = None
              ) -> Iterator[NormalizedRecord]:
@@ -101,12 +75,7 @@ class SftpDropAdapter(InventoryAdapter):
 
     @staticmethod
     def _guard_against_broken_quoting(path: Path, source_row: int, row: dict) -> None:
-        """Unterminated quotes make csv swallow later lines into one field.
-
-        The signature is a newline inside a value: no real inventory description
-        contains one. Rejecting the whole source is right here -- half a file
-        looks exactly like a kitchen with fewer items in it.
-        """
+        """Reject the file if an unterminated quote swallowed later lines."""
         for header, value in row.items():
             if isinstance(value, str) and "\n" in value:
                 raise AdapterRejection(
@@ -149,9 +118,7 @@ class SftpDropAdapter(InventoryAdapter):
                 return None
             return value
 
-        # raw_description is stored even when blank: FR-007 forbids dropping a
-        # row we could not read, and an empty description with the field flagged
-        # is a row an operator can still go and look at.
+        # FR-007: keep the row even when blank rather than dropping it.
         description = (f.get("raw_description") or "").strip()
         if not description:
             unpopulated.add("raw_description")
@@ -168,9 +135,7 @@ class SftpDropAdapter(InventoryAdapter):
         if unit_cost is None:
             unpopulated.add("unit_cost")
 
-        # Supplier identity (FR-069). Passed through as the source wrote it:
-        # firm.agrees() does the normalizing, in one place, so an adapter cannot
-        # change what matches by tidying a company name differently.
+        # FR-069: passed through verbatim; firm.agrees() does all normalizing.
         supplier = {name: keep(name, (f.get(name) or "").strip() or None)
                     for name in ("brand", "manufacturer", "manufacturer_item_code",
                                  "vendor_name", "vendor_item_code")}
@@ -191,12 +156,7 @@ class SftpDropAdapter(InventoryAdapter):
             unpopulated=frozenset(unpopulated),
         )
 
-    # -- polling -----------------------------------------------------------
-
-    #: Seconds a file must sit unchanged before it is considered fully written.
-    #: An SFTP upload lands byte by byte, and a CSV cut off on a row boundary
-    #: parses perfectly as a shorter inventory -- a partial read is the one
-    #: failure here that produces a plausible wrong answer instead of an error.
+    # A part-written CSV parses cleanly as a shorter inventory, so wait it out.
     SETTLE_SECONDS = 2.0
 
     @classmethod
@@ -225,21 +185,8 @@ class SftpDropAdapter(InventoryAdapter):
         return target
 
 
-# ---------------------------------------------------------------------------
-# The poll loop (T035)
-# ---------------------------------------------------------------------------
-
 def poll_once(db_path=None, folder: Path = WATCHED, archive_dir: Path = ARCHIVE) -> list[dict]:
-    """Ingest every settled file in the drop directory as its own run.
-
-    Each file is one run, carried all the way through matching and finalize by
-    ``db.ingest_file`` -- so a crash cannot leave rows committed with no matches
-    and a sheet that reads as good news.
-
-    Archive on SUCCESS only. A rejected file stays where it landed so the person
-    who dropped it can see that it is still there -- a rejection that tidies away
-    its own evidence is worse than no rejection at all.
-    """
+    """Ingest every settled file as its own run. Archives on success only."""
     from pullsheet import db as db_module
 
     results: list[dict] = []
@@ -266,12 +213,7 @@ def poll_once(db_path=None, folder: Path = WATCHED, archive_dir: Path = ARCHIVE)
 
 
 def watch(interval_seconds: float = 2.0, stop=None, db_path=None) -> None:
-    """Poll forever. Intended to run on a daemon thread beside uvicorn.
-
-    Exceptions are swallowed deliberately: a poller that dies stops watching the
-    drop, and a drop nobody is watching looks exactly like a kitchen with
-    nothing recalled.
-    """
+    """Poll forever on a daemon thread. Exceptions are swallowed so it never dies."""
     import time
     import traceback
 

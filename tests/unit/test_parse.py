@@ -1,8 +1,5 @@
 """Every case here is a real ``code_info`` string from the committed corpus.
-
 The governing property is FR-067: failure to parse WIDENS. A string this module
-cannot read must produce empty lists and ``unparsed: True`` -- never an
-exception, and never something that reads like a confident non-match.
 """
 
 from __future__ import annotations
@@ -102,14 +99,16 @@ def test_never_raises_across_the_whole_corpus():
 
 def test_coverage_is_reported_honestly():
     """The share of the corpus we can read is a number we show in the UI (T045).
-    It is not expected to be 100%, and pretending otherwise would be the lie."""
+    It is not expected to be 100%, and pretending otherwise would be the lie.
+    """
     parsed = sum(1 for r in CORPUS.values() if not parse_code_info(r.get("code_info"))["unparsed"])
     assert parsed >= 400, f"only {parsed} of {len(CORPUS)} records yielded any code"
 
 
 def test_gtins_and_upcs_do_not_double_count():
     """A 14-digit GTIN must not also land in the UPC list, or the screening index
-    would key one code under two identities."""
+    would key one code under two identities.
+    """
     for record in CORPUS.values():
         got = parse_code_info(record.get("code_info"))
         assert not (set(got["gtins"]) & set(got["upcs"]))

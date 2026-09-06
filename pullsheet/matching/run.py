@@ -1,12 +1,5 @@
 """Match orchestration: for every inventory row, generate candidates, build
 evidence, and record a decision.
-
-This module is an addition to the plan's source tree. It exists so ``gate.py``
-stays a pure function of its arguments -- orchestration, database handles, and
-loops all live here instead of being smuggled into the chokepoint.
-
-The loop itself is deliberately dull. Every interesting rule is in one of the
-four modules it calls, each of which is tested on its own.
 """
 
 from __future__ import annotations
@@ -21,8 +14,8 @@ from pullsheet.matching.screen import ScreenRecord, build_indexes, generate_cand
 from pullsheet.matching.tiers import build_evidence
 from pullsheet.recalls.corpus import active_records
 
-#: FR-032. The trailing `id` guarantees a total order, so two runs cannot
-#: differ on ties (SC-011).
+# FR-032. The trailing `id` guarantees a total order, so two runs cannot
+# differ on ties (SC-011).
 MATCH_ORDER = """
     ORDER BY r.class_rank,
              CASE m.tier WHEN 'CONFIRMED' THEN 1 WHEN 'PROBABLE' THEN 2 ELSE 3 END,
@@ -54,14 +47,6 @@ def _recall_objects(rows) -> list[SimpleNamespace]:
 def _inventory_objects(conn) -> list[SimpleNamespace]:
     """Every inventory row that has not been replaced -- NOT every row this run
     delivered.
-
-    This distinction is the whole safety argument for daily runs. An item that
-    is absent from today's export is deliberately left active by
-    ``db.persist_records``, because a missing line is not proof the food left
-    the freezer. Matching the ACTIVE set into every run means that item keeps
-    appearing on every sheet until an export actually replaces it. Matching only
-    what today's file carried would make a partial export a silent clearing
-    path, which is the exact failure Principle I exists to prevent.
     """
     rows = conn.execute(
         "SELECT * FROM inventory_records WHERE superseded_by IS NULL ORDER BY id"
@@ -81,18 +66,7 @@ def _inventory_objects(conn) -> list[SimpleNamespace]:
 
 def run_matcher(conn: sqlite3.Connection, run_id: int,
                 now: datetime | str | None = None) -> dict[str, int]:
-    """Match every active inventory row against the loaded corpus, for one run.
-
-    Rebuilds the indexes each run rather than caching them. At this corpus size
-    that costs under a second, and a cache is a place for the corpus and the
-    index to disagree about what exists.
-
-    Every match is stamped with ``run_id``, and whether it is NEW is decided
-    here, at the moment the row is written -- by asking whether the previous
-    good run produced the same (item identity, recall) pair. Deciding it here
-    rather than patching it afterwards is what keeps ``matches`` a table the
-    matcher writes once and nothing ever edits (tests/unit/test_clearing_audit.py).
-    """
+    """Match every active inventory row against the loaded corpus, for one run."""
     from pullsheet.db import previously_matched_pairs
 
     if isinstance(now, str):
@@ -123,12 +97,10 @@ def run_matcher(conn: sqlite3.Connection, run_id: int,
             if evidence is None:
                 # Screening let the pair through but nothing links it. Recording
                 # no match here is not a clearing path: no line ever existed to
-                # remove, and generate_candidates is where that is justified.
                 continue
             decision = decide(inv, rec, evidence)
             # The first run has no predecessor to be new against. Flagging its
             # whole sheet would bury the one line that matters on every run
-            # after it.
             is_new = int(has_predecessor
                          and (inv.identity_key, rec.id) not in seen_before)
             conn.execute(
@@ -152,24 +124,7 @@ def run_matcher(conn: sqlite3.Connection, run_id: int,
 
 def ordered_matches(conn: sqlite3.Connection, run_id: int,
                     decided_before: str | None = None) -> list[sqlite3.Row]:
-    """One run's sheet, in the one deterministic order the whole application uses.
-
-    PULL and HELD come back interleaved in this single order. HELD is never a
-    separate section and never behind a toggle -- a held line that an operator
-    has to go looking for is a held line they will not see.
-
-    Scoped on ``m.run_id`` and on NOTHING ELSE. In particular it does not also
-    filter ``i.superseded_by IS NULL``: the run already matched the active set
-    as it stood, and re-applying today's supersession to a past run would empty
-    its sheet retroactively -- which would read as "that day was clean" rather
-    than as the bug it is.
-
-    A clearing is matched on ``subject_key`` -- the item's identity and the
-    recall, not the match row id -- so a false positive an operator cleared on
-    Monday stays cleared on Tuesday's run, which writes new match rows for the
-    same food. ``decided_before`` bounds that to the moment the sheet depicts,
-    so a past run does not render lines as cleared before anyone cleared them.
-    """
+    """One run's sheet, in the one deterministic order the whole application uses."""
     from pullsheet.db import SUBJECT_KEY_SQL
 
     return list(conn.execute("""

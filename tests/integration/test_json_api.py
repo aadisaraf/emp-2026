@@ -1,18 +1,4 @@
-"""The JSON API at ``/api/v1``: one test per endpoint, against the real fixtures.
-
-The API is a serialization layer, so most of what is worth asserting here is
-that it did not quietly change the answer on the way out. Three things it must
-never do, each with a test of its own:
-
-* drop a line from the sheet -- especially a cleared one, which stays with its
-  clearing recorded rather than disappearing;
-* reorder or re-section the sheet, which would put HELD lines somewhere an
-  operator has to go looking for them;
-* let a source reach the client without its provenance label attached.
-
-Every 200 in this file is also a serialization proof: ``sqlite3.Row`` is not
-JSON-serializable, so a row that leaked would be a 500 rather than a payload.
-"""
+"""The JSON API at ``/api/v1``: one test per endpoint, against the real fixtures."""
 
 from __future__ import annotations
 
@@ -32,22 +18,17 @@ from pullsheet.menu import substitute as menu_substitute
 from pullsheet.provenance import LABELS, SOURCES
 from pullsheet.recalls import fetch as recalls_fetch
 
-#: The three provenance labels, and there are only three.
+# The three provenance labels, and there are only three.
 PROVENANCES = set(LABELS)
 
-#: The line the API contract documents by name: a PULL line in Freezer 3,
-#: matched to a hand-authored FSIS record.
+# The line the API contract documents by name: a PULL line in Freezer 3,
+# matched to a hand-authored FSIS record.
 SAMPLE_MATCH = 559
 
 
 @pytest.fixture
 def loaded(tmp_path, bind_app):
-    """The committed fixtures, loaded through the real ingestion path.
-
-    ``load_fixtures`` and not a hand-built database: the numbers asserted below
-    are the demo's numbers, and they are only worth asserting if they came from
-    the same code the demo runs.
-    """
+    """The committed fixtures, loaded through the real ingestion path."""
     path = bind_app(tmp_path / "api.db")
     db.reset(path)
     db.load_fixtures(path)
@@ -102,9 +83,7 @@ def _labelled(entry: dict, key: str = "source_provenance"):
     assert entry[f"{key}_label"] == LABELS[entry[key]], entry
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/location
-# ---------------------------------------------------------------------------
 
 def test_location_is_the_one_deployment_with_no_id_to_switch(client):
     body = _get(client, "/api/v1/location")
@@ -121,9 +100,7 @@ def test_location_is_the_one_deployment_with_no_id_to_switch(client):
     assert "id" not in body, "one deployment is one location; there is nothing to select"
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/status
-# ---------------------------------------------------------------------------
 
 def test_status_carries_the_word_the_counts_both_clocks_and_the_corpus(client):
     body = _get(client, "/api/v1/status")
@@ -166,7 +143,8 @@ def test_status_carries_the_word_the_counts_both_clocks_and_the_corpus(client):
 
 def test_status_says_never_received_rather_than_clear_when_nothing_has_arrived(blank):
     """The one distinction the whole status word exists to make. A location that
-    has compared nothing against nothing must not render as an all-clear."""
+    has compared nothing against nothing must not render as an all-clear.
+    """
     body = _get(blank, "/api/v1/status")
 
     assert body["state"] == "never"
@@ -186,9 +164,7 @@ def test_status_never_404s_so_a_poll_cannot_render_a_blank_page(blank):
     assert blank.get("/api/v1/status").status_code == 200
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/runs and /api/v1/runs/{run_id}
-# ---------------------------------------------------------------------------
 
 def test_run_history_lists_every_delivery_with_its_new_count(client, loaded):
     body = _get(client, "/api/v1/runs")
@@ -243,9 +219,7 @@ def test_a_malformed_run_id_is_a_validation_error_in_the_documented_shape(client
     _error(client.get("/api/v1/runs/not-a-number"), 422, "invalid_request")
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/sheet and /api/v1/sheet/{run_id}
-# ---------------------------------------------------------------------------
 
 def test_sheet_returns_every_line_in_one_order_with_provenance_on_each(client):
     body = _get(client, "/api/v1/sheet")
@@ -278,7 +252,8 @@ def test_sheet_returns_every_line_in_one_order_with_provenance_on_each(client):
 
 def test_held_lines_are_interleaved_in_the_order_the_matcher_produced(client, loaded):
     """Not a separate collection and not re-sorted. A held line an operator has
-    to go looking for is a held line they will not see."""
+    to go looking for is a held line they will not see.
+    """
     body = _get(client, "/api/v1/sheet")
     expected = pull_sheet.by_storage(loaded, 1, None)
 
@@ -312,14 +287,13 @@ def test_sheet_for_an_unknown_run_is_no_run_and_no_sheet_at_all_is_no_inventory(
 
 def test_the_whole_sheet_survives_json_serialization(client):
     """No sqlite3.Row may reach a response. The payload is ~1.3 MB and every
-    byte of it has to be a JSON value."""
+    byte of it has to be a JSON value.
+    """
     body = _get(client, "/api/v1/sheet")
     assert len(json.dumps(body)) > 500_000
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/matches/{match_id}
-# ---------------------------------------------------------------------------
 
 def test_match_detail_carries_both_records_verbatim_and_every_decision(client):
     body = _get(client, f"/api/v1/matches/{SAMPLE_MATCH}")
@@ -357,9 +331,7 @@ def test_match_detail_of_an_unknown_match_is_no_match(client):
     _error(client.get("/api/v1/matches/999999"), 404, "no_match")
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/impact
-# ---------------------------------------------------------------------------
 
 def test_impact_carries_the_money_the_cascade_and_the_proofs(client):
     body = _get(client, "/api/v1/impact")
@@ -414,9 +386,7 @@ def test_impact_needs_an_ingested_run(blank):
     _error(blank.get("/api/v1/impact"), 404, "no_inventory")
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/artifacts/*
-# ---------------------------------------------------------------------------
 
 def test_hold_record_lists_pulled_and_held_lines_with_blank_signature_fields(client):
     body = _get(client, "/api/v1/artifacts/hold")
@@ -510,9 +480,7 @@ def test_artifacts_report_an_unknown_run_and_an_empty_database(client, blank):
         _error(blank.get(path), 404, "no_inventory")
 
 
-# ---------------------------------------------------------------------------
 # GET /api/v1/sources
-# ---------------------------------------------------------------------------
 
 def test_sources_labels_every_channel_and_reads_coverage_from_the_adapters(client):
     body = _get(client, "/api/v1/sources")
@@ -547,14 +515,13 @@ def test_sources_works_before_anything_has_ever_been_ingested(blank):
     assert len(body["sources"]) == len(SOURCES)
 
 
-# ---------------------------------------------------------------------------
 # POST /api/v1/matches/{id}/clear
-# ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("body", [{"actor": ""}, {"actor": "   "}, {}, None])
 def test_clearing_without_a_named_actor_is_refused(client, loaded, body):
     """The rule with teeth. A decision is only auditable if a person's name is
-    attached, and no scheduled process supplies one."""
+    attached, and no scheduled process supplies one.
+    """
     response = client.post(f"/api/v1/matches/{SAMPLE_MATCH}/clear", json=body)
     _error(response, 400, "actor_required")
     assert loaded.execute("SELECT COUNT(*) FROM decisions").fetchone()[0] == 0, (
@@ -587,7 +554,8 @@ def test_clearing_records_the_decision_and_changes_nothing_about_the_match(clien
 
 def test_a_cleared_line_is_still_on_the_sheet_with_its_clearing_recorded(client):
     """Nothing is ever deleted. The line stays, rendered as cleared-by-a-person,
-    and no query parameter exists that would remove it."""
+    and no query parameter exists that would remove it.
+    """
     before = _get(client, "/api/v1/sheet")
     _post(client, f"/api/v1/matches/{SAMPLE_MATCH}/clear", {"actor": "A. Saraf"})
     after = _get(client, "/api/v1/sheet")
@@ -620,9 +588,7 @@ def test_a_malformed_clear_body_is_a_validation_error(client):
            422, "invalid_request")
 
 
-# ---------------------------------------------------------------------------
 # POST /api/v1/matches/{id}/confirm-pulled
-# ---------------------------------------------------------------------------
 
 def test_confirming_a_pull_records_a_person_without_clearing_anything(client, loaded):
     body = _post(client, f"/api/v1/matches/{SAMPLE_MATCH}/confirm-pulled",
@@ -651,13 +617,12 @@ def test_confirming_an_unknown_match_is_no_match(client):
            404, "no_match")
 
 
-# ---------------------------------------------------------------------------
 # POST /api/v1/recalls/refresh
-# ---------------------------------------------------------------------------
 
 def test_refresh_reports_an_unreachable_agency_as_a_fact_not_an_error(client, monkeypatch):
     """A 500 in front of a nutrition director during a recall is worse than
-    stale data whose age is on the screen."""
+    stale data whose age is on the screen.
+    """
     def unreachable(*args, **kwargs):
         raise urllib.error.URLError("no network")
 
@@ -689,9 +654,7 @@ def test_a_refresh_does_not_move_the_sheet(client, monkeypatch):
            [l["id"] for s in before["sections"] for l in s["lines"]]
 
 
-# ---------------------------------------------------------------------------
 # Cross-cutting
-# ---------------------------------------------------------------------------
 
 def test_the_browser_origin_is_allowed_and_others_are_not(client):
     for origin in ("http://localhost:3000", "http://127.0.0.1:3000"):
@@ -703,7 +666,8 @@ def test_the_browser_origin_is_allowed_and_others_are_not(client):
 
 def test_the_jinja_pages_still_answer_in_html(client):
     """The API is additive. The server-rendered UI is the print path and the
-    offline fallback, and its error handling must stay its own."""
+    offline fallback, and its error handling must stay its own.
+    """
     for url in ("/", "/sheet", "/impact", "/runs", "/sources", "/api/status"):
         assert client.get(url).status_code == 200, url
     html = client.get("/sheet")

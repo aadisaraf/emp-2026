@@ -5,21 +5,7 @@ import { cx } from "@/lib/cx";
 import { STRIP_LEGEND, STRIP_NOTE, STRIP_TITLE, channelLabel, countWord } from "./runsMeta";
 import styles from "./RunDayStrip.module.css";
 
-/*
-  The shape of the operation, one cell per calendar day.
-
-  A run every day is the healthy pattern here, so the thing worth noticing is
-  not any single row in the table below: it is a date with nothing on it. That
-  is why every day in the span gets a cell, including the days that carried no
-  run. A calendar that simply skipped those would show a gap as an absence of
-  ink, which is exactly how a missed morning goes unnoticed.
-
-  This is a density display, not a heatmap. Nothing here is shaded by
-  magnitude. A cell that carried a run prints that day's PULL count; a refused
-  delivery prints the word REJ; a day with no run is hatched and carries no
-  number. Every one of those survives a grayscale printout, because the channel
-  is fill and glyph, never hue.
-*/
+/* The shape of the operation, one cell per calendar day. */
 
 const DAY_MS = 86_400_000;
 
@@ -87,7 +73,6 @@ export function buildDays(
 
   // A gap at the right-hand end is the most important gap on the strip: it is
   // the morning the export did not arrive. So the span runs to today, not to
-  // the last run.
   const todayIndex = dayIndex(today);
   const end = todayIndex !== null && todayIndex > last ? todayIndex : last;
 

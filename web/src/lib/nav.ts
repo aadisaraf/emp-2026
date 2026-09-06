@@ -1,10 +1,6 @@
 /*
   The nav, as data. One flat list of the routes that exist, plus the three
   printable artifacts under an "Artifacts" label.
-
-  There is no site switcher, no district roll-up and no locations item, because
-  one deployment serves one location and its name is in the masthead. Do not add
-  a dropdown here.
 */
 
 export interface NavItem {
@@ -31,14 +27,7 @@ export const ARTIFACT_NAV: NavItem[] = [
   { href: "/artifacts/state-report", label: "State report", mealProgramOnly: true },
 ];
 
-/*
-  What the print control is called on each route.
-
-  It names the artefact, never the act: the printed sheet is the record that
-  leaves the building and an operator asks for "the pull sheet", not for "a
-  printout". Keyed here rather than typed at each call site so the wording
-  cannot drift between two pages that print the same document.
-*/
+/* What the print control is called on each route. */
 export const PRINT_LABEL: Record<string, string> = {
   "/sheet": "Print pull sheet",
   "/impact": "Print impact",

@@ -5,20 +5,7 @@ import { PAGE_TITLES } from "@/lib/strings";
 import { SheetView } from "../_components/SheetView";
 import { clearedFacts } from "../_components/clearedFacts";
 
-/*
-  A past run's sheet, shown exactly as it was printed that morning.
-
-  The response shape is identical to the current sheet's and it renders through
-  the same component, because a past run that went through different code could
-  quietly become a different document. What differs comes from the payload
-  itself: is_current is false, so the page carries the banner; corpora is empty
-  and corpus_note carries the frozen provenance sentence; and decided_before
-  bounds the clearings to the ones that existed the instant this sheet was
-  replaced.
-
-  A run the matcher never finished, or one that was refused, answers 200 with no
-  sections. That is not "clear" and this page does not render it as such.
-*/
+/* A past run's sheet, shown exactly as it was printed that morning. */
 
 export const dynamic = "force-dynamic";
 

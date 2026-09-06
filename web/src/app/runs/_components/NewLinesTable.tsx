@@ -11,14 +11,7 @@ import {
 import { UNCLASSIFIED } from "@/lib/strings";
 import styles from "./NewLinesTable.module.css";
 
-/*
-  The lines this run produced that the run before it did not.
-
-  is_new is a column the matcher wrote when the line was created, by diffing
-  the pair against the previous accepted run. Nothing here recomputes it and
-  nothing here compares two runs client-side: this table renders the rows the
-  API returned, in the order it returned them.
-*/
+/* The lines this run produced that the run before it did not. */
 
 export interface NewLinesTableProps {
   lines: readonly NewLine[];

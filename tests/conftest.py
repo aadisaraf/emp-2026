@@ -1,12 +1,4 @@
-"""Shared test fixtures.
-
-Three fixtures, used across unit, adapter, and integration tests:
-
-- ``tmp_db``       a fresh SQLite connection built from ``pullsheet/schema.sql``
-- ``fixed_now``    a frozen ``datetime`` for injection — nothing in PullSheet reads
-                   the clock directly, so every time-dependent test injects this
-- ``fixture_path`` resolves a name under ``data/fixtures/`` or ``tests/*/fixtures/``
-"""
+"""Shared test fixtures."""
 
 from __future__ import annotations
 
@@ -28,7 +20,6 @@ def tmp_db(tmp_path):
     conn.row_factory = sqlite3.Row
     # Foreign keys are OFF by default in SQLite, per connection. Without this a
     # test could write a match against a run that does not exist and pass, while
-    # the application -- which turns them on in db.connect -- would refuse.
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA.read_text())
     conn.commit()
@@ -38,11 +29,7 @@ def tmp_db(tmp_path):
 
 @pytest.fixture
 def seeded_run():
-    """Open, and optionally finalize, a run on a bare ``tmp_db``.
-
-    Every match now belongs to a run, so a test that writes match rows needs one
-    to hang them from. This is the one-line version.
-    """
+    """Open, and optionally finalize, a run on a bare ``tmp_db``."""
 
     def _open(conn, channel: str = "sftp_drop", **kwargs) -> int:
         from pullsheet import db as db_module
@@ -60,13 +47,7 @@ def fixed_now():
 
 @pytest.fixture
 def bind_app(monkeypatch):
-    """Point the FastAPI app at a specific database file.
-
-    ``app._conn()`` resolves ``db.DB_PATH`` at call time, so patching the module
-    attribute is enough. Without this a TestClient reads the developer's own
-    working database, and the test passes or fails on whatever was last left
-    there -- which is not a test.
-    """
+    """Point the FastAPI app at a specific database file."""
     from pullsheet import db as db_module
 
     def _bind(path):

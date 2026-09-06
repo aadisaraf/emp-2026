@@ -16,19 +16,6 @@ import styles from "./sheet.module.css";
   The nine columns of the pull sheet, in the order the Jinja macro uses, so
   that the screen and the printout are the same document and an operator's eye
   learns one horizontal position per field:
-
-    Status · Item · Where · Qty · Lot · Class · Evidence · Triggered by · Pulled
-
-  ONE LINE PER CELL. Every cell here renders a single row of text, because a
-  table where one line occupies four rows of height is not a table. Storage
-  location is its own column rather than prose under the item name: it is the
-  walking order through the kitchen, so it belongs in the sort, and a column of
-  it reads down the page at a glance where a run-on line does not.
-
-  The supplier, the item codes, the pack size, the lot note, the amendment
-  notice and the clearing stamp are all real and all needed -- they live in
-  MatchPane, which opens beside the table at a fixed width for exactly this
-  material. Putting them in the cell cost 137px a row and left the pane empty.
 */
 
 /** A recall the agency has since terminated or amended keeps its line. */
@@ -62,9 +49,11 @@ export function sheetColumns(cleared: ClearedFacts): Column<SheetLine>[] {
       headerTitle: "The product as the inventory export wrote it.",
       render: (line) => {
         const supplier = line.brand ?? line.manufacturer;
-        /* The description ellipsizes; the amendment flag never does. A recall
-           the agency has since terminated keeps its line, and the word saying
-           so is the reason the line looks unexplained without it. */
+        /*
+          The description ellipsizes; the amendment flag never does. A recall
+          the agency has since terminated keeps its line, and the word saying
+          so is the reason the line looks unexplained without it.
+        */
         return (
           <span className={styles.item}>
             <button

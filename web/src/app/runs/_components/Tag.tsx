@@ -8,13 +8,7 @@ export interface TagProps {
   className?: string;
 }
 
-/**
- * A hollow micro chip, the same footprint as the "new" mark on the sheet.
- *
- * Local to this route on purpose: the shared library has NewMark, which is
- * fixed to one word, and adding a general chip to it would be reaching into a
- * directory another agent owns.
- */
+/** A hollow micro chip, the same footprint as the "new" mark on the sheet. */
 export function Tag({ children, title, className }: TagProps) {
   return (
     <span className={cx(styles.tag, className)} title={title}>

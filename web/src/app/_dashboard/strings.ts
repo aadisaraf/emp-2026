@@ -1,22 +1,9 @@
-/*
-  The strings this page owns, in one file so a reviewer can grep them.
+/* The strings this page owns, in one file so a reviewer can grep them. */
 
-  Almost nothing is here on purpose. The six status words, their explanations,
-  the deadline labels and phrases, the provenance labels and the six next
-  actions are server-owned or already in @/lib/strings, and this page renders
-  them verbatim. What is left is panel titles, column heads, and four sentences
-  that state a fact the operator cannot derive from the numbers on screen.
-
-  House rules that apply to every string below: no em dash, no exclamation
-  mark, no emoji, digits for numbers including under ten, present tense for
-  state, past tense with a named actor for anything a person did, and one word
-  per concept (run, pull sheet, PULL, HELD, tier, evidence kind, storage
-  location, corpus, delivery, cleared, line, item).
+/**
+  Panel headings. "Deliveries that were refused" is spelled the way
+  STATE_ACTIONS.rejected spells it, because that string tells the operator to
 */
-
-/** Panel headings. "Deliveries that were refused" is spelled the way
- *  STATE_ACTIONS.rejected spells it, because that string tells the operator to
- *  go and read this section by name. */
 export const PANEL = {
   corpus: "Recall corpus",
   refused: "Deliveries that were refused",
@@ -91,11 +78,11 @@ export function pollUnreachable(asOf: string): string {
 export const HOLD_POLICY =
   "Held lines are held. No automatic process in this system cleared a line, and none can: clearing is an action taken by a person who names themselves, and the line stays on the sheet afterwards.";
 
-/* ---------------------------------------------------------------------------
-   Column heads. Uppercase 11px is the operational register for a label, and
-   these words match the pull sheet's own columns so the eye learns one
-   horizontal position per field.
---------------------------------------------------------------------------- */
+/*
+  Column heads. Uppercase 11px is the operational register for a label, and
+  these words match the pull sheet's own columns so the eye learns one
+  horizontal position per field.
+*/
 
 export const NEW_COLUMNS = {
   status: "Status",
@@ -139,11 +126,11 @@ export const COUNT_LABELS = {
 
 export const NEW_COUNT_TITLE = "Lines that were not on the previous run";
 
-/* ---------------------------------------------------------------------------
-   Tallies. Written out rather than templated with a bare "(s)", because a
-   panel note is read at a glance and "1 sources" is the kind of small wrong
-   thing that makes an operator distrust the large right things next to it.
---------------------------------------------------------------------------- */
+/*
+  Tallies. Written out rather than templated with a bare "(s)", because a
+  panel note is read at a glance and "1 sources" is the kind of small wrong
+  thing that makes an operator distrust the large right things next to it.
+*/
 
 export function corpusTally(records: string, sources: number): string {
   return sources === 1

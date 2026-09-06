@@ -28,20 +28,7 @@ import { RefreshControl } from "./RefreshControl";
 import styles from "./sources.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
-/*
-  Where every number comes from.
-
-  This screen exists to answer one question a health inspector, a nutrition
-  director, or a sceptical judge will ask: did you make the data up. The answer
-  is partly yes, and this is the page that says which parts and why. The FSIS
-  corpus is written by the build team because FSIS answers programmatic requests
-  with HTTP 403. The email channel reads a committed mailbox file, not a mail
-  server. Both are stated here in a bordered block rather than left to be
-  inferred from a quiet label.
-
-  The value of this page is entirely in not flinching, so nothing on it is
-  softened, abbreviated, or hidden behind a tooltip.
-*/
+/* Where every number comes from. */
 
 export const dynamic = "force-dynamic";
 

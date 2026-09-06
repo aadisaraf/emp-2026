@@ -1,18 +1,4 @@
-/*
-  The joins this page needs, in one place and with no arithmetic of its own.
-
-  The impact payload arrives in three shapes that answer three different
-  questions, and the page has to put them beside each other without inventing a
-  number:
-
-  - menu.entries      one per pulled inventory line that reaches a recipe (13)
-  - menu.service_days [date, recipe_id, planned_meals] triples (5)
-  - proposals         one per broken recipe, either a substitute or a proof (9)
-
-  13, 5 and 9 are different counts of different things. Nothing here adds them
-  together, and nothing here recomputes menu.planned_meals: that total is a sum
-  over the distinct (date, recipe) set and the server owns it.
-*/
+/* The joins this page needs, in one place and with no arithmetic of its own. */
 
 import type { MenuEntry, MenuProposal, MenuSummary, Provenance } from "@/lib/api";
 
@@ -33,14 +19,7 @@ export interface BrokenMeal {
   proposal: MenuProposal;
 }
 
-/**
- * One row per broken menu item, in the order the proposals arrived.
- *
- * A recipe with no service day is not dropped. 4 of the 9 fixture recipes use a
- * pulled item without being scheduled this week; they contribute 0 planned
- * meals and they still broke, so they keep their row and the dates cell says
- * why the count is 0.
- */
+/** One row per broken menu item, in the order the proposals arrived. */
 export function brokenMeals(menu: MenuSummary, proposals: MenuProposal[]): BrokenMeal[] {
   const scheduled = new Map<string, { dates: string[]; planned: number }>();
   for (const [date, recipeId, planned] of menu.service_days) {

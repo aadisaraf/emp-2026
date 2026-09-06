@@ -1,6 +1,7 @@
 """FR-023: every line on the pull sheet must name the exact text on each side
 that caused it. Not a paraphrase and not our normalized form -- the string the
-operator will find on their own screen and on the agency's notice."""
+operator will find on their own screen and on the agency's notice.
+"""
 
 from __future__ import annotations
 
@@ -84,11 +85,6 @@ def test_each_evidence_kind_is_produced_from_a_fixture_pair(kind):
 def test_both_triggers_are_verbatim(seed):
     """This is the assertion that makes a pull sheet defensible in a kitchen:
     the operator can find every piece of quoted text on the page in front of
-    them.
-
-    A compound kind quotes two things -- the supplier and the code, or the
-    supplier and the product word -- and each is checked on its own side. The
-    rule is per component, never relaxed to "close enough".
     """
     inv = INVENTORY[seed["source_row"] - 1]
     rec = RECALLS[seed["recall_source_record_id"]]
@@ -121,7 +117,8 @@ def test_seeded_evidence_kind_matches_the_oracle(seed):
 
 def test_the_spaced_upc_is_quoted_as_the_agency_printed_it():
     """The recall prints '0 24284-96910 5'; we carry '024284969105'. The sheet
-    must show the agency's spacing, or the operator cannot find it."""
+    must show the agency's spacing, or the operator cannot find it.
+    """
     seed = next(s for s in SEEDS if s["recall_source_record_id"] == "H-0109-2026")
     ev = build_evidence(INVENTORY[seed["source_row"] - 1], RECALLS["H-0109-2026"])
     assert ev.trigger_recall_text == "0 24284-96910 5"
@@ -129,7 +126,8 @@ def test_the_spaced_upc_is_quoted_as_the_agency_printed_it():
 
 def test_a_name_pair_quotes_each_side_as_its_own_author_wrote_it():
     """MOZZARELLA in a district catalog, Mozzarella in an agency notice. One
-    word, two spellings of its case, and the sheet shows each side its own."""
+    word, two spellings of its case, and the sheet shows each side its own.
+    """
     seed = next(s for s in SEEDS
                 if s["item_description"] == "MOZZARELLA CHEESE SHREDDED LMPS 5 LB")
     ev = build_evidence(INVENTORY[seed["source_row"] - 1],
@@ -142,7 +140,7 @@ def test_a_name_pair_quotes_each_side_as_its_own_author_wrote_it():
 def test_a_catalog_number_is_identity_only_next_to_its_manufacturer():
     """FR-070. The same number, moved to another company, must stop being
     evidence of identity -- and must not silently become a weaker kind of
-    evidence for the same product either."""
+    """
     seed = next(s for s in SEEDS if s["expected_evidence_kind"] == "mfr_item")
     inv = INVENTORY[seed["source_row"] - 1]
     rec = RECALLS[seed["recall_source_record_id"]]
@@ -158,7 +156,7 @@ def test_a_catalog_number_is_identity_only_next_to_its_manufacturer():
 def test_firm_agreement_alone_produces_no_firm_evidence():
     """FR-071. The supplier is recalled; the product is not one of the recalled
     ones. The pair may still appear by name -- it must not appear as supplier
-    evidence."""
+    """
     negatives = json.loads((FIXTURES / "expected_matches.json").read_text())["must_not_pull"]
     checked = 0
     for neg in negatives:

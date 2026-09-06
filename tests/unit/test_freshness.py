@@ -1,10 +1,5 @@
 """FR-068. The 24-hour window is measured from the snapshot's capture time
 against an INJECTED now, never against the clock.
-
-The property that matters most is the last one: staleness changes what the
-header says, never which lines are produced. Suppressing lines because the data
-is old would trade a visible caveat for an invisible gap, which is the trade
-this system exists to refuse.
 """
 
 from __future__ import annotations
@@ -34,7 +29,8 @@ def _captured_at(conn) -> datetime:
 
 def test_age(loaded):
     """30 hours after capture is stale; 23 hours is fresh; the lines are the
-    same either way."""
+    same either way.
+    """
     captured = _captured_at(loaded)
 
     fresh_now = captured + timedelta(hours=23)
@@ -69,7 +65,8 @@ def test_now_is_injected_and_the_clock_is_never_read(loaded):
 
 def test_terminated_recalls_are_returned(loaded):
     """FR-016. active_records() filters to loaded snapshots and nothing else --
-    a terminated recall is marked downstream, never withheld here."""
+    a terminated recall is marked downstream, never withheld here.
+    """
     statuses = {r["status"] for r in corpus.active_records(loaded)}
     assert "terminated" in statuses
     assert "active" in statuses
@@ -101,9 +98,7 @@ def test_corpus_summary_reports_both_sources_with_provenance(loaded):
     assert all(s["stale"] for s in summary.values())
 
 
-# ===========================================================================
 # SC-013 (T068). Staleness gates one word in the status, never a line.
-# ===========================================================================
 
 CLEAN_EXPORT = ("Storage Location,Item Description,Qty On Hand,UOM,Lot #\n"
                 "Dry Store,SALT IODIZED 5 LB,4,CS,S-100\n"
@@ -123,8 +118,7 @@ def _run_at(conn, path, when: datetime):
 def clean(tmp_path):
     """A location whose export matched nothing -- the only state in which
     "clear" and "stale" are distinguishable. With a PULL line on the sheet the
-    word is "items to pull" whatever the corpus's age, which is correct and
-    would make every assertion below vacuous."""
+    """
     from pullsheet import runs
 
     path = tmp_path / "clean.db"
@@ -166,7 +160,7 @@ def test_sc013_a_stale_status_names_the_reason_and_the_age(clean):
 def test_sc013_the_lines_themselves_are_identical_stale_or_fresh(tmp_path):
     """The assertion that matters most. A run which suppressed lines because the
     data is old would trade a visible caveat for an invisible gap -- and would
-    pass every other test in this file."""
+    """
     from pullsheet import runs
     from pullsheet.matching.run import ordered_matches
 
@@ -199,7 +193,8 @@ def test_sc013_the_lines_themselves_are_identical_stale_or_fresh(tmp_path):
 
 def test_a_location_that_never_reported_is_not_a_quiet_green_page(tmp_path):
     """FR-050. "No export has ever arrived" and "an export arrived and matched
-    nothing" are different situations, and only one of them is reassuring."""
+    nothing" are different situations, and only one of them is reassuring.
+    """
     from pullsheet import runs
 
     path = tmp_path / "silent.db"

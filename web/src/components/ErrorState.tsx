@@ -19,13 +19,7 @@ export interface ErrorStateProps {
   compact?: boolean;
 }
 
-/**
- * What a screen says when the backend did not answer.
- *
- * It states the fact and nothing else: no apology, no "something went wrong",
- * no retry animation, and above all no placeholder numbers. A fabricated count
- * on a recall screen is worse than an empty one.
- */
+/** What a screen says when the backend did not answer. */
 export function ErrorState({ failure, heading, detail, compact }: ErrorStateProps) {
   const message = failure?.message ?? "";
   return (

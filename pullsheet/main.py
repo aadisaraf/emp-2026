@@ -1,8 +1,5 @@
 """One command starts everything: the web app and the SFTP drop poller, in one
 process.
-
-The demo is "a file lands and a pull sheet appears". That only reads as
-effortless if there is nothing else to start.
 """
 
 from __future__ import annotations

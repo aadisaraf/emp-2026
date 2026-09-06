@@ -17,19 +17,7 @@ export interface TodayBoardProps {
   initial: StatusResponse;
 }
 
-/**
- * The morning screen, and the live half of it.
- *
- * Everything below reads from one polled payload, so the counts, both clocks,
- * the new lines and the corpus ages move together and can never disagree with
- * each other by a poll. When the run id or the run count changes the route
- * refreshes, which is what redraws the masthead and the shell around this page.
- *
- * The reading order is the order of the questions an operator has at 06:40:
- * what is the state, how much time is left, what is new since yesterday, what
- * are the numbers and where did they come from, where do the recall records
- * come from, and did anything get refused overnight.
- */
+/** The morning screen, and the live half of it. */
 export function TodayBoard({ initial }: TodayBoardProps) {
   const { status, reachable } = useStatusFeed(initial);
   const run = status.run;
@@ -59,10 +47,11 @@ export function TodayBoard({ initial }: TodayBoardProps) {
           </>
         ) : (
           <>
-            {/* Nothing has ever been read here, so the argument that silence is
-                not an answer is the widest thing on the page, not a note in a
-                side column. There are no counts to show and none are invented:
-                a "0" beside this sentence would be read as "0 to pull". */}
+            {/*
+              Nothing has ever been read here, so the argument that silence is
+              not an answer is the widest thing on the page, not a note in a
+              side column. There are no counts to show and none are invented:
+            */}
             <EmptyState
               heading={EMPTY_NO_RUNS.heading}
               body={EMPTY_NO_RUNS.body}

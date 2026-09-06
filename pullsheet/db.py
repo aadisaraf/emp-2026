@@ -1,12 +1,4 @@
-"""SQLite connection, schema load, reset, and fixture loading.
-
-No ORM. Every query is hand-written SQL in the module that owns it; this file
-owns connection handling, the reset path, and loading the committed fixtures
-that a demo starts from.
-
-``--reset`` and ``--load-fixtures`` together put the database in a known state.
-``scripts/demo_reset.sh`` (T053) is the operator-facing wrapper around them.
-"""
+"""SQLite connection, schema load, reset, and fixture loading."""
 
 from __future__ import annotations
 
@@ -35,12 +27,7 @@ def connect(path: Path | str = DB_PATH) -> sqlite3.Connection:
 
 
 def reset(path: Path = DB_PATH) -> None:
-    """Delete and recreate the database from schema.sql.
-
-    This is a development and rehearsal path only. It is not reachable from the
-    application, and it is not how anything is removed at run time -- nothing in
-    PullSheet deletes rows.
-    """
+    """Delete and recreate the database from schema.sql."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         path.unlink()
@@ -54,24 +41,12 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-# ===========================================================================
 # Runs
-# ===========================================================================
 #
-# One run is one delivery, from arrival to a finalized sheet. Everything the
-# dashboard shows is scoped to a run, and only a run that reached 'ok' is ever
-# shown as the current picture -- a rejected or half-finished delivery must not
-# be able to blank a good sheet (FR-009).
 
 
 class DuplicateDelivery(Exception):
-    """The same delivery has already been ingested.
-
-    Raised rather than silently re-ingested. A file dropped twice would
-    otherwise become the baseline that tomorrow's "new since the last run" diff
-    is measured against, and the day would report nothing new while hiding the
-    real change.
-    """
+    """The same delivery has already been ingested."""
 
     def __init__(self, delivery_ref: str, run_id: int):
         super().__init__(f"already ingested as run {run_id}: {delivery_ref}")
@@ -80,13 +55,7 @@ class DuplicateDelivery(Exception):
 
 
 def business_date(timestamp: str) -> str:
-    """Which local day a run belongs to.
-
-    "Every day" is a calendar question, and the calendar is the kitchen's, not
-    UTC's. An export that lands at 6 p.m. Pacific is that day's export; grouping
-    it by UTC date would file it under tomorrow and make the day it belongs to
-    look like a day nothing arrived.
-    """
+    """Which local day a run belongs to."""
     from zoneinfo import ZoneInfo
 
     from pullsheet import location
@@ -99,12 +68,7 @@ def business_date(timestamp: str) -> str:
 
 def open_run(conn: sqlite3.Connection, channel: str, delivery_ref: str | None = None,
              column_map: dict | None = None, now: str | None = None) -> int:
-    """Start a run. It stays 'running' until it is finalized or rejected.
-
-    The 'running' state is not bookkeeping. Rows are committed before the
-    matcher is called, so without it a crash in between leaves a database full
-    of inventory and no matches -- an empty sheet that looks like good news.
-    """
+    """Start a run. It stays 'running' until it is finalized or rejected."""
     now = now or _now()
     if delivery_ref:
         prior = conn.execute(
@@ -125,11 +89,7 @@ def open_run(conn: sqlite3.Connection, channel: str, delivery_ref: str | None = 
 
 def reject_run(conn: sqlite3.Connection, run_id: int, reason: str,
                now: str | None = None) -> int:
-    """FR-006, FR-009. A rejection is a recorded run, not a silence.
-
-    It never touches inventory_records, so any existing pull sheet is left
-    exactly as it was. A bad export must not be able to empty a good sheet.
-    """
+    """FR-006, FR-009. A rejection is a recorded run, not a silence."""
     conn.execute(
         """UPDATE runs SET status = 'rejected', rejection_reason = ?, finalized_at = ?
             WHERE id = ?""",
@@ -140,12 +100,7 @@ def reject_run(conn: sqlite3.Connection, run_id: int, reason: str,
 
 
 def previous_ok_run(conn: sqlite3.Connection, run_id: int) -> int | None:
-    """The last run before this one that actually produced a sheet.
-
-    Not ``id - 1``. Diffing against a rejected or half-finished run would make
-    every line read as new the following morning, which is how a real alert
-    stops being worth reading.
-    """
+    """The last run before this one that actually produced a sheet."""
     row = conn.execute(
         "SELECT id FROM runs WHERE status = 'ok' AND id < ? ORDER BY id DESC LIMIT 1",
         (run_id,),
@@ -165,45 +120,31 @@ def get_run(conn: sqlite3.Connection, run_id: int) -> sqlite3.Row | None:
 
 
 def recent_runs(conn: sqlite3.Connection, limit: int = 30) -> list[sqlite3.Row]:
-    """Every run, newest first -- rejections included.
-
-    A rejected delivery is part of the history an operator needs to see. Showing
-    only the good ones would make a week of failed drops look like a quiet week.
-    """
+    """Every run, newest first -- rejections included."""
     return conn.execute(
         "SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)
     ).fetchall()
 
 
-#: The unit separator, used to join key components. Chosen because it cannot
-#: appear in a product description, a firm name or an agency record id.
+# The unit separator, used to join key components. Chosen because it cannot
+# appear in a product description, a firm name or an agency record id.
 SEP = "\u241f"
 
-#: What a human decision is ABOUT: this food, and this recall record.
-#:
-#: Deliberately not the match row id. A nightly run writes fresh match rows for
-#: inventory that has not moved, so a clearing keyed to a row id would stop
-#: applying the next morning -- and an operator would have to clear the same
-#: false positive every day until they stopped reading the sheet.
+# What a human decision is ABOUT: this food, and this recall record.
+#
 def subject_key(identity_key: str, recall_source: str, recall_source_record_id: str) -> str:
     return SEP.join([identity_key, recall_source, recall_source_record_id])
 
 
-#: The same key, computed in SQL. The two must agree exactly; if they drift, a
-#: cleared line silently comes back. tests/unit/test_clearing_audit.py checks it.
+# The same key, computed in SQL. The two must agree exactly; if they drift, a
+# cleared line silently comes back. tests/unit/test_clearing_audit.py checks it.
 SUBJECT_KEY_SQL = (
     "(i.identity_key || char(9247) || r.source || char(9247) || r.source_record_id)"
 )
 
 
 def previously_matched_pairs(conn: sqlite3.Connection, run_id: int) -> set[tuple[str, int]]:
-    """What the previous good run already knew, as (item identity, recall id).
-
-    Identity rather than row id, deliberately: a carried-over item is re-recorded
-    every morning under a fresh inventory_records id, so a diff on ids would
-    report the entire sheet as new every single day and the word would stop
-    meaning anything.
-    """
+    """What the previous good run already knew, as (item identity, recall id)."""
     previous = previous_ok_run(conn, run_id)
     if previous is None:
         return set()
@@ -220,17 +161,7 @@ def previously_matched_pairs(conn: sqlite3.Connection, run_id: int) -> set[tuple
 
 def finalize_run(conn: sqlite3.Connection, run_id: int, corpus_note: str | None = None,
                  now: str | None = None) -> dict:
-    """Freeze a run's counts and mark it good.
-
-    The counts are stored rather than derived on read because a past run's page
-    must show the totals THAT run produced. Reading them live would print
-    tonight's numbers above yesterday's lines, which is the kind of quietly
-    wrong answer Principle V exists to prevent.
-
-    Nothing here touches `matches`. Whether a match is new was decided by the
-    matcher at the moment it wrote the row, so this never has to go back and
-    edit a machine judgement after the fact.
-    """
+    """Freeze a run's counts and mark it good."""
     counts = conn.execute(
         """SELECT COUNT(*) AS total,
                   SUM(status = 'PULL') AS pulls,
@@ -256,19 +187,7 @@ def identity_key(location: str | None, gtin: str | None,
                  normalized_description: str, lot_code: str | None,
                  manufacturer: str | None = None,
                  manufacturer_item_code: str | None = None) -> str:
-    """FR-064. Product identity is the strongest thing the row actually carries.
-
-    GTIN first. Failing that, the manufacturer's own catalog number -- which is
-    what a kitchen orders by, and is a far more stable identity than a
-    description string that a catalog refresh can reword. The normalized
-    description is the floor, so a row with neither still has a stable identity
-    instead of being treated as unique every time.
-
-    ``location`` is the storage location -- the freezer, not the building. One
-    deployment is one location, so the building is not part of an identity; the
-    cooler still is, because the same case in two coolers is two things to walk
-    to.
-    """
+    """FR-064. Product identity is the strongest thing the row actually carries."""
     if gtin:
         product_identity = gtin
     elif manufacturer and manufacturer_item_code:
@@ -286,18 +205,7 @@ def _digits(value: str | None) -> str | None:
 
 
 def load_inventory_fixture(conn: sqlite3.Connection, now: str | None = None) -> int:
-    """Load the committed inventory fixture through the real ingestion path.
-
-    Not a second reader. It opens a run, hands the file to the drop adapter, and
-    persists it exactly as a scheduled delivery would -- so a rehearsal database
-    and a demo database contain the same rows, merged the same way, with the
-    same counts. Two readers for one file is two places for the demo's headline
-    numbers to disagree with the demo.
-
-    ``data/fixtures/unit_costs.csv`` fills in the handful of rows whose export
-    left the cost column blank. It is a supplement to what arrived, applied
-    after the fact and only where the source said nothing -- never an override.
-    """
+    """Load the committed inventory fixture through the real ingestion path."""
     from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
     path = FIXTURES / "inventory_lincoln.csv"
@@ -363,13 +271,7 @@ def load_menu_fixtures(conn: sqlite3.Connection) -> dict[str, int]:
 
 
 def load_fixtures(path: Path = DB_PATH) -> dict[str, int]:
-    """Recalls FIRST, then inventory.
-
-    Order is load-bearing now that ingesting an export runs the matcher and
-    finalizes a run in one step: an inventory loaded before the corpus would be
-    matched against nothing and finalize a run reading "no recalled items found"
-    -- the exact false all-clear this whole application exists to prevent.
-    """
+    """Recalls FIRST, then inventory."""
     conn = connect(path)
     from pullsheet.recalls.corpus import load_snapshots
     counts = {"recall_records": sum(load_snapshots(conn).values())}
@@ -398,18 +300,11 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-
-# ===========================================================================
 # Ingestion persistence (T036, T037)
-# ===========================================================================
 
 def persist_records(conn: sqlite3.Connection, run_id: int, records: list) -> dict:
     """Write one delivery's rows into an open run: merges, then supersession.
-
     FR-064/FR-065 (merge): rows sharing an identity within a single export are
-    one record with summed quantities, and every contributing source row number
-    is retained in ``merged_from`` -- so a total can always be traced back to the
-    lines that produced it.
     """
     merged: dict[str, dict] = {}
     for rec in records:
@@ -450,15 +345,6 @@ def persist_records(conn: sqlite3.Connection, run_id: int, records: list) -> dic
 
     # Supersession. A later export replaces the rows it has a counterpart for,
     # and the old rows are RETAINED with superseded_by set -- so a pull sheet can
-    # still be reconstructed as it stood, and any decisions taken against those
-    # rows still resolve.
-    #
-    # A row with no counterpart in the new export is deliberately left ACTIVE.
-    # An item vanishing from an export is not proof it left the freezer; the
-    # export may simply be incomplete, and quietly dropping it would be the one
-    # kind of disappearance this system exists to prevent. This is why the pull
-    # sheet is never scoped by which run delivered a row -- see matching/run.py,
-    # which re-matches the whole active set into every run.
     superseded = 0
     for old in conn.execute(
         """SELECT id, identity_key FROM inventory_records
@@ -482,11 +368,7 @@ def persist_records(conn: sqlite3.Connection, run_id: int, records: list) -> dic
 
 def ingest_file(conn: sqlite3.Connection, path: Path, adapter,
                 column_map: dict | None = None, now: str | None = None) -> dict:
-    """Read one file through an adapter and carry it through a whole run.
-
-    Always returns a result and never raises past the caller: a folder poller
-    that dies on a bad file stops watching the folder.
-    """
+    """Read one file through an adapter and carry it through a whole run."""
     from pullsheet.adapters.base import AdapterRejection
     from pullsheet.matching.run import run_matcher
     from pullsheet.recalls.corpus import corpus_note
@@ -497,7 +379,6 @@ def ingest_file(conn: sqlite3.Connection, path: Path, adapter,
     except DuplicateDelivery as dup:
         # Not an error and not a new run. Re-reading a file already ingested
         # would make it the baseline tomorrow's "new since" diff is measured
-        # against, and the day would report nothing new while hiding the change.
         return {"status": "duplicate", "run_id": dup.run_id, "filename": path.name,
                 "reason": str(dup)}
 
@@ -517,12 +398,7 @@ def ingest_file(conn: sqlite3.Connection, path: Path, adapter,
 
 
 def delivery_ref(path: Path) -> str:
-    """What was delivered, identified well enough to recognise a redelivery.
-
-    Filename AND content hash. Filename alone would refuse a genuine second
-    export that happens to reuse a name; the hash alone would accept the same
-    file dropped twice under two names.
-    """
+    """What was delivered, identified well enough to recognise a redelivery."""
     import hashlib
 
     digest = hashlib.sha256(path.read_bytes()).hexdigest()[:16]

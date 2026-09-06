@@ -15,13 +15,9 @@ export interface StatusPollerProps {
 }
 
 /**
- * The reload. A file lands in data/watched/, the poller notices that the run
- * changed, and the open tab becomes today's sheet.
- *
- * It renders nothing, animates nothing, and says nothing when the API is down:
- * the status line already carries that fact, and a poller that shouted every
- * two seconds would be the loudest thing on a screen about contaminated food.
- */
+  The reload. A file lands in data/watched/, the poller notices that the run
+  changed, and the open tab becomes today's sheet.
+*/
 export function StatusPoller({ signature, intervalMs = POLL_INTERVAL_MS }: StatusPollerProps) {
   const router = useRouter();
   const inFlight = useRef(false);

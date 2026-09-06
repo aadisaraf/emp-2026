@@ -1,17 +1,4 @@
-/*
-  The strings this page authors, and only those.
-
-  Everything with a home in @/lib/strings is imported from there instead: the
-  tier explanations, the evidence-kind labels, the clear form, the confirm
-  form, and the two confirmations. Everything the server owns is rendered
-  verbatim from the payload: the provenance label, the recall's own text, the
-  agency identifiers.
-
-  What is left is the connective tissue of one screen, and it follows the same
-  house rules: no em dash, no exclamation mark, no emoji, digits for numbers,
-  present tense for state, past tense with a named actor for anything a person
-  did, and one word per concept.
-*/
+/* The strings this page authors, and only those. */
 
 /** The page exists to answer one question, so the title is that question answered. */
 export const MATCH_TITLE = "Why this line is on the sheet";

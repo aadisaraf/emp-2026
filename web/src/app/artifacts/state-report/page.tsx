@@ -15,22 +15,7 @@ import styles from "../_components/document.module.css";
 import reportStyles from "./report.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
-/*
-  The child nutrition recall report.
-
-  24 fields. 11 come out of the database and carry the table they came from.
-  13 cannot, and each of those says REQUIRES HUMAN ENTRY and why: an agreement
-  number the state issues, a notification that happened on a telephone, a
-  signature.
-
-  Not one field is silently blank. A form that quietly left the 13 empty would
-  be the most dangerous artifact in this application, because a director would
-  sign it believing it was finished. The marker is the whole product here.
-
-  The layout is modelled on USDA FNS guidance and written by the build team. It
-  is not an official state form and the page says so above the fields, not in a
-  footnote.
-*/
+/* The child nutrition recall report. */
 
 export const dynamic = "force-dynamic";
 
@@ -148,10 +133,9 @@ function ReportSectionBlock({
 }
 
 /**
- * Three columns and no fourth. The field, what is in it, and where that came
- * from or why it is empty. The third column is the one that makes the document
- * checkable: every value points at a table, and every gap points at a reason.
- */
+  Three columns and no fourth. The field, what is in it, and where that came
+  from or why it is empty. The third column is the one that makes the document
+*/
 function fieldColumns(marker: string): Column<ReportField>[] {
   return [
     {

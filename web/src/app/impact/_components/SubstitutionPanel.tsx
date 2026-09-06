@@ -12,19 +12,7 @@ export interface SubstitutionPanelProps {
   caveat: string;
 }
 
-/**
- * What can replace a broken meal, and what provably cannot.
- *
- * Both outcomes sit in one table, interleaved in the order they arrived. A
- * proof is not a failed search and does not belong in a second section headed
- * like a list of errors: it is the result of testing every clean candidate
- * recipe in this kitchen against the meal-pattern components the broken meal
- * covered, and it names the component that went unmet. Five of the nine fixture
- * meals land there, and the unmet component is fruit every time.
- *
- * There is no closest match. A substitute is named only where it covers every
- * required component, so an approximate substitute has nowhere to appear.
- */
+/** What can replace a broken meal, and what provably cannot. */
 export function SubstitutionPanel({ proposals, caveat }: SubstitutionPanelProps) {
   return (
     <Panel id="substitution" title={SUBSTITUTION.title} note={caveat} printBlock>
@@ -49,7 +37,6 @@ export function SubstitutionPanel({ proposals, caveat }: SubstitutionPanelProps)
   Unmet has its own column so that all five proofs stack in one vertical
   position and the reader sees at a glance that the same component is missing
   every time. On a substitute row the cell is not empty and not a dash: every
-  required component is covered by definition, so it says so.
 */
 const COLUMNS: Column<MenuProposal>[] = [
   {

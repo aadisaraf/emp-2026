@@ -20,17 +20,9 @@ const FALLBACK: Record<Provenance, string> = {
 };
 
 /**
- * Three labels and only three, and this component is the only place they are
- * rendered, so there is one place to check that they are still legible.
- *
- * The label is load-bearing UI: it must be visible on screen and in print. It
- * may not be styled into invisibility, hidden behind a tooltip, faded below
- * 4.5:1, or dropped because a row felt busy. Muted is 5.27:1 on white here,
- * which is quiet on purpose and readable on purpose.
- *
- * hand-authored also carries a dotted underline, so it is separable
- * from dated-snapshot at a glance and after a photocopy.
- */
+  Three labels and only three, and this component is the only place they are
+  rendered, so there is one place to check that they are still legible.
+*/
 export function ProvenanceLabel({
   provenance,
   label,

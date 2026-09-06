@@ -22,9 +22,6 @@ export interface SheetViewProps {
   The pull sheet, for the current run and for any past run. One component, one
   code path: a past run that rendered through different code could quietly
   become a different document.
-
-  The order of the page is the order of the work. What this sheet is, then what
-  it says, then what it left out.
 */
 
 export function SheetView({ sheet, screeningRule, cleared, currentRunId }: SheetViewProps) {
@@ -49,12 +46,11 @@ export function SheetView({ sheet, screeningRule, cleared, currentRunId }: Sheet
           />
         )}
 
-        {/* Print-only. On screen the corpus and its provenance are already in
-            the status line above, and the counts are already in the stat rail;
-            repeating them here cost 64px on the one page where rows are the
-            point. On paper neither of those exists, so the block is the
-            letterhead and the sheet carries its own provenance out of the
-            building. */}
+        {/*
+          Print-only. On screen the corpus and its provenance are already in
+          the status line above, and the counts are already in the stat rail;
+          repeating them here cost 64px on the one page where rows are the
+        */}
         <SheetHeaderBlock header={header} />
 
         {refused ? <RunWithoutLines run={run} showCurrentLink={!sheet.is_current} /> : null}

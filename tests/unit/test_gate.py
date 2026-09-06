@@ -1,15 +1,4 @@
-"""The most heavily tested function in the codebase.
-
-Written BEFORE gate.decide() exists and observed failing. Constitution
-Principle I is the one place in this build where that ceremony earns its keep:
-a gate implemented before its tests cannot be said to have been driven by them.
-
-The ladder (contracts/hold-gate.md):
-
-    normalized gtin or upc equality      CONFIRMED  PULL
-    lot agreement or secondary code      PROBABLE   PULL
-    name similarity only, ANY score      POSSIBLE   HELD
-"""
+"""The most heavily tested function in the codebase."""
 
 from __future__ import annotations
 
@@ -24,8 +13,7 @@ from pullsheet.matching.tiers import Evidence
 class Row:
     """A stand-in for an inventory or recall record. decide() reads nothing off
     these beyond what Evidence already carries -- if a test passes with these
-    and fails with the real rows, decide() is reaching for something it should
-    not have."""
+    """
 
     def __init__(self, **kw):
         self.__dict__.update(kw)
@@ -36,9 +24,7 @@ REC = Row(id=1, product_description="Frozen Chicken Strips, breaded",
           source_record_id="FSIS-RC-018-2026", status="active")
 
 
-# --------------------------------------------------------------------------
 # The ladder: three rows, three tests
-# --------------------------------------------------------------------------
 
 def test_ladder_gtin_equality_is_confirmed_and_pulls():
     d = decide(INV, REC, Evidence("gtin", "10073803110075", "10073803110075"))
@@ -70,13 +56,12 @@ def test_ladder_name_only_is_possible_and_holds():
     assert (d.tier, d.status) == ("POSSIBLE", "HELD")
 
 
-# --------------------------------------------------------------------------
 # The seven widening rules. Every one of them produces or retains a line.
-# --------------------------------------------------------------------------
 
 def test_widen_recall_names_a_lot_the_inventory_does_not_track():
     """FR-027. The district does not record lots for this item, so we cannot
-    rule it out -- and not being able to rule it out means it stays visible."""
+    rule it out -- and not being able to rule it out means it stays visible.
+    """
     d = decide(INV, REC, Evidence(
         "name", "peas & carrots froz 2lb", "Deep-brand PREMIUM Select Peas and Carrots",
         score=0.6, recall_lot_present=True, inventory_lot_present=False))
@@ -86,7 +71,8 @@ def test_widen_recall_names_a_lot_the_inventory_does_not_track():
 
 def test_widen_lot_range_or_date_code_cannot_be_parsed():
     """FR-067. 'BEST BY 03/12-04/02' is not a lot code we can compare. Failure
-    to parse widens; it must never narrow."""
+    to parse widens; it must never narrow.
+    """
     d = decide(INV, REC, Evidence(
         "name", "beef crumbles ckd", "Beef Crumbles, cooked and seasoned",
         score=0.7, lot_comparison="unparseable",
@@ -107,7 +93,8 @@ def test_widen_lot_codes_overlap_partially():
 
 def test_widen_inventory_has_no_gtin():
     """FR-026. Produce and USDA commodity foods carry no barcode. Absence of a
-    code is not evidence of absence of a recall."""
+    code is not evidence of absence of a recall.
+    """
     inv = Row(id=2, raw_description="APPLES FRESH 125 CT", gtin=None, lot_code=None)
     d = decide(inv, REC, Evidence("name", "APPLES FRESH 125 CT",
                                   "Golden delicious whole fresh apples", score=0.5))
@@ -140,9 +127,7 @@ def test_widen_terminated_or_amended_recall_is_retained_and_marked():
         assert d.lot_note and status in d.lot_note.lower()
 
 
-# --------------------------------------------------------------------------
 # Determinism
-# --------------------------------------------------------------------------
 
 def test_same_triple_yields_an_identical_decision_across_100_calls():
     ev = Evidence("lot", "4829-B", "LOT 4829B", score=0.9,
@@ -152,23 +137,11 @@ def test_same_triple_yields_an_identical_decision_across_100_calls():
         assert decide(INV, REC, ev) == first
 
 
-# --------------------------------------------------------------------------
 # SC-003: the explicit auto-clear assertion
-# --------------------------------------------------------------------------
 
 def test_no_input_can_auto_clear():
     """Two parts, and between them they are what makes "there is no pull
     threshold" a testable claim rather than a slogan.
-
-    (a) A property sweep over generated triples -- every combination of null,
-        empty, malformed, and contradictory fields -- asserting that the status
-        is always PULL or HELD, that nothing else is ever produced, and that
-        nothing raises.
-
-    (b) A score sweep on name-only evidence from 0.00 to 1.00 in 0.01 steps.
-        All 101 values must yield HELD. If any score anywhere promotes a line,
-        this fails, and a threshold has appeared in a codebase that claims not
-        to have one.
     """
     # --- (a) property sweep -------------------------------------------------
     kinds = ["gtin", "upc", "lot", "secondary_code", "name"]

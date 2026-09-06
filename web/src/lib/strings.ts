@@ -1,21 +1,6 @@
 /*
   The string table from brief/ANTI_AI_COPY.md part 4, in one file so a reviewer
   can grep it and so six pages cannot each invent a synonym.
-
-  What is NOT here, deliberately: the six status words and their explanations,
-  the deadline labels and phrases, and the human provenance labels. Those are
-  server-owned constants covered by Python tests. Render status.word,
-  status.detail, deadline.label, deadline.text and provenance_label verbatim
-  from the payload. A front end that paraphrases them can drift into a claim
-  the backend never made.
-
-  The dashboard authors exactly one string per state: the next action.
-
-  House rules for anything added here: no em dash, no exclamation mark, no
-  emoji, numbers as digits including under ten, present tense for state, past
-  tense with a named actor for anything a person did, and one word per concept
-  (run, pull sheet, PULL, HELD, tier, evidence kind, storage location, corpus,
-  delivery, cleared, line, item).
 */
 
 import type { EvidenceKind, Provenance, StatusState, Tier } from "./types";
@@ -267,17 +252,7 @@ export function apiUnreachableBody(detail: string): string {
 export const API_UNREACHABLE_HINT =
   "The backend runs from the repository root: .venv/bin/python -m pullsheet.main --port 8000";
 
-/* ---------------------------------------------------------------------------
-   The four delivery channels.
-
-   These are the one place the acronym is spelled. A generic underscore-to-space
-   formatter lowercased SFTP into "sftp drop", which reads as a typo to anyone
-   who administers the drop, so the mapping is explicit and the fallback only
-   ever runs for a channel the backend added after this file was written.
-
-   rematch is the one that has to be spelled out elsewhere: it is a run with no
-   delivery behind it. See app/runs/_components/runsMeta.ts for that sentence.
---------------------------------------------------------------------------- */
+/* The four delivery channels. */
 
 export const CHANNEL_LABEL: Record<string, string> = {
   sftp_drop: "SFTP drop",

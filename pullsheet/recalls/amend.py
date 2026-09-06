@@ -1,24 +1,4 @@
-"""FR-016. A recall that is later terminated or amended.
-
-The rule is short: **the line stays.** The case was in the kitchen either way,
-and a system that removed a pull-sheet line because an agency closed a notice
-would be deciding, on its own, that nobody needs to look at it any more. That is
-clearing, and clearing is a human action.
-
-So neither function here deletes anything:
-
-``terminate``   flips the record's status and REMEMBERS the prior one, so the
-                sheet can show "terminated (was active)" from two columns rather
-                than inferring the first from the second.
-``amend``       inserts the agency's new version as its own record with
-                ``amended_from`` pointing back, and marks the old one amended.
-                Both records survive, both carry their own matches, and the
-                chain between them is walkable in either direction.
-
-The matcher is untouched by either. ``active_records`` returns terminated and
-amended records exactly like any other -- the status only changes how a line is
-MARKED downstream.
-"""
+"""FR-016. A recall that is later terminated or amended."""
 
 from __future__ import annotations
 
@@ -62,11 +42,7 @@ def terminate(conn: sqlite3.Connection, source: str, source_record_id: str,
 
 def amend(conn: sqlite3.Connection, source: str, source_record_id: str,
           revised: dict[str, Any], now: datetime) -> dict[str, Any]:
-    """The agency reissued this notice. Both versions survive.
-
-    ``revised`` is an agency record in the same shape the snapshots use, so an
-    amendment arriving through a refresh needs no separate parsing path.
-    """
+    """The agency reissued this notice. Both versions survive."""
     row = _find(conn, source, source_record_id)
     if row is None:
         raise LookupError(f"no active record {source}/{source_record_id}")

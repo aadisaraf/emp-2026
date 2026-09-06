@@ -1,10 +1,4 @@
-"""US2 acceptance scenarios 1-5. The menu-break cascade end to end.
-
-The two scenarios that carry weight are 3 and 4, and they are opposites: a
-substitute must be proposed when one genuinely exists, and must NOT be
-approximated when one does not. A system that only ever declines would pass a
-careless reading of scenario 4 while being useless.
-"""
+"""US2 acceptance scenarios 1-5. The menu-break cascade end to end."""
 
 from __future__ import annotations
 
@@ -143,7 +137,7 @@ def test_scenario_5_the_revised_menu_prints(loaded):
 def test_held_lines_are_excluded_but_the_exclusion_is_stated(loaded, run_id):
     """Holding means undecided. Cascading held lines would bury the decided ones,
     so they are left out -- and the count of what was left out is reported, so
-    the omission can never be mistaken for an absence."""
+    """
     summary = cascade.summary(loaded, run_id)
     assert summary["held_not_cascaded"] > 0
     assert TestClient(app).get("/impact").text.count("held for review") >= 1
@@ -155,7 +149,8 @@ def test_held_lines_are_excluded_but_the_exclusion_is_stated(loaded, run_id):
 
 def test_the_cascade_counts_a_line_once_however_many_recalls_hit_it(loaded, run_id):
     """One inventory line carrying three recall matches is one broken item, not
-    three. This is the bug that inflates the headline meal count."""
+    three. This is the bug that inflates the headline meal count.
+    """
     entries = cascade.cascade(loaded, run_id)
     ids = [e["line"]["id"] for e in entries]
     assert len(ids) == len(set(ids))

@@ -13,18 +13,7 @@ export interface SheetFooterProps {
   servesMealProgram: boolean;
 }
 
-/*
-  What the sheet leaves out, stated on the sheet.
-
-  The screening rule is the answer to the question a health inspector asks
-  second: not "what did you find" but "what did you never look at". It comes
-  from the matcher itself and is printed word for word, because a paraphrase
-  would be a claim about the system's behaviour that the system has not made.
-
-  The parser coverage sentence is the same argument in numbers: a recall record
-  with no machine-readable code can only be matched on the wording of a product
-  name, and a line matched that way is held rather than pulled.
-*/
+/* What the sheet leaves out, stated on the sheet. */
 
 export function SheetFooter({
   coverage,

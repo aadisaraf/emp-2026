@@ -1,20 +1,8 @@
 #!/usr/bin/env bash
 #
-# Reset to the pre-drop demo state. Run this between rehearsals.
-#
-# Afterwards:
-#   - the database exists, with the recall corpus and menu fixtures loaded
-#   - there is NO run, and therefore no pull sheet. The dashboard does NOT read
-#     "clear": it reads "no inventory has ever been received", which is a
-#     different sentence and the one that is true.
-#   - data/watched/ and data/archive/ are empty
-#   - the app keeps running; the browser only needs a refresh
-#
-# The next thing that happens is the location's export landing in data/watched/,
-# which is the demo: the file is read, matched and finalized into one dated run
-# with nobody touching anything.
-#
-# Idempotent: running it twice in a row produces identical output.
+# Reset to the pre-drop demo state: corpus and menu fixtures loaded, no run,
+# data/watched/ and data/archive/ empty. The app keeps running; refresh only.
+# Idempotent.
 
 set -euo pipefail
 

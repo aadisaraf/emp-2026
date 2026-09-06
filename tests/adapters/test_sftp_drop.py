@@ -1,5 +1,6 @@
 """The primary ingestion path. Two rules carry most of the weight: never drop a
-row, and never invent a value."""
+row, and never invent a value.
+"""
 
 from __future__ import annotations
 
@@ -34,7 +35,8 @@ def test_every_source_row_becomes_a_record(adapter):
 
 def test_the_blank_quantity_row_survives_with_the_field_flagged(adapter):
     """FR-007. Defaulting it to 1 would invent a case of food that may not
-    exist, and nobody downstream could tell."""
+    exist, and nobody downstream could tell.
+    """
     records = [r for r in adapter.read(FIXTURE) if r.quantity is None]
     assert len(records) == 1
     record = records[0]
@@ -44,7 +46,8 @@ def test_the_blank_quantity_row_survives_with_the_field_flagged(adapter):
 
 def test_lot_codes_pass_through_verbatim(adapter):
     """R3. Normalization is the matcher's job; an adapter that upper-cased a lot
-    here would destroy the only string there is to compare against."""
+    here would destroy the only string there is to compare against.
+    """
     source = [r["Lot #"] for r in _source_rows() if r["Lot #"]]
     read = [r.lot_code for r in adapter.read(FIXTURE) if r.lot_code]
     assert read == source
@@ -88,7 +91,8 @@ def test_an_unusable_source_is_rejected_loudly(adapter, name, expected_in_messag
 
 def test_a_missing_required_column_names_the_column(adapter, tmp_path):
     """Exactly one column is required: the one naming the food. Without it there
-    is nothing to match, and the run is rejected naming what was absent."""
+    is nothing to match, and the run is rejected naming what was absent.
+    """
     path = tmp_path / "no_description.csv"
     path.write_text("Storage Location,Qty On Hand\nFreezer A,14\n")
     with pytest.raises(AdapterRejection) as err:
@@ -100,7 +104,7 @@ def test_a_missing_required_column_names_the_column(adapter, tmp_path):
 def test_a_building_column_is_ignored_rather_than_read_as_storage(adapter, tmp_path):
     """One deployment is one location, so a school-name column carries nothing.
     Letting it drift into storage_location would print a building on the sheet
-    and send someone to the wrong place looking for a freezer."""
+    """
     path = tmp_path / "with_site.csv"
     path.write_text("Site,Storage Location,Item Description,Qty On Hand\n"
                     "Lincoln Elementary,Freezer A,CHICKEN STRIPS BRD FC FROZEN,14\n")

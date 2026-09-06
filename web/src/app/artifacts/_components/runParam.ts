@@ -1,13 +1,4 @@
-/**
- * The `?run=` query parameter the three artifact endpoints accept.
- *
- * Absent means the latest ok run, which is what somebody who clicked the nav
- * item wants. A present but unreadable value is deliberately passed through as
- * undefined rather than guessed at: printing today's custody record when the
- * address asked for run 7 would be a quiet substitution on a signed document.
- * An unknown but well formed id reaches the API and comes back 404 no_run,
- * which the page states.
- */
+/** The `?run=` query parameter the three artifact endpoints accept. */
 export type ArtifactSearchParams = { run?: string | string[] };
 
 export function runParam(params: ArtifactSearchParams | undefined): number | undefined {

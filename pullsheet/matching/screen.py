@@ -1,27 +1,4 @@
-"""Candidate generation. **The one narrowing operation in the system.**
-
-Everything else in ``matching/`` widens. This file is the single place where a
-pair can fail to exist at all, which is why it is a separate module from
-``gate.py``: a reviewer asking "where can something be lost?" has exactly one
-file to open, and its rule is rendered verbatim on the pull sheet (T045) so an
-operator can read it without reading the code.
-
-Four in-memory inverted indexes, rebuilt on every run:
-
-* **code index** -- GTINs, UPCs, and lot codes. Barcodes are keyed by their
-  right-most 11 digits *after* dropping the check digit, so a GTIN-14 and the
-  UPC-12 printed on the same case collide on one key instead of missing each
-  other over a packaging indicator.
-* **firm index** -- the identifying words of ``recalling_firm``. Populated on
-  100% of the corpus, which makes it the channel most kitchen rows actually
-  reach a recall through: barcodes and lot codes are absent from most item
-  masters, but every purchasing system knows its suppliers.
-* **item index** -- manufacturer catalog numbers, keyed *within* a firm. An item
-  number means nothing across manufacturers, so ``2075`` is filed under
-  ``liner|2075`` rather than under ``2075``.
-* **token index** -- significant words of the description, with a hand-authored
-  stoplist removed.
-"""
+"""Candidate generation. **The one narrowing operation in the system.**"""
 
 from __future__ import annotations
 
@@ -32,14 +9,8 @@ from pullsheet.matching.firm import firm_tokens
 from pullsheet.matching.lot import normalize_lot
 from pullsheet.matching.normalize import tokens
 
-#: Hand-authored. These words appear in so many food descriptions that indexing
-#: them makes every product a candidate for every recall, which is the same as
-#: having no index at all.
-#:
-#: **They are removed from CANDIDATE GENERATION ONLY.** Stoplisted tokens are
-#: still counted by similarity.dice() when a pair is scored, because "frozen"
-#: genuinely is evidence that two frozen products are the same product -- it is
-#: just not evidence worth *searching* on.
+# Hand-authored. These words appear in so many food descriptions that indexing
+# them makes every product a candidate for every recall, which is the same as
 STOPLIST: frozenset[str] = frozenset({
     # states and preparations that describe half the freezer
     "frozen", "fresh", "refrigerated", "chilled", "cooked", "raw", "prepared",
@@ -70,12 +41,7 @@ STOPLIST: frozenset[str] = frozenset({
 
 
 def code_key(code: str | None) -> Optional[str]:
-    """Index key for a barcode.
-
-    Drops the check digit and keeps the right-most 11 digits, so the GTIN-14
-    ``10073803048293`` and the UPC-12 ``073803048296`` -- the same case, printed
-    two ways -- both key on ``07380304829``.
-    """
+    """Index key for a barcode."""
     if not code:
         return None
     digits = "".join(c for c in str(code) if c.isdigit())
@@ -83,20 +49,13 @@ def code_key(code: str | None) -> Optional[str]:
         return None
     # openFDA routinely prints a UPC-12 with its leading zero dropped
     # ("41220273355"). Left-pad so it keys identically to the 12-digit form the
-    # kitchen scanned, rather than missing it over a character that carries no
-    # information.
     if len(digits) < 12:
         digits = digits.rjust(12, "0")
     return digits[:-1][-11:]
 
 
 def _item_key(code: str | None) -> Optional[str]:
-    """Index key for a manufacturer catalog number: see ``tiers.item_key``.
-
-    Defined here rather than imported because ``tiers`` imports from this
-    module. ``tests/unit/test_screen.py::test_item_key_agrees_with_tiers`` fails
-    the build if the two ever disagree.
-    """
+    """Index key for a manufacturer catalog number: see ``tiers.item_key``."""
     import re
     if not code:
         return None
@@ -113,17 +72,12 @@ class ScreenRecord(NamedTuple):
     recalling_firm: str = ""
 
 
-#: A token appearing in more than this share of the corpus narrows nothing on
-#: its own: "milk" reaches every milk recall there has ever been. Such a token
-#: still creates a candidate when the pair shares a SECOND token, and it is
-#: still scored -- it just cannot be the sole reason two things are compared.
-#: Every one of the 25 seeded correspondences survives this threshold, which is
-#: asserted, not assumed:
-#: tests/unit/test_screen.py::test_every_seeded_pair_survives_screening
+# A token appearing in more than this share of the corpus narrows nothing on
+# its own: "milk" reaches every milk recall there has ever been. Such a token
 COMMON_TOKEN_SHARE = 0.02
 
-#: A pair sharing this many significant tokens is a candidate no matter how
-#: common each one is.
+# A pair sharing this many significant tokens is a candidate no matter how
+# common each one is.
 MIN_SHARED_TOKENS = 2
 
 
@@ -237,8 +191,6 @@ def generate_candidates(inv, indexes: Indexes) -> set:
 
     # Supplier channels. Any shared firm word admits the pair; whether the two
     # names actually agree is decided later, by firm.agrees(), on the full name.
-    # Screening deliberately admits more than agreement would: over-admitting
-    # costs a comparison, and under-admitting costs a line.
     supplier_tokens: set[str] = set()
     for name in (getattr(inv, "manufacturer", None), getattr(inv, "brand", None)):
         supplier_tokens |= firm_tokens(name)
@@ -252,7 +204,6 @@ def generate_candidates(inv, indexes: Indexes) -> set:
 
     # Name channel. Count how many of this row's significant tokens each recall
     # shares, so "two common tokens" and "one distinctive token" can both admit
-    # a pair while "one common token" alone cannot.
     shared_counts: dict = defaultdict(int)
     for token in significant_tokens(getattr(inv, "normalized_description", None)):
         for recall_id in indexes.by_token.get(token, ()):
@@ -265,8 +216,8 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     return hits
 
 
-#: The screening rule in one sentence, rendered verbatim on the pull sheet so an
-#: operator can read what the system throws away without reading the code (T045).
+# The screening rule in one sentence, rendered verbatim on the pull sheet so an
+# operator can read what the system throws away without reading the code (T045).
 SCREENING_RULE = (
     "A recall is compared against an inventory line only if the two share a barcode "
     "fragment, a lot code, a word from the supplier's name, two or more significant "

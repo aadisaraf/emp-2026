@@ -1,16 +1,4 @@
-"""Evidence: what was found linking one inventory row to one recall record.
-
-Evidence is a *description*, not a judgement. It says what matched and quotes
-the exact substring from each side; ``gate.decide()`` is the only thing that
-turns it into a status. Keeping those apart means the ladder can be read in one
-place and the widening rules in another, and neither can quietly acquire a
-threshold from the other.
-
-The order the channels are tried in is the order of how much each one proves:
-barcode, then manufacturer catalog number, then lot, then supplier-plus-product,
-then name alone. The first one that fires wins, so a pair is always described by
-its strongest link.
-"""
+"""Evidence: what was found linking one inventory row to one recall record."""
 
 from __future__ import annotations
 
@@ -20,12 +8,8 @@ EvidenceKind = Literal["gtin", "upc", "mfr_item", "lot", "secondary_code",
                        "firm_and_name", "name"]
 LotComparison = Literal["equal", "contained", "none", "unparseable"]
 
-#: Kinds whose evidence is two things agreeing rather than one. Their trigger
-#: text is the two components joined by ``JOINER``, and each component is a
-#: verbatim substring of its own side -- FR-023 holds per component, which is
-#: what an operator actually needs: every piece of quoted text findable on the
-#: page in front of them.
-#: Asserted by tests/unit/test_tiers.py::test_both_triggers_are_verbatim.
+# Kinds whose evidence is two things agreeing rather than one. Their trigger
+# text is the two components joined by ``JOINER``, and each component is a
 COMPOUND_KINDS: frozenset[str] = frozenset({"mfr_item", "firm_and_name"})
 JOINER = " + "
 
@@ -36,28 +20,25 @@ class Evidence(NamedTuple):
     kind: EvidenceKind
     trigger_inventory_text: str
     trigger_recall_text: str
-    #: Name similarity, 0.0-1.0. Carried for ORDERING within POSSIBLE only.
-    #: It never appears in a comparison that determines status or tier.
+    # Name similarity, 0.0-1.0. Carried for ORDERING within POSSIBLE only.
+    # It never appears in a comparison that determines status or tier.
     score: Optional[float] = None
-    #: Outcome of comparing the two lot strings, when both sides had one.
+    # Outcome of comparing the two lot strings, when both sides had one.
     lot_comparison: Optional[LotComparison] = None
-    #: The recall names a lot or date code.
+    # The recall names a lot or date code.
     recall_lot_present: bool = False
-    #: The inventory row tracks a lot code at all.
+    # The inventory row tracks a lot code at all.
     inventory_lot_present: bool = False
-    #: The recall's code_info could not be parsed into codes (FR-067).
+    # The recall's code_info could not be parsed into codes (FR-067).
     recall_codes_unparsed: bool = False
-    #: 'active' | 'terminated' | 'amended'. A terminated recall is marked, never dropped.
+    # 'active' | 'terminated' | 'amended'. A terminated recall is marked, never dropped.
     recall_status: str = "active"
-    #: The inventory row's brand or manufacturer names the recalling firm
-    #: (FR-071). A boolean, deliberately: gate.decide() must stay free of the
-    #: corpus statistics that produced it.
+    # The inventory row's brand or manufacturer names the recalling firm
+    # (FR-071). A boolean, deliberately: gate.decide() must stay free of the
     firm_agreement: bool = False
 
 
-# ---------------------------------------------------------------------------
 # Evidence construction
-# ---------------------------------------------------------------------------
 
 import re  # noqa: E402
 
@@ -67,9 +48,8 @@ from pullsheet.matching.normalize import tokens  # noqa: E402
 from pullsheet.matching.screen import code_key, significant_tokens  # noqa: E402
 from pullsheet.matching.similarity import dice  # noqa: E402
 
-#: Labels that mean "this is a code, but not the lot code". A match on one of
-#: these is real evidence and is worth a PULL, but calling it a lot match would
-#: misdescribe it to the operator reading the sheet.
+# Labels that mean "this is a code, but not the lot code". A match on one of
+# these is real evidence and is worth a PULL, but calling it a lot match would
 _SECONDARY_LABEL = re.compile(
     r"\b(DAYCODE|DAY\s*CODE|PRODUCT\s*CODE|ITEM\s*CODE|SKU|PLU)\b[^A-Z0-9]{0,12}$", re.I)
 
@@ -81,12 +61,7 @@ def _digits(text: str) -> str:
 
 
 def item_key(code: str | None) -> Optional[str]:
-    """Index key for a manufacturer's catalog number.
-
-    Uppercased, punctuation dropped, leading zeros removed: a kitchen that
-    stores High Liner's cod portions as ``02075`` and an agency that prints
-    ``Item Number: 2075`` are naming one product.
-    """
+    """Index key for a manufacturer's catalog number."""
     if not code:
         return None
     cleaned = re.sub(r"[^A-Z0-9]", "", str(code).upper()).lstrip("0")
@@ -95,11 +70,7 @@ def item_key(code: str | None) -> Optional[str]:
 
 def find_code_substring(haystack: str | None, code: str) -> str | None:
     """The literal substring of ``haystack`` that prints ``code``.
-
-    The recall writes ``0 24284-96910 5``; the inventory carries
     ``024284969105``. FR-023 requires the exact triggering text *as each side
-    wrote it*, so the operator can find it on the page in front of them -- which
-    means returning the spaced form, not our cleaned-up version of it.
     """
     if not haystack:
         return None
@@ -115,9 +86,6 @@ def find_code_substring(haystack: str | None, code: str) -> str | None:
 
 def find_source_word(token: str, text: str | None) -> str | None:
     """The word in ``text`` that produced ``token``.
-
-    Words are compared as written, so this is usually the token back again --
-    but the source spelled it with its own case and punctuation (``COD,``
     ``Row``), and FR-023 wants what the operator will see on their screen.
     """
     if not text:
@@ -136,17 +104,7 @@ def _label_before(haystack: str, needle: str) -> str:
 def build_evidence(inv, rec, is_distinctive: Optional[Callable[[str], bool]] = None
                    ) -> Optional[Evidence]:
     """Inspect a candidate pair and describe what links it.
-
-    ``is_distinctive`` reports whether a product word is rare enough in the
-    recall corpus to carry weight -- the same corpus statistic screening uses.
-    It is passed in rather than looked up so that the only thing crossing into
-    ``gate.decide()`` is a boolean, and ``decide()`` stays a pure function of its
     arguments (FR-024). Absent, every word counts as distinctive: that widens the
-    sheet, which is the safe direction to fail in (Principle I).
-
-    Returns None only when the pair shares nothing at all -- which screening
-    should already have prevented. It never decides a status; that is
-    ``gate.decide()``'s sole job.
     """
     if is_distinctive is None:
         def is_distinctive(_token: str) -> bool:      # noqa: ARG001
@@ -204,9 +162,6 @@ def build_evidence(inv, rec, is_distinctive: Optional[Callable[[str], bool]] = N
 
     # --- 3. Manufacturer catalog number (FR-070) --------------------------
     # Product identity, but ONLY next to an agreeing manufacturer. Item number
-    # 02075 is a breaded cod portion at High Liner and something else entirely
-    # at every other company; the number alone asserts an identity it does not
-    # carry.
     inv_item = getattr(inv, "manufacturer_item_code", None)
     if firm_ok and inv_item:
         key = item_key(inv_item)
@@ -231,7 +186,6 @@ def build_evidence(inv, rec, is_distinctive: Optional[Callable[[str], bool]] = N
                                 lot_comparison=outcome, **common)
         # The recall names lots and this row tracks one, but none of them line
         # up. Fall through -- a lot that does not match is not a reason to stop
-        # looking at the supplier and the name.
 
     # --- 6 / 7. supplier-and-product, then name ---------------------------
     inv_tokens = tokens(inv_desc)
@@ -252,10 +206,6 @@ def build_evidence(inv, rec, is_distinctive: Optional[Callable[[str], bool]] = N
 
     # --- 6. firm and product word (FR-071) --------------------------------
     # The maker is being recalled AND the two descriptions agree on a word that
-    # is rare across the corpus. Either signal alone is weak -- a firm recalls
-    # one line out of hundreds, and one shared word is the POSSIBLE tier -- but
-    # a kitchen holding a High Liner product when High Liner recalls a cod
-    # portion, where both descriptions say "cod", is not a coincidence.
     if firm_ok:
         distinctive = {t for t in shared if is_distinctive(t)}
         if distinctive:

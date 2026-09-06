@@ -1,28 +1,4 @@
-"""FR-044, FR-045. The location's recall report.
-
-FR-044 asked which state's form to target. That question is still open, and the
-spec's interim default is what this implements: a recall report modeled on USDA
-FNS guidance, labeled hand-authored, alongside a structured export a director
-can transfer into whatever form their own state actually uses.
-
-This is a CHILD NUTRITION document. It applies to a school deployment and not to
-a restaurant one, and ``location.serves_meal_program()`` is what decides whether
-it is offered at all -- rather than renaming its fields until it looks generic.
-
-FR-045 is the load-bearing rule here, and it is the reason this module is a list
-of fields rather than a template full of holes: **every field the system cannot
-derive is visibly marked as requiring human entry.** Not blank -- marked. A blank
-box on a form reads as "nothing to report"; a box that says REQUIRES HUMAN ENTRY
-reads as "you are not finished". A form that silently omitted the difference
-would be the most dangerous artifact in this application, because it would look
-complete.
-
-So there are exactly three kinds of field and nothing else:
-
-    derived     computed from the database, with the source named
-    human       the system cannot know it. Marked, never guessed.
-    blank       structurally empty on purpose (a signature). Also marked.
-"""
+"""FR-044, FR-045. The location's recall report."""
 
 from __future__ import annotations
 
@@ -35,11 +11,11 @@ from typing import Any, Literal
 
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln")
 
-#: Shown verbatim on the form wherever the system has nothing. FR-045.
+# Shown verbatim on the form wherever the system has nothing. FR-045.
 HUMAN_MARKER = "REQUIRES HUMAN ENTRY"
 
-#: Principle V. This form is modeled on published USDA FNS guidance by the build
-#: team. It is not a state agency's form and does not claim to be one.
+# Principle V. This form is modeled on published USDA FNS guidance by the build
+# team. It is not a state agency's form and does not claim to be one.
 FORM_CAVEAT = (
     "Modeled on USDA FNS recall reporting guidance by the build team. "
     "This is not an official state form. Transfer these values into your state "
@@ -118,13 +94,7 @@ def derived_fields(conn: sqlite3.Connection, run_id: int, now: datetime) -> list
 
 
 def human_fields() -> list[Field]:
-    """T062a. Everything the system cannot know, each saying WHY.
-
-    "Why" matters as much as the marker. A director looking at a marked field
-    should be able to tell instantly whether the system failed or whether the
-    answer simply does not live in any database -- and every one of these is the
-    second kind.
-    """
+    """T062a. Everything the system cannot know, each saying WHY."""
     H, B = "human", "blank"
     return [
         Field("Location", "Child nutrition agreement number", H,

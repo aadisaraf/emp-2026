@@ -5,9 +5,8 @@
 
 <main class="dashboard">
 
-  {# ------------------------------------------------------------------ #}
   {# MAIN: the recall picture. One word, then the evidence behind it.     #}
-  {# ------------------------------------------------------------------ #}
+  
   <section class="verdict verdict-{{ status.state }}">
     <p class="word" data-poll="word">{{ status.word }}</p>
     <p class="detail" data-poll="detail">{{ status.detail }}</p>
@@ -31,8 +30,7 @@
   </section>
   {% else %}
 
-  {# The two clocks. USDA reporting deadlines run from when the NOTICE arrived,
-     not from when this run happened, so tomorrow's export does not reset them. #}
+  {# The two clocks. USDA reporting deadlines run from when the NOTICE arrived, #}
   {% if deadlines %}
   <section class="clocks">
     <h2>Reporting clocks</h2>
@@ -56,8 +54,7 @@
   </section>
   {% endif %}
 
-  {# What changed since yesterday. The reason a daily run is worth reading at
-     all: an operator who pulled 42 cases yesterday needs the 3 that are new. #}
+  {# What changed since yesterday. The reason a daily run is worth reading at #}
   <section class="whats-new">
     <h2>New since {% if previous_run_id %}run #{{ previous_run_id }}{% else %}the first run{% endif %}</h2>
     {% if not previous_run_id %}

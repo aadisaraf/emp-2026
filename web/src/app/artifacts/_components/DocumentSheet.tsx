@@ -24,20 +24,7 @@ export interface DocumentSheetProps {
   children: ReactNode;
 }
 
-/**
- * The paper frame the three artifacts share.
- *
- * A letterhead (the location that is filing this), a stamp block (which run,
- * which day, when it was generated, which delivery it came from), a green
- * hairline, then the body. The green rule is the one piece of institutional
- * colour on the page, the same way it is the one large green area in the
- * masthead: it says which system issued the document. It does not mean "fine".
- *
- * Two notes render themselves when the payload asks for them. A document built
- * from a past run says so, because a signed page that looks like today and is
- * not is the worst failure available to this screen. A stale corpus says so
- * too, and says in the same breath that no line below changed.
- */
+/** The paper frame the three artifacts share. */
 export function DocumentSheet({
   title,
   intro,

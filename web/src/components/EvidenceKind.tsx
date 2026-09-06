@@ -16,13 +16,9 @@ function isKnown(kind: string): kind is EvidenceKindValue {
 }
 
 /**
- * What agreed, in words. The column is called Evidence, not "Match type", and
- * the value is the kind of evidence, not a quality rating.
- *
- * An unrecognised key prints raw rather than being swallowed: the matcher
- * emitting a kind this build does not know about is a fact worth seeing on the
- * line, not a gap to paper over.
- */
+  What agreed, in words. The column is called Evidence, not "Match type", and
+  the value is the kind of evidence, not a quality rating.
+*/
 export function EvidenceKind({ kind, showRaw, className }: EvidenceKindProps) {
   if (!isKnown(kind)) {
     return (

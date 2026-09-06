@@ -1,28 +1,4 @@
-"""The JSON surface at ``/api/v1``, for the browser dashboard.
-
-This module is a **serialization layer and nothing else**. Every number it
-returns was computed by the same function the Jinja pages call -- ``runs``,
-``deadlines``, ``artifacts/*``, ``menu/*``, ``matching/run`` and ``db`` -- so a
-figure on the dashboard and the same figure on the printed sheet cannot disagree.
-No route here writes SQL that one of those modules already owns.
-
-Three rules the shape of this file exists to keep:
-
-* **The sheet is read through ``pull_sheet.by_storage``.** That query is scoped
-  on ``matches.run_id`` and on nothing else, deliberately. Any extra filter added
-  here -- superseded inventory, the delivering run, cleared lines -- would empty a
-  past run's sheet retroactively, which reads as "that day was clean".
-* **Clearing a line is not this module's to do.** The two POST routes call
-  ``app.clear_match`` and ``app.confirm_pulled``, which are the audited writers.
-  A third INSERT into ``decisions`` here would break the argument
-  ``tests/unit/test_clearing_audit.py`` enforces, so there isn't one.
-* **Provenance travels with every source.** Wherever a payload names a source it
-  carries the raw label and the human one on the same object, so a client cannot
-  render the record without also being handed where it came from.
-
-``sqlite3.Row`` is not JSON-serializable. Every row is converted by one of the
-``_`` helpers below, and no route builds a dict field by field.
-"""
+"""The JSON surface at ``/api/v1``, for the browser dashboard."""
 
 from __future__ import annotations
 
@@ -55,28 +31,16 @@ log = logging.getLogger(__name__)
 
 
 def _app():
-    """``pullsheet.app``, imported on first use.
-
-    ``app.py`` mounts this router, so importing it at module scope would be a
-    cycle. Everything this module needs from it -- the connection factory, the
-    single clock, ``_decided_before``, and the two decision writers -- is only
-    ever wanted while a request is being served, by which time both modules are
-    fully loaded.
-    """
+    """``pullsheet.app``, imported on first use."""
     from pullsheet import app as app_module
 
     return app_module
 
 
-# ---------------------------------------------------------------------------
 # Errors: one shape for every non-2xx, including FastAPI's own validation
-# ---------------------------------------------------------------------------
 
 class ApiError(HTTPException):
-    """An error with a stable machine token a client can switch on.
-
-    The message is a human sentence and may be shown; ``code`` is the contract.
-    """
+    """An error with a stable machine token a client can switch on."""
 
     def __init__(self, status: int, code: str, message: str):
         super().__init__(status_code=status, detail=message)
@@ -84,15 +48,15 @@ class ApiError(HTTPException):
         self.message = message
 
 
-#: Fallbacks for an ``HTTPException`` raised by a reused route in ``app.py``,
-#: which carries a status and a sentence but no token of its own.
+# Fallbacks for an ``HTTPException`` raised by a reused route in ``app.py``,
+# which carries a status and a sentence but no token of its own.
 _FALLBACK_CODES = {400: "invalid_request", 404: "not_found", 422: "invalid_request"}
 
 
 class _Json(JSONResponse):
     """Always ``application/json; charset=utf-8``. The client polls this API and
     parses every response the same way; a bare ``application/json`` on some
-    routes and a charset on others is a difference nobody benefits from."""
+    """
 
     media_type = "application/json; charset=utf-8"
 
@@ -103,16 +67,7 @@ def _error(status: int, code: str, message: str) -> _Json:
 
 
 class _ApiRoute(APIRoute):
-    """Every ``/api/v1`` response, error or not, leaves through here.
-
-    Two things are attached in one place rather than in fifteen: the error
-    envelope, and ``Cache-Control: no-store``. The dashboard polls for a status
-    word that gates what a person does with food; a cached one is a lie with a
-    timestamp on it.
-
-    Scoped to this router on purpose. The Jinja pages are the print path and the
-    offline fallback, and they must keep returning HTML for their own errors.
-    """
+    """Every ``/api/v1`` response, error or not, leaves through here."""
 
     def get_route_handler(self):
         original = super().get_route_handler()
@@ -132,7 +87,6 @@ class _ApiRoute(APIRoute):
             except Exception:                                        # noqa: BLE001
                 # Logged with its traceback, reported as one sentence. A stack
                 # trace rendered into a nutrition director's browser is not an
-                # error message.
                 log.exception("unhandled error serving %s", request.url.path)
                 response = _error(500, "internal",
                                   "the server could not complete this request")
@@ -152,9 +106,7 @@ def _validation_message(err: RequestValidationError) -> str:
 router = APIRouter(prefix="/api/v1", route_class=_ApiRoute, default_response_class=_Json)
 
 
-# ---------------------------------------------------------------------------
 # Serializers. The only place JSON shaping happens.
-# ---------------------------------------------------------------------------
 
 def _row(row: Any) -> dict[str, Any]:
     """A ``sqlite3.Row`` (or anything mapping-shaped) as a plain dict."""
@@ -162,10 +114,7 @@ def _row(row: Any) -> dict[str, Any]:
 
 
 def _parse(text: Any, default: Any = None) -> Any:
-    """A column holding JSON text, as a real JSON value.
-
-    Parsed here so no client ever calls ``JSON.parse`` on a field it was handed.
-    """
+    """A column holding JSON text, as a real JSON value."""
     if text is None or text == "":
         return default
     if isinstance(text, (dict, list)):
@@ -182,7 +131,7 @@ def _run(row: Any) -> dict[str, Any]:
 def _location() -> dict[str, Any]:
     """The location block, plus the two facts the JSON clients need that the
     printed block does not carry: which calendar a business date belongs to, and
-    whether the child-nutrition surfaces apply at all."""
+    """
     return {**location.summary(),
             "timezone_name": location.TIMEZONE_NAME,
             "serves_meal_program": location.serves_meal_program()}
@@ -205,24 +154,14 @@ def _snapshot(entry: dict[str, Any]) -> dict[str, Any]:
 
 
 def _provenance_of_source(entry: dict[str, Any]) -> dict[str, Any]:
-    """Stamp a recall-side dict with where its agency record came from.
-
-    Mutates in place and returns the same object, because several of the
-    artifact builders hand back the *same* dict in two lists (a credit claim's
-    excluded lines are the objects already in ``lines``). Copying here would make
-    those two lists disagree about provenance.
-    """
+    """Stamp a recall-side dict with where its agency record came from."""
     entry["source_provenance"] = provenance_of(entry["source"])
     entry["source_provenance_label"] = label_for(entry["source"])
     return entry
 
 
 def _line(row: sqlite3.Row) -> dict[str, Any]:
-    """One sheet line.
-
-    ``cleared`` is a convenience over ``cleared_count``; neither is ever a reason
-    to drop the line. There is no ``CLEARED`` status and this never invents one.
-    """
+    """One sheet line."""
     out = _row(row)
     out["is_new"] = bool(out["is_new"])
     out["merged_from"] = _parse(out.get("merged_from"))
@@ -239,13 +178,7 @@ def _new_line(row: sqlite3.Row) -> dict[str, Any]:
 
 
 def _header(conn: sqlite3.Connection, run: Any, at: datetime) -> dict[str, Any]:
-    """``pull_sheet.header`` with the API's own two enrichments applied.
-
-    ``corpora`` is empty for any run that is not the current one, and this does
-    not fill it back in: printing tonight's capture dates above yesterday's lines
-    makes a document look sourced when it is not. A past run states the corpus it
-    was matched against in ``corpus_note``, frozen at finalize.
-    """
+    """``pull_sheet.header`` with the API's own two enrichments applied."""
     head = pull_sheet.header(conn, run, at)
     head["location"] = _location()
     head["run"] = _run(head["run"])
@@ -254,11 +187,7 @@ def _header(conn: sqlite3.Connection, run: Any, at: datetime) -> dict[str, Any]:
 
 
 def _field(field: state_report.Field) -> dict[str, Any]:
-    """One form field, with ``display`` already resolved.
-
-    ``display`` is the dataclass property, not a copy of the rule: a field the
-    system could not derive reads REQUIRES HUMAN ENTRY, never blank.
-    """
+    """One form field, with ``display`` already resolved."""
     return {"section": field.section, "label": field.label, "kind": field.kind,
             "value": field.value, "source": field.source, "why": field.why,
             "display": field.display}
@@ -268,9 +197,7 @@ def _iso(at: datetime) -> str:
     return at.isoformat(timespec="seconds")
 
 
-# ---------------------------------------------------------------------------
 # Resolving a run
-# ---------------------------------------------------------------------------
 
 def _current_or_404(conn: sqlite3.Connection) -> sqlite3.Row:
     run = db.latest_ok_run(conn)
@@ -290,9 +217,7 @@ def _resolve(conn: sqlite3.Connection, run_id: int | None) -> sqlite3.Row:
     return _run_or_404(conn, run_id) if run_id else _current_or_404(conn)
 
 
-# ---------------------------------------------------------------------------
 # Location and status
-# ---------------------------------------------------------------------------
 
 @router.get("/location")
 def api_location() -> dict[str, Any]:
@@ -304,11 +229,6 @@ def api_location() -> dict[str, Any]:
 def api_status() -> dict[str, Any]:
     """The polled endpoint: the status word, the counts, both clocks, corpus
     provenance, what is new, and the refused deliveries.
-
-    Always 200, including before anything has ever been ingested -- a poll that
-    404s is a poll that renders a blank page. ``never_received`` is in the
-    payload so "nothing has ever arrived" cannot be mistaken for "clear" by
-    string-matching a word.
     """
     app = _app()
     conn = app._conn()
@@ -334,7 +254,6 @@ def api_status() -> dict[str, Any]:
             "deadlines": deadlines.clocks(conn, run["id"], at) if run else [],
             # Present even with no run at all: the corpus is loaded whether or
             # not an export ever arrived, and saying so is how a blank page
-            # proves it is blank for the right reason.
             "corpus": [_snapshot(c) for c in corpus.corpus_summary(conn, at)],
             "run_count": conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0],
             "new_lines": ([_new_line(r) for r in
@@ -345,17 +264,11 @@ def api_status() -> dict[str, Any]:
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Runs
-# ---------------------------------------------------------------------------
 
 @router.get("/runs")
 def api_runs(limit: int = Query(30, ge=1, le=200)) -> dict[str, Any]:
-    """Every delivery, newest first, rejections included.
-
-    Listing only the good ones would make a week of failed drops look like a
-    quiet week.
-    """
+    """Every delivery, newest first, rejections included."""
     app = _app()
     conn = app._conn()
     try:
@@ -375,11 +288,6 @@ def api_runs(limit: int = Query(30, ge=1, le=200)) -> dict[str, Any]:
 def api_run_detail(run_id: int) -> dict[str, Any]:
     """One run's facts. Deliberately without its lines -- ``/sheet/{run_id}``
     carries those, so there is exactly one code path producing lines.
-
-    A rejected or still-running run is a 200 with zero counts and no clocks, not
-    an error. The client renders "this delivery was refused" with
-    ``run.rejection_reason``; rendering it as "clear" is the failure FR-009
-    exists to prevent.
     """
     app = _app()
     conn = app._conn()
@@ -399,18 +307,10 @@ def api_run_detail(run_id: int) -> dict[str, Any]:
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # The sheet
-# ---------------------------------------------------------------------------
 
 def _sheet(run_id: int | None) -> dict[str, Any]:
-    """The pull sheet for one run, current or past.
-
-    Sections come from ``pull_sheet.by_storage``, which is the only line-producing
-    query in the application. Nothing is filtered on the way out: PULL and HELD
-    arrive interleaved in one order and are returned in it, and a cleared line is
-    returned with ``cleared_count`` set rather than removed.
-    """
+    """The pull sheet for one run, current or past."""
     app = _app()
     conn = app._conn()
     try:
@@ -444,14 +344,10 @@ def api_sheet_for_run(run_id: int) -> dict[str, Any]:
     return _sheet(run_id)
 
 
-# ---------------------------------------------------------------------------
 # One match
-# ---------------------------------------------------------------------------
 
-#: The same projection ``app.match_detail`` reads for the Jinja page: both source
-#: records verbatim, with the triggering substrings. A read, with no narrowing in
-#: it -- the sheet's own lines still come from ``ordered_matches`` and only from
-#: there.
+# The same projection ``app.match_detail`` reads for the Jinja page: both source
+# records verbatim, with the triggering substrings. A read, with no narrowing in
 _MATCH_DETAIL = """
     SELECT m.*, i.storage_location, i.raw_description, i.quantity,
            i.unit, i.pack_size, i.gtin, i.lot_code, i.unit_cost,
@@ -486,11 +382,6 @@ _RECALL_SIDE = ("source", "source_record_id", "product_description", "code_info"
 def _match_payload(conn: sqlite3.Connection, match_id: int, at: datetime) -> dict[str, Any]:
     """One match, both sides verbatim, and every decision ever taken about this
     food and this recall.
-
-    The decisions are looked up by ``subject_key`` rather than by match id, so a
-    clearing taken against an earlier run's row for the same pair is still shown.
-    A judgement does not expire because a new export arrived overnight -- which is
-    also why a decision's ``match_id`` may not be the id that was asked for.
     """
     row = conn.execute(_MATCH_DETAIL, (match_id,)).fetchone()
     if row is None:
@@ -541,17 +432,10 @@ def api_match(match_id: int) -> dict[str, Any]:
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Impact
-# ---------------------------------------------------------------------------
 
 def _claim(conn: sqlite3.Connection, run_id: int, at: datetime) -> dict[str, Any]:
-    """The credit claim, with provenance stamped on every recall it names.
-
-    ``excluded`` holds the same objects that are already in ``lines`` -- a line
-    with no price is printed on the claim, not omitted from it -- so the two
-    lists are stamped by one pass over ``lines``.
-    """
+    """The credit claim, with provenance stamped on every recall it names."""
     claim = credit_claim.credit_claim(conn, run_id, at)
     claim["location"] = _location()
     for line in claim["lines"]:
@@ -565,10 +449,6 @@ def _claim(conn: sqlite3.Connection, run_id: int, at: datetime) -> dict[str, Any
 def api_impact() -> dict[str, Any]:
     """What the pulls cost: the money for any kitchen, the menu cascade and the
     substitution proposals only where the location runs a meal program.
-
-    Always the latest good run, as the Jinja page is. ``menu`` is ``null`` for a
-    restaurant deployment rather than an empty panel -- the client says the
-    deployment runs no meal program instead of showing nothing.
     """
     app = _app()
     conn = app._conn()
@@ -608,18 +488,12 @@ def api_impact() -> dict[str, Any]:
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Compliance artifacts
-# ---------------------------------------------------------------------------
 
 @router.get("/artifacts/hold")
 def api_hold_record(run: int | None = None) -> dict[str, Any]:
     """The custody record. Both PULL and HELD lines appear: a held case is off
     the menu while a person decides, and leaving it off the custody record would
-    mean a case in the freezer that no paperwork accounts for.
-
-    ``pull_count`` and ``held_count`` here count inventory LINES, not match lines.
-    A case with three recalls against it is one case to walk to.
     """
     app = _app()
     conn = app._conn()
@@ -643,7 +517,8 @@ def api_hold_record(run: int | None = None) -> dict[str, Any]:
 @router.get("/artifacts/credit-claim")
 def api_credit_claim(run: int | None = None) -> dict[str, Any]:
     """Quantity x unit cost, summed. Nothing estimated, ever -- and every line
-    that could not be priced is on the claim with the reason named."""
+    that could not be priced is on the claim with the reason named.
+    """
     app = _app()
     conn = app._conn()
     try:
@@ -661,12 +536,6 @@ def api_credit_claim(run: int | None = None) -> dict[str, Any]:
 def api_state_report(run: int | None = None) -> dict[str, Any]:
     """The child-nutrition recall report: what the database can answer, and what
     it visibly cannot.
-
-    ``sections`` and ``export`` are arrays rather than objects so section and
-    field order survives the wire. Every underivable field carries
-    ``display: "REQUIRES HUMAN ENTRY"`` -- a blank box reads as "nothing to
-    report", which on this form would be the most dangerous thing in the
-    application.
     """
     app = _app()
     conn = app._conn()
@@ -698,17 +567,12 @@ def api_state_report(run: int | None = None) -> dict[str, Any]:
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Sources
-# ---------------------------------------------------------------------------
 
 @router.get("/sources")
 def api_sources() -> dict[str, Any]:
     """Every channel and corpus with its provenance label, and each adapter's
     field coverage read from ``declares()`` rather than from a hand-kept list
-    that could drift away from the code.
-
-    Works before anything has ever been ingested; ``header`` is then ``null``.
     """
     app = _app()
     conn = app._conn()
@@ -742,14 +606,12 @@ def api_sources() -> dict[str, Any]:
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # The two human actions
-# ---------------------------------------------------------------------------
 
 class ClearRequest(BaseModel):
     """``actor`` defaults to the empty string rather than being required, so a
     body that omits it is refused by the same check the HTML form is refused by
-    -- 400 with a sentence about a name, not a 422 about a schema."""
+    """
 
     actor: str = ""
     note: str | None = None
@@ -757,7 +619,8 @@ class ClearRequest(BaseModel):
 
 class ConfirmPulledRequest(BaseModel):
     """No ``note``: the confirm route stores NULL, and accepting a note the
-    system then discards would be a promise the record does not keep."""
+    system then discards would be a promise the record does not keep.
+    """
 
     actor: str = ""
 
@@ -773,18 +636,7 @@ def _decision_error(err: HTTPException) -> ApiError:
 
 @router.post("/matches/{match_id}/clear")
 def api_clear(match_id: int, payload: ClearRequest | None = None) -> dict[str, Any]:
-    """Mark a line cleared by a named person, through the one route that can.
-
-    The write itself is ``app.clear_match`` -- the audited clearing path, which
-    requires a non-empty actor and writes one ``decisions`` row and nothing else.
-    This function deliberately contains no INSERT of its own: a second writer
-    would mean "a person did this" no longer said what it says, and
-    ``tests/unit/test_clearing_audit.py`` fails the build if one appears.
-
-    The line is NOT removed and its status does not change. The response is the
-    whole match, re-read after the commit, so the client re-renders from one
-    authoritative read instead of guessing at what changed.
-    """
+    """Mark a line cleared by a named person, through the one route that can."""
     body = payload or ClearRequest()
     app = _app()
     try:
@@ -802,12 +654,7 @@ def api_clear(match_id: int, payload: ClearRequest | None = None) -> dict[str, A
 @router.post("/matches/{match_id}/confirm-pulled")
 def api_confirm_pulled(match_id: int,
                        payload: ConfirmPulledRequest | None = None) -> dict[str, Any]:
-    """Record that a named person walked to the cooler.
-
-    Delegates to ``app.confirm_pulled``, which touches no match and no inventory
-    row -- which is exactly why it is safe as a one-click action, and why the
-    word on the button is not "clear".
-    """
+    """Record that a named person walked to the cooler."""
     body = payload or ConfirmPulledRequest()
     app = _app()
     try:
@@ -822,23 +669,11 @@ def api_confirm_pulled(match_id: int,
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Corpus refresh
-# ---------------------------------------------------------------------------
 
 @router.post("/recalls/refresh")
 def api_refresh() -> dict[str, Any]:
-    """Try the agency; fall back to the cached snapshot on any failure.
-
-    Never returns a non-200. An unreachable agency is a reported fact -- a 500 in
-    front of a nutrition director during a recall is worse than stale data whose
-    age is on the screen.
-
-    It does not re-match. A refresh writes a new dated snapshot and stops there;
-    re-deciding lines underneath an operator holding a printout is the surprise
-    this system exists not to spring. The corpus ages come back with it so the
-    client can repaint the provenance strip without implying the sheet moved.
-    """
+    """Try the agency; fall back to the cached snapshot on any failure."""
     app = _app()
     conn = app._conn()
     try:

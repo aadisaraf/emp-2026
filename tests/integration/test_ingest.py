@@ -39,7 +39,6 @@ def test_row_counts_reconcile(conn, adapter):
     assert run["status"] == "ok"
     # rows READ is the file's row count; records WRITTEN is lower when two rows
     # of one export are the same item (FR-065). Both are on the run, and the
-    # difference is the merge -- neither number silently absorbs the other.
     assert run["rows_read"] == result["rows_read"]
     assert written == result["records_written"] <= run["rows_read"]
 
@@ -104,7 +103,8 @@ def test_ingest_never_raises_past_the_caller(conn, adapter, tmp_path):
 
 def test_the_delivery_and_its_channel_are_recorded(conn, adapter):
     """A run names the channel it arrived on and the delivery it came from, so
-    "which file produced this sheet" is answerable a week later."""
+    "which file produced this sheet" is answerable a week later.
+    """
     result = db.ingest_file(conn, FIXTURE, adapter)
     run = db.get_run(conn, result["run_id"])
     assert run["channel"] == "sftp_drop"
@@ -116,7 +116,7 @@ def test_the_delivery_and_its_channel_are_recorded(conn, adapter):
 def test_the_same_delivery_twice_is_refused_rather_than_double_counted(conn, adapter):
     """The drop folder can hand the same file back after a retry. Ingesting it
     again would make it the baseline tomorrow's "new since" diff is measured
-    against, and the day would report nothing new while hiding the change."""
+    """
     first = db.ingest_file(conn, FIXTURE, adapter)
     again = db.ingest_file(conn, FIXTURE, adapter)
     assert first["status"] == "ok"

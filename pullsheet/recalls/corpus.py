@@ -1,13 +1,4 @@
-"""Loading the committed recall corpus, and knowing how old it is.
-
-Constitution Principle III: no external dependency at demo time. The corpus is
-read from committed snapshot files on disk. ``fetch.py`` exists as a refresh
-convenience and is never on the path between a dropped file and a printed sheet.
-
-Freshness is measured against an INJECTED ``now``. Nothing here reads the clock.
-That is what makes the 24-hour window testable without waiting a day, and it is
-why the stale banner can be demonstrated on demand rather than hoped for.
-"""
+"""Loading the committed recall corpus, and knowing how old it is."""
 
 from __future__ import annotations
 
@@ -24,12 +15,12 @@ from pullsheet.recalls.parse import parse_record
 ROOT = Path(__file__).resolve().parent.parent.parent
 SNAPSHOT_DIR = ROOT / "pullsheet" / "recalls" / "snapshots"
 
-#: FR-068. Beyond this the corpus is presented as stale -- loudly, on every
-#: surface. A stale banner during a demo is intended behaviour, not a defect.
+# FR-068. Beyond this the corpus is presented as stale -- loudly, on every
+# surface. A stale banner during a demo is intended behaviour, not a defect.
 FRESHNESS_WINDOW = timedelta(hours=24)
 
-#: openFDA writes 'Ongoing' / 'Completed' / 'Terminated'. FR-016 keeps every one
-#: of them; the status only changes how the line is marked.
+# openFDA writes 'Ongoing' / 'Completed' / 'Terminated'. FR-016 keeps every one
+# of them; the status only changes how the line is marked.
 _STATUS_MAP = {
     "ongoing": "active",
     "completed": "active",
@@ -38,8 +29,8 @@ _STATUS_MAP = {
     "amended": "amended",
 }
 
-#: A recall with no classification sorts as the MOST serious until an agency
-#: says otherwise. Widening, not narrowing.
+# A recall with no classification sorts as the MOST serious until an agency
+# says otherwise. Widening, not narrowing.
 _CLASS_RANK = {"class i": 1, "class ii": 2, "class iii": 3}
 
 
@@ -70,16 +61,7 @@ def snapshot_files() -> list[tuple[str, Path, Path]]:
 
 def load_snapshots(conn: sqlite3.Connection, received_at: str | None = None) -> dict[str, int]:
     """Load every committed snapshot into ``recall_snapshots`` and ``recall_records``.
-
-    ``received_at`` is when THIS LOCATION first saw the recall, which is what the
     24-hour and 48-hour USDA FNS clocks run from (FR-051) -- not the agency's own
-    report date. It is injected so a rehearsal can place the kitchen anywhere in
-    that window on purpose.
-
-    A daily cadence re-reads the same feeds every morning, so a record already
-    held is UPDATED and its ``received_at`` is left exactly as it was. FR-053:
-    a deadline never resets. Re-stamping it would quietly hand the kitchen a
-    fresh 24 hours every time the corpus refreshed.
     """
     counts: dict[str, int] = {}
     now = received_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -167,9 +149,7 @@ def _parse_ts(value: str) -> datetime:
 
 def snapshot_age_hours(conn: sqlite3.Connection, now: datetime) -> Optional[float]:
     """Age of the oldest loaded snapshot, in hours, measured from ``captured_at``.
-
     ``now`` is injected. Never read from the clock -- FR-068 is only testable
-    because of that.
     """
     row = conn.execute("SELECT MIN(captured_at) AS oldest FROM recall_snapshots").fetchone()
     if not row or not row["oldest"]:
@@ -178,12 +158,7 @@ def snapshot_age_hours(conn: sqlite3.Connection, now: datetime) -> Optional[floa
 
 
 def is_stale(conn: sqlite3.Connection, now: datetime) -> bool:
-    """True when the corpus is older than the 24-hour window.
-
-    A stale corpus never changes which lines are produced -- it changes what the
-    header says about them. Suppressing lines because the data is old would trade
-    a visible caveat for an invisible gap.
-    """
+    """True when the corpus is older than the 24-hour window."""
     age = snapshot_age_hours(conn, now)
     return age is not None and age > FRESHNESS_WINDOW.total_seconds() / 3600.0
 
@@ -208,12 +183,7 @@ def corpus_summary(conn: sqlite3.Connection, now: datetime) -> list[dict]:
 
 
 def corpus_note(conn: sqlite3.Connection) -> str:
-    """One line naming every snapshot this run was matched against.
-
-    Frozen onto the run at finalize, and printed on that run's page thereafter.
-    Reading it live instead would put tonight's corpus and capture date above
-    yesterday's lines -- a document that looks sourced and is not.
-    """
+    """One line naming every snapshot this run was matched against."""
     parts = [
         f"{row['source']} {row['captured_at']} ({row['record_count']} records, "
         f"{row['provenance']})"

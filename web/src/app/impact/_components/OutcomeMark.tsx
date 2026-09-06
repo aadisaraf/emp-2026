@@ -8,15 +8,9 @@ export interface OutcomeMarkProps {
 }
 
 /**
- * What the substitution search settled on: a named covering recipe, or a proof
- * that this kitchen has none.
- *
- * Both chips are hollow and both carry a word, because "no substitute" is a
- * finding and not an error. It is the result of testing every clean candidate
- * recipe against the meal-pattern components the broken meal covered, and it
- * names the component that went unmet. Rendering it as an alert, an empty
- * state, or a red row would misstate what happened.
- */
+  What the substitution search settled on: a named covering recipe, or a proof
+  that this kitchen has none.
+*/
 export function OutcomeMark({ kind }: OutcomeMarkProps) {
   const none = kind === "none";
   return (

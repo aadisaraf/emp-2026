@@ -1,20 +1,4 @@
-/*
-  The typed client for the PullSheet JSON API.
-
-  One function per endpoint in brief/API.md, and every type from that document
-  re-exported from here, so a page only ever imports "@/lib/api".
-
-  Two rules this file exists to enforce:
-
-  1. Server components fetch with { cache: "no-store" }. A cached status word is
-     a lie: a file lands in data/watched/ and the sheet changes underneath you.
-  2. A failure is a fact to render, never a crash and never a placeholder
-     number. Every function throws ApiRequestError with a message that is safe
-     to show; wrap the call in attempt() and hand the failure to <ErrorState />.
-
-  The demo runs with the network physically off. This module contacts exactly
-  one origin, the local FastAPI process, and nothing else.
-*/
+/* The typed client for the PullSheet JSON API. */
 
 import type {
   CreditClaim,
@@ -69,12 +53,9 @@ export class ApiRequestError extends Error {
 export type Attempt<T> = { ok: true; data: T } | { ok: false; error: ApiFailure };
 
 /**
- * Run a request and return the failure instead of throwing it. This is the
- * shape every page uses:
- *
- *   const sheet = await attempt(getSheet());
- *   if (!sheet.ok) return <ErrorState failure={sheet.error} />;
- */
+  Run a request and return the failure instead of throwing it. This is the
+  shape every page uses:
+*/
 export async function attempt<T>(promise: Promise<T>): Promise<Attempt<T>> {
   try {
     return { ok: true, data: await promise };
@@ -187,10 +168,9 @@ export function getLocation(): Promise<Location> {
 }
 
 /**
- * The status word, the counts, both clocks, corpus provenance and the refused
- * deliveries. This is the polled endpoint, and it never returns an error
- * status: "nothing has ever been ingested" is a 200 with never_received true.
- */
+  The status word, the counts, both clocks, corpus provenance and the refused
+  deliveries. This is the polled endpoint, and it never returns an error
+*/
 export function getStatus(): Promise<StatusResponse> {
   return request<StatusResponse>("/api/v1/status");
 }
@@ -206,10 +186,9 @@ export function getRun(runId: number): Promise<RunDetailResponse> {
 }
 
 /**
- * The current pull sheet. PULL and HELD arrive interleaved in one order
- * (class rank, tier rank, score, id). Render them in the order received: do not
- * re-sort, do not group by status, do not filter cleared lines out.
- */
+  The current pull sheet. PULL and HELD arrive interleaved in one order
+  (class rank, tier rank, score, id). Render them in the order received: do not
+*/
 export function getSheet(): Promise<SheetResponse> {
   return request<SheetResponse>("/api/v1/sheet");
 }
@@ -256,10 +235,9 @@ export function getSources(): Promise<SourcesResponse> {
 --------------------------------------------------------------------------- */
 
 /**
- * Mark a line cleared. The only action in the system that can do that, and it
- * needs a named person. It writes one audit row: the match is not edited, the
- * line stays on every sheet, and its status stays PULL or HELD.
- */
+  Mark a line cleared. The only action in the system that can do that, and it
+  needs a named person. It writes one audit row: the match is not edited, the
+*/
 export function clearMatch(
   matchId: number,
   body: { actor: string; note?: string | null },
@@ -285,12 +263,9 @@ export function confirmPulled(
 }
 
 /**
- * Try the agency, fall back to the committed snapshot. Always answers 200:
- * offline, the answer is cached_fallback with the reason attached.
- *
- * It does not re-match. Nothing on the pull sheet changes, and the UI must not
- * imply otherwise. Refetch the status after this call, not the sheet.
- */
+  Try the agency, fall back to the committed snapshot. Always answers 200:
+  offline, the answer is cached_fallback with the reason attached.
+*/
 export function refreshRecalls(): Promise<RefreshResponse> {
   return request<RefreshResponse>("/api/v1/recalls/refresh", {
     method: "POST",

@@ -1,19 +1,4 @@
-"""FR-005. The export that arrives as an email attachment.
-
-Many kitchens have no network folder to write to; they have a manager who
-emails a spreadsheet. This adapter reads a local mailbox file (mbox), pulls CSV
-attachments out of it, and hands each one to the drop adapter -- literally the
-same reader, not a parallel one. An emailed export and a dropped export
-therefore take the same code path, so there is no second place for row parsing
-to drift.
-
-**Provenance is `hand-authored`, and that is not a placeholder.** This reads a
-committed fixture mailbox, not a live mail server -- no IMAP, no credentials, no
-polling. Constitution Principle V forbids presenting a stub as working, so the
-label says what it is, on `/sources` and everywhere else the source appears.
-Wiring it to a real mailbox means changing the source of the mbox file and the
-provenance label together, and nothing else.
-"""
+"""FR-005. The export that arrives as an email attachment."""
 
 from __future__ import annotations
 
@@ -35,13 +20,14 @@ class EmailDropAdapter(InventoryAdapter):
     """Reads an export that arrived as an attachment, through the same reader."""
 
     name = "email_drop"
-    #: Reads a committed fixture mailbox, not a mail server. Labelled honestly.
+    # Reads a committed fixture mailbox, not a mail server. Labelled honestly.
     provenance = "hand-authored"
     channel = "email_drop"
 
     def declares(self) -> frozenset[str]:
         """Whatever the attached spreadsheet carries -- identical to the drop,
-        because after extraction the attachment IS a dropped file."""
+        because after extraction the attachment IS a dropped file.
+        """
         return SftpDropAdapter().declares()
 
     def attachments(self, path: Path = MAILBOX) -> list[tuple[str, str]]:
@@ -62,12 +48,7 @@ class EmailDropAdapter(InventoryAdapter):
 
     def read(self, source: Path | str = MAILBOX,
              column_map: dict | None = None) -> Iterator[NormalizedRecord]:
-        """Extract each attachment and read it exactly as a dropped file.
-
-        A rejection from the inner reader propagates unchanged, so an emailed
-        export that cannot be read is recorded the same way a dropped one is --
-        with the failing column named, and with any existing sheet untouched.
-        """
+        """Extract each attachment and read it exactly as a dropped file."""
         path = Path(source)
         found = self.attachments(path)
         if not found:

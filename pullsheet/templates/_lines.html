@@ -1,10 +1,4 @@
-{#
-  The sheet's line table, defined once and used by every page that shows lines:
-  today's dashboard, the printable sheet, and any past run's page. One macro
-  means PULL and HELD are interleaved in the same single order everywhere -- a
-  page that quietly re-sorted or filtered them would be a different sheet
-  wearing the same name.
-#}
+{# The sheet's line table, defined once and used by every page that shows lines: #}
 {% import "base.html" as ui with context %}
 
 {% macro lines_table(section) -%}
@@ -25,9 +19,7 @@
       </td>
       <td class="item">
         <a href="/match/{{ m.id }}">{{ m.raw_description }}</a>
-        {# The supplier line is what the manager reads off the side of the
-           case, and for most rows it is the identifier the match was made
-           on -- so it belongs on the sheet, not only on the detail page. #}
+        {# The supplier line is what the manager reads off the side of the #}
         {% set supplier = m.brand or m.manufacturer %}
         {% if supplier or m.vendor_item_code %}
           <div class="supplier">
@@ -37,9 +29,7 @@
           </div>
         {% endif %}
         {% if m.lot_note %}<div class="note">{{ m.lot_note }}</div>{% endif %}
-        {# FR-016. A terminated or amended recall keeps its line. Both the
-           prior and the current state are shown, because "terminated" alone
-           does not tell an operator what it used to be. #}
+        {# FR-016. A terminated or amended recall keeps its line. Both the #}
         {% if m.recall_status != 'active' %}
           <div class="note note-amended">
             Recall <strong>{{ m.recall_status }}</strong> by the agency
@@ -84,9 +74,7 @@
     <strong class="stale">(stale)</strong>{% endif %}{% if not loop.last %}<br>{% endif %}
   {% endfor %}
 {% else %}
-  {# A finalized run states the corpus it was actually matched against.
-     Printing tonight's snapshot over yesterday's lines would make a document
-     look sourced when it is not. #}
+  {# A finalized run states the corpus it was actually matched against. #}
   <span class="frozen-corpus">{{ header.corpus_note }}</span>
 {% endif %}
 {%- endmacro %}

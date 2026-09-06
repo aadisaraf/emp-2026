@@ -7,15 +7,6 @@ import styles from "./sheet.module.css";
 /*
   The three things a sheet has to be able to say about itself, none of which is
   an empty state and none of which reads as "clear":
-
-  1. this is a past run, shown as it was printed;
-  2. this delivery was refused, so it produced no line;
-  3. this run compared everything and matched nothing.
-
-  The third one is the one that has to be got right. A zero-line sheet is a
-  result: the comparison ran, against a named corpus with a capture date, and
-  this page is the record that it ran. It is not a blank page and it is not a
-  green tick.
 */
 
 export interface PastRunBannerProps {
@@ -59,10 +50,9 @@ export interface RunWithoutLinesProps {
 }
 
 /**
- * A rejected delivery, or one still being read. Either way there are no lines,
- * and the plainest available sentence says so. A refused delivery never
- * overwrites the sheet that was printed before it.
- */
+  A rejected delivery, or one still being read. Either way there are no lines,
+  and the plainest available sentence says so. A refused delivery never
+*/
 export function RunWithoutLines({ run, showCurrentLink }: RunWithoutLinesProps) {
   const rejected = run.status === "rejected";
   const when = formatDateTime(rejected ? run.finalized_at : run.started_at);

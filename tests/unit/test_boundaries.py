@@ -1,14 +1,5 @@
 """The two boundaries that are cheap to hold and expensive to lose.
-
-1. ``matching/`` must not be able to reach ``adapters/``. If it can, adding a
-   fifth source stops being a one-file change and SC-012 quietly stops being
-   true. This is checked by walking the AST rather than by convention, because
-   conventions do not survive hour 20 of a build.
-
-2. ``lot_code`` must arrive at the matcher byte-identical to what the source
-   wrote. Lot normalization belongs in ``matching/lot.py``; an adapter that
-   "helpfully" upper-cases a lot on the way in makes R3 unfalsifiable, because
-   the un-normalized string no longer exists anywhere to compare against.
+fifth source stops being a one-file change and SC-012 quietly stops being
 """
 
 from __future__ import annotations
@@ -53,7 +44,8 @@ def test_matching_never_imports_adapters(module):
 
 def test_no_matching_module_imports_the_web_layer():
     """Same reasoning, one layer up: the matcher is importable and testable
-    without FastAPI in the room."""
+    without FastAPI in the room.
+    """
     for module in _matching_modules():
         imported = _imported_modules(module)
         assert not {m for m in imported if m.startswith(("fastapi", "pullsheet.app"))}, module.name
@@ -62,7 +54,7 @@ def test_no_matching_module_imports_the_web_layer():
 def test_lot_code_reaches_the_matcher_byte_identical(tmp_path):
     """The fixture writes ``4829-B``; the recall writes ``LOT 4829B``. Reconciling
     those two is matching/lot.py's job, and it can only do it if the raw string
-    survives the trip in unchanged."""
+    """
     from pullsheet import db
 
     source_lots = []
@@ -82,7 +74,6 @@ def test_lot_code_reaches_the_matcher_byte_identical(tmp_path):
 
     # Compared as sets, not as lists: two export rows for the same item, storage
     # and lot are one record (FR-065), so the stored list is legitimately
-    # shorter. What may never change is the STRING.
     assert set(stored) == set(source_lots), (
         "a lot code was rewritten between the source and the database: "
         f"{set(stored) ^ set(source_lots)}")

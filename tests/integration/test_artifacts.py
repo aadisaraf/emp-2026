@@ -1,10 +1,4 @@
-"""US3 acceptance scenarios 1-5. The three compliance artifacts.
-
-Scenario 5 is the one that binds them together and it is asserted against every
-artifact, not sampled: an artifact that reached a compliance folder without
-saying where its numbers came from is exactly the failure Principle V exists to
-prevent.
-"""
+"""US3 acceptance scenarios 1-5. The three compliance artifacts."""
 
 from __future__ import annotations
 
@@ -99,7 +93,8 @@ def test_scenario_2_state_report_marks_every_underivable_field(loaded, run_id, c
 
 def test_scenario_2_no_field_is_silently_blank(loaded, run_id, client):
     """The dangerous failure is a form that LOOKS complete. Every row on the
-    rendered page carries either a value or the marker."""
+    rendered page carries either a value or the marker.
+    """
     report = state_report.state_report(loaded, run_id, NOW)
     for value in report["export"].values():
         assert value, "a field rendered as an empty string"
@@ -147,7 +142,8 @@ def test_scenario_4_costless_lines_are_quantity_only_and_named(loaded, run_id, c
 
 def test_scenario_4_no_price_is_ever_estimated(loaded, run_id):
     """The property behind scenario 4: an extended value exists only where both
-    inputs did."""
+    inputs did.
+    """
     for line in credit_claim.credit_claim(loaded, run_id, NOW)["lines"]:
         if line["extended"] is not None:
             assert line["quantity"] is not None and line["unit_cost"] is not None
@@ -181,7 +177,8 @@ def test_scenario_5_every_artifact_labels_the_provenance_of_its_sources(client, 
 ])
 def test_no_artifact_writes_anything(client, loaded, url):
     """Artifacts are reads. Generating paperwork must not be able to change what
-    the paperwork is about."""
+    the paperwork is about.
+    """
     before = {t: loaded.execute(f"SELECT COUNT(*) c FROM {t}").fetchone()["c"]
               for t in ("matches", "decisions", "inventory_records", "recall_records")}
     assert client.get(url).status_code == 200

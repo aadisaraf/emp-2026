@@ -1,8 +1,4 @@
-"""T073, FR-060. The refresh, and the fallback it is designed around.
-
-An unreachable agency is never an error response. Both outcomes return normally
-and both say which happened.
-"""
+"""T073, FR-060. The refresh, and the fallback it is designed around."""
 
 from __future__ import annotations
 
@@ -46,7 +42,8 @@ def test_every_failure_mode_falls_back_rather_than_raising(loaded, monkeypatch, 
 
 def test_an_empty_response_is_treated_as_a_failure(loaded, monkeypatch):
     """Zero records is not a fresh corpus; it is a broken one. Writing it would
-    silently empty the matcher's inputs."""
+    silently empty the matcher's inputs.
+    """
     monkeypatch.setattr(fetch, "fetch", lambda *a, **k: {"results": []})
     assert fetch.refresh(loaded, now=NOW)["status"] == "cached_fallback"
 
@@ -62,7 +59,8 @@ def test_the_fallback_names_the_snapshot_date_and_size(loaded, monkeypatch):
 
 def test_a_successful_fetch_never_overwrites_a_committed_snapshot(loaded, monkeypatch, tmp_path):
     """Two refreshes on one day must not be able to destroy the corpus a
-    rehearsal was verified against."""
+    rehearsal was verified against.
+    """
     monkeypatch.setattr(fetch, "SNAPSHOT_DIR", tmp_path)
     monkeypatch.setattr(fetch, "fetch", lambda *a, **k: {"results": [{"recall_number": "X"}]})
 

@@ -11,17 +11,7 @@ export interface SignatureBlockProps {
   columns?: 1 | 2;
 }
 
-/**
- * Ruled lines for a pen.
- *
- * This component takes labels and nothing else. There is no value prop, no
- * default, and no "prefill" flag, because the one way this document can lie is
- * by arriving with a name already in it. The system records what was found on
- * the shelf; it does not record who handled it, and it must not appear to.
- *
- * The rule under each field is --border-strong, which clears 3:1 against white
- * and is therefore still a visible line after a photocopy.
- */
+/** Ruled lines for a pen. */
 export function SignatureBlock({
   heading,
   note,

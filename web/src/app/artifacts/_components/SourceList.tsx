@@ -9,18 +9,7 @@ export interface SourceListProps {
   note?: string;
 }
 
-/**
- * Every file behind the document, on the document.
- *
- * The key, the label, the repository path and the full description, printed
- * rather than summarised. This block is the reason the artifact can be handed
- * to an inspector: it says where each number came from and which of the three
- * labels applies, and it says it on the filed copy, not only on screen.
- *
- * The FSIS sentence appears whenever an FSIS source is listed. It is the one
- * fact on the page most likely to be quietly dropped, so it is the one fact
- * hardest to drop: it is keyed off the payload, not off a flag.
- */
+/** Every file behind the document, on the document. */
 export function SourceList({ sources, note }: SourceListProps) {
   const namesFsis = sources.some((source) => source.key === "fsis");
 

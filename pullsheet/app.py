@@ -1,15 +1,4 @@
-"""FastAPI routes. Thin -- every route delegates immediately.
-
-The dashboard is three surfaces and nothing else:
-
-* ``/``        MAIN -- the recall picture for the most recent good run.
-* ``/impact``  IMPACT -- what those pulls cost: meals, money, paperwork.
-* ``/runs``    HISTORY -- every run, and any one of them as it stood.
-
-The only interesting thing in this file is ``clear_match``, which is the second
-of the three justified clearing paths in the codebase and the ONLY way a line
-can be marked cleared at all.
-"""
+"""FastAPI routes. Thin -- every route delegates immediately."""
 
 from __future__ import annotations
 
@@ -73,9 +62,6 @@ def _conn():
 
 def _current(conn):
     """The run the dashboard shows, or None if nothing has ever been ingested.
-
-    Deliberately the latest run with status 'ok'. A rejected delivery or a run
-    still in flight must never become "the latest run" and blank the picture --
     that is the FR-009 failure the whole run lifecycle exists to prevent.
     """
     return db.latest_ok_run(conn)
@@ -89,13 +75,7 @@ def _run_or_404(conn, run_id: int):
 
 
 def _decided_before(conn, run) -> str | None:
-    """The moment a run's sheet depicts.
-
-    For the current run that is now, so every clearing applies -- a false
-    positive cleared on Monday stays cleared. For a past run it is the instant
-    the NEXT good run replaced it, so its page does not show lines as cleared
-    before anyone had cleared them.
-    """
+    """The moment a run's sheet depicts."""
     nxt = conn.execute(
         "SELECT started_at FROM runs WHERE status = 'ok' AND id > ? ORDER BY id LIMIT 1",
         (run["id"],)).fetchone()
@@ -103,12 +83,7 @@ def _decided_before(conn, run) -> str | None:
 
 
 def _sync_form(request: Request) -> dict:
-    """Read a form body from a sync route.
-
-    Starlette exposes form parsing as a coroutine; this route is otherwise
-    entirely synchronous, and one nested event loop is cheaper than making the
-    whole clearing and mapping surface async for no other reason.
-    """
+    """Read a form body from a sync route."""
     import asyncio
 
     async def _read():
@@ -124,9 +99,7 @@ def _sync_form(request: Request) -> dict:
             loop.close()
 
 
-# ---------------------------------------------------------------------------
 # Status
-# ---------------------------------------------------------------------------
 
 @app.get("/api/status")
 def api_status():
@@ -153,9 +126,7 @@ def api_status():
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # MAIN -- the recall picture
-# ---------------------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
@@ -205,17 +176,11 @@ def sheet(request: Request, run_id: int | None = None):
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # RUN HISTORY
-# ---------------------------------------------------------------------------
 
 @app.get("/runs", response_class=HTMLResponse)
 def run_history(request: Request):
-    """Every run, newest first -- rejected deliveries included.
-
-    Listing only the good ones would make a week of failed drops look like a
-    quiet week, which is the same lie as a blank dashboard.
-    """
+    """Every run, newest first -- rejected deliveries included."""
     conn = _conn()
     try:
         return templates.TemplateResponse("runs.html", {
@@ -247,15 +212,13 @@ def run_detail(request: Request, run_id: int):
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # IMPACT -- what the pulls cost
-# ---------------------------------------------------------------------------
 
 @app.get("/impact", response_class=HTMLResponse)
 def impact(request: Request):
     """What each pulled case was going to become, what replaces it, and what it
     is worth. The menu half is a child nutrition surface and is shown only for a
-    school deployment; the money half applies to any kitchen."""
+    """
     conn = _conn()
     try:
         run = _current(conn)
@@ -284,10 +247,8 @@ def impact(request: Request):
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Compliance artifacts (US3). Each is a read of the same match rows the sheet
 # shows -- none of them can change a line, and none writes anything.
-# ---------------------------------------------------------------------------
 
 @app.get("/artifacts/hold", response_class=HTMLResponse)
 def artifact_hold(request: Request, run: int | None = None):
@@ -347,7 +308,7 @@ def artifact_state_report(request: Request, run: int | None = None):
 def sources_page(request: Request):
     """SC-007, FR-003. Every source, its provenance, and what each adapter can
     honestly read -- straight from `declares()`, not from a hand-kept list that
-    could drift away from the code."""
+    """
     conn = _conn()
     try:
         adapters = []
@@ -376,11 +337,7 @@ def sources_page(request: Request):
 
 @app.post("/recalls/refresh")
 def refresh_recalls(request: Request):
-    """FR-060. Try the agency; fall back to the cached snapshot on any failure.
-
-    An unreachable endpoint is NEVER an error response. The page renders either
-    way and says which of the two happened.
-    """
+    """FR-060. Try the agency; fall back to the cached snapshot on any failure."""
     conn = _conn()
     try:
         result = recalls_fetch.refresh(conn, now=now())
@@ -395,7 +352,8 @@ def refresh_recalls(request: Request):
 @app.get("/match/{match_id}", response_class=HTMLResponse)
 def match_detail(request: Request, match_id: int):
     """Both source records, verbatim, with the triggering substring highlighted
-    on each side. FR-023, SC-002."""
+    on each side. FR-023, SC-002.
+    """
     conn = _conn()
     try:
         row = conn.execute(
@@ -418,7 +376,6 @@ def match_detail(request: Request, match_id: int):
         subject = db.subject_key(row["identity_key"], row["source"], row["source_record_id"])
         # Every decision about this FOOD and this RECALL, including ones taken
         # against an earlier run's match row for the same pair. A judgement does
-        # not expire because a new export arrived overnight.
         decisions = [dict(d) for d in conn.execute(
             "SELECT * FROM decisions WHERE subject_key = ? ORDER BY id", (subject,))]
         run = db.get_run(conn, row["run_id"])
@@ -433,9 +390,7 @@ def match_detail(request: Request, match_id: int):
         conn.close()
 
 
-# ---------------------------------------------------------------------------
 # Actions
-# ---------------------------------------------------------------------------
 
 @app.get("/ingest", response_class=HTMLResponse)
 def ingest_page(request: Request, pending: str | None = None):
@@ -464,17 +419,7 @@ def ingest_page(request: Request, pending: str | None = None):
 
 
 def _remembered_answers(conn) -> dict[str, str]:
-    """Answers this location has already given about ambiguous headers.
-
-    Only the ANSWERS are reused, never a whole mapping. Detection itself runs on
-    every file: replaying an old mapping over a differently shaped export would
-    silently drop the columns whose headers changed, and produce a sheet that
-    looks complete because nothing was rejected.
-
-    Answers are remembered across channels, not per channel. "Does `Code` mean
-    the lot or the barcode" is a fact about this kitchen's inventory system; it
-    does not change because today's export arrived by email instead of SFTP.
-    """
+    """Answers this location has already given about ambiguous headers."""
     answers: dict[str, str] = {}
     for row in conn.execute(
         """SELECT column_map FROM runs
@@ -484,12 +429,7 @@ def _remembered_answers(conn) -> dict[str, str]:
 
 
 def _resolve(conn, adapter, path):
-    """Detect this file's columns, then fill any ambiguity from memory.
-
-    Returns ``(mapping, ambiguous)``; a non-empty ``ambiguous`` means the
-    operator has to be asked, because nothing in this system guesses at a column
-    whose meaning would change what a line says.
-    """
+    """Detect this file's columns, then fill any ambiguity from memory."""
     _headers, mapping, ambiguous = adapter.inspect(path)
     remembered = _remembered_answers(conn)
     for header in list(ambiguous):
@@ -503,7 +443,8 @@ def _resolve(conn, adapter, path):
 @app.post("/ingest/upload")
 async def ingest_upload(file: UploadFile):
     """Accept a spreadsheet, detect its columns, and ask once if anything is
-    genuinely ambiguous."""
+    genuinely ambiguous.
+    """
     UPLOADS.mkdir(parents=True, exist_ok=True)
     name = Path(file.filename or "upload.csv").name
     target = UPLOADS / name
@@ -517,7 +458,6 @@ async def ingest_upload(file: UploadFile):
         except Exception as err:            # noqa: BLE001
             # A file we cannot even read the headers of is still a delivery that
             # happened. It becomes a rejected run so the morning it arrives
-            # broken is visible, rather than a morning with no run at all.
             run_id = db.open_run(conn, adapter.channel)
             db.reject_run(conn, run_id, str(err))
             return RedirectResponse("/ingest", status_code=303)
@@ -532,10 +472,7 @@ async def ingest_upload(file: UploadFile):
 
 @app.post("/ingest/mapping")
 def ingest_mapping(request: Request, filename: str = Form(...)):
-    """Store the operator's answer and ingest with it.
-
-    The answer rides on the run, so the next delivery reuses it without asking.
-    """
+    """Store the operator's answer and ingest with it."""
     form = _sync_form(request)
     path = UPLOADS / Path(filename).name
     if not path.exists():
@@ -558,14 +495,7 @@ def ingest_mapping(request: Request, filename: str = Form(...)):
 
 @app.post("/match/{match_id}/confirm-pulled")
 def confirm_pulled(match_id: int, actor: str = Form("")):
-    """FR-054. A named person says this line has physically been pulled.
-
-    Writes a `confirm_pulled` decision and nothing else. It touches no match and
-    no inventory row, so it records that somebody walked to the cooler and
-    cannot make a line disappear from any sheet -- including this one's. That is
-    exactly why it is safe as a one-click action, and why the word on the button
-    is not "clear".
-    """
+    """FR-054. A named person says this line has physically been pulled."""
     if not actor or not actor.strip():
         raise HTTPException(400, "an actor name is required to confirm a line")
     conn = _conn()
@@ -643,7 +573,6 @@ def clear_match(match_id: int, actor: str = Form(""), note: str = Form("")):
 
 # The JSON API the browser dashboard reads. Imported last, and only for its
 # router: `api.py` calls back into the two decision writers above, so the import
-# has to run after they exist.
 from pullsheet.api import router as api_router  # noqa: E402
 
 app.include_router(api_router)

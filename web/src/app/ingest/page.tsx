@@ -6,12 +6,6 @@ import styles from "./ingest.module.css";
 /*
   The three ways an export reaches this location, and what to do when the
   scheduled one does not arrive.
-
-  The upload form itself lives on the Python side, at :8000/ingest, because the
-  multipart POST and the column-mapping round trip are already implemented and
-  audited there. Duplicating them here would put a second writer in front of the
-  same table for no gain. This page names the channels and hands the operator to
-  the form.
 */
 
 export const dynamic = "force-dynamic";
@@ -27,13 +21,11 @@ const CHANNELS = [
     path: "data/watched/",
   },
   {
-    /* Deliberately not described as working mail. The reader is real and
-       tested, and an attachment parses into exactly the same record as a
-       dropped file. What does not exist is a mail server: nothing here
-       connects to IMAP, holds a mailbox credential, or polls for new mail.
-       The fixture below is a committed file. Saying otherwise on this page
-       would be the one place in the application that claims a channel it
-       does not run. */
+    /*
+      Deliberately not described as working mail. The reader is real and
+      tested, and an attachment parses into exactly the same record as a
+      dropped file. What does not exist is a mail server: nothing here
+    */
     term: "Email",
     detail:
       "The same reader, behind an attachment instead of a file. There is no " +

@@ -11,18 +11,7 @@ import {
 } from "./runsMeta";
 import styles from "./CorpusInForce.module.css";
 
-/*
-  What this run was matched against.
-
-  There is a trap in the payload here, and it is deliberate on the server's
-  side. corpora is populated only for the run that is currently in force; for
-  any past run it is an empty array, because printing tonight's snapshot dates
-  above yesterday's lines would make a document look sourced when it is not.
-  What a past run carries instead is corpus_note, a sentence frozen at finalize
-  that already names each source, its capture time and its provenance. It is
-  rendered verbatim. Suppressing it because it is a plain string would drop the
-  provenance label off a whole run.
-*/
+/* What this run was matched against. */
 
 export interface CorpusInForceProps {
   header: SheetHeader;

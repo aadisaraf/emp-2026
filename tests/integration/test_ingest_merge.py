@@ -1,9 +1,4 @@
-"""Identity, merging, and supersession (FR-064, FR-065, SC-014).
-
-The property that matters: a quantity on the pull sheet can always be traced
-back to the source rows that produced it, and re-ingesting an export replaces
-rather than duplicates -- without destroying anything a human already decided.
-"""
+"""Identity, merging, and supersession (FR-064, FR-065, SC-014)."""
 
 from __future__ import annotations
 
@@ -24,12 +19,7 @@ HEADER = ["Storage Location", "Item Description", "Qty On Hand", "UOM",
 
 
 def _copy(tmp_path, name: str) -> Path:
-    """The same export under a new name.
-
-    A delivery is identified by name AND content hash, so handing the drop the
-    identical file twice is refused as a duplicate. Tomorrow's export is a new
-    file, which is what supersession is actually about.
-    """
+    """The same export under a new name."""
     target = tmp_path / name
     target.write_bytes(FIXTURE.read_bytes())
     return target
@@ -59,7 +49,8 @@ def adapter():
 
 def test_same_identity_rows_merge_with_summed_quantity(conn, adapter, tmp_path):
     """SC-014. Two lines for the same product, same storage, same lot are one
-    record -- and both contributing source rows are named."""
+    record -- and both contributing source rows are named.
+    """
     path = _write(tmp_path / "dupes.csv", [
         ["Freezer A", "CHICKEN STRIPS BRD FC FROZEN", "14", "CS",
          "2/5 lb", "", "4829-B", "38.50", "2026-08-24"],
@@ -74,7 +65,6 @@ def test_same_identity_rows_merge_with_summed_quantity(conn, adapter, tmp_path):
         "SELECT * FROM inventory_records ORDER BY id").fetchall()
     # Two records: Freezer A (merged from rows 1 and 2) and Cooler 1 (row 3).
     # A different storage location is a different identity -- you walk to a
-    # different place to pull it.
     assert len(rows) == 2
 
     freezer = next(r for r in rows if r["storage_location"] == "Freezer A")
@@ -139,7 +129,8 @@ def test_superseded_rows_point_at_their_replacement(conn, adapter, tmp_path):
 
 def test_a_prior_clearing_decision_still_resolves_after_reingest(conn, adapter, tmp_path):
     """Nothing is deleted, so a decision taken against yesterday's sheet is still
-    an auditable record today -- and it still applies to today's line."""
+    an auditable record today -- and it still applies to today's line.
+    """
     from pullsheet.matching.run import ordered_matches
     from pullsheet.recalls.corpus import load_snapshots
 
@@ -165,7 +156,6 @@ def test_a_prior_clearing_decision_still_resolves_after_reingest(conn, adapter, 
 
     # And the decision reaches TODAY's line, which is a different match row for
     # the same food and the same recall. A clearing that expired overnight would
-    # have to be taken again every morning.
     today = [m for m in ordered_matches(conn, second["run_id"])
              if db.subject_key(m["identity_key"], m["source"],
                                m["source_record_id"]) == subject]
@@ -182,7 +172,8 @@ def test_identity_uses_the_gtin_when_there_is_one(conn):
 
 def test_identity_falls_back_to_the_manufacturer_catalog_number(conn):
     """No barcode, but a maker and their own item number -- which is a stronger
-    identity than a product name, and is what most kitchen exports carry."""
+    identity than a product name, and is what most kitchen exports carry.
+    """
     catalog = db.identity_key("Freezer A", None, "pollock wedge", "L1",
                               "High Liner Foods", "HL-2261")
     name_only = db.identity_key("Freezer A", None, "pollock wedge", "L1")

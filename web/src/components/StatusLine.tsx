@@ -12,18 +12,7 @@ export interface StatusLineProps {
   failure?: ApiFailure | null;
 }
 
-/**
- * The state of the location, in one line, above everything else.
- *
- * word and detail are rendered verbatim. They are constitutional strings
- * produced by pullsheet/runs.py and covered by Python tests; a front end that
- * paraphrases them can drift into a claim the backend never made. The only
- * string this component authors is the next action.
- *
- * Two things this line refuses to do: read "clear" when nothing has ever been
- * received, and go quiet when the corpus is stale. Staleness gates this one
- * word and never a line on the sheet.
- */
+/** The state of the location, in one line, above everything else. */
 export function StatusLine({ status, failure }: StatusLineProps) {
   if (!status) {
     return (

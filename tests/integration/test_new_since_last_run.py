@@ -1,15 +1,4 @@
-"""US5, FR-055 to FR-058. "What is new since the last run", and nothing else.
-
-This is what used to be a standing monitor with its own table, its own schedule
-and its own high-water mark. Amendment 3 dissolved all three: the daily run
-already re-matches the whole active shelf against the whole corpus, so "new" is
-a property of a match row, decided once at the moment the matcher writes it.
-
-The assertion that carries the most weight here is
-``test_a_carried_over_item_is_not_new_every_single_morning``. A diff on row ids
-would flag the entire sheet as new every day -- and would pass every other test
-in this file, because every other test only ever looks at one transition.
-"""
+"""US5, FR-055 to FR-058. "What is new since the last run", and nothing else."""
 
 from __future__ import annotations
 
@@ -32,16 +21,14 @@ HEADER = ("Storage Location,Item Description,Qty On Hand,UOM,Pack Size,"
           "Case UPC,Lot #,Brand,Manufacturer,Mfr Item #,Vendor,Vendor Item #,"
           "Unit Cost,Received Date\n")
 
-#: An overnight delivery of a product that is genuinely recalled in the
-#: committed corpus -- the same case already sitting in Freezer A, arriving into
-#: a second storage location. Real PULL lines, not a hand-forced one.
+# An overnight delivery of a product that is genuinely recalled in the
+# committed corpus -- the same case already sitting in Freezer A, arriving into
 RECALLED_ROW = ("Cooler 1,BEEF CRUMBLES COOKED TACO SEASONED 5 LB,6,CS,4/5 lb,,,"
                 "Prairie Line,Prairie Line Beef LLC,PL-0904,US Foods,6612034,"
                 "33.90,2026-09-04\n")
 
-#: A second arrival that touches the corpus only by a word in an ingredient
-#: list. It is flagged new too -- it genuinely was not on the shelf yesterday --
-#: and it is HELD, not PULL, which is the fail-safe gate doing its job.
+# A second arrival that touches the corpus only by a word in an ingredient
+# list. It is flagged new too -- it genuinely was not on the shelf yesterday --
 WEAK_ROW = ("Dry Store,SALT IODIZED 5 LB,4,CS,12 CT,,S-100,House,House Brand,"
             "HB-1,Sysco,SY-1,3.10,2026-09-01\n")
 
@@ -60,7 +47,7 @@ def kitchen(tmp_path):
 def _export(tmp_path, name: str, extra_rows: str = "", *, drop: str = "") -> Path:
     """Tomorrow's export: the committed fixture, optionally with rows added or
     one description dropped. A new file name, because a delivery is identified by
-    name and content hash and the same file twice is refused as a duplicate."""
+    """
     lines = FIXTURE.read_text().splitlines(keepends=True)
     if drop:
         lines = [ln for ln in lines if drop not in ln]
@@ -85,7 +72,7 @@ def _new_lines(conn, run_id):
 def test_the_first_run_flags_nothing_as_new(kitchen):
     """A first run with every line marked "new" would bury the one line that
     matters on every run after it. There is no previous run, so nothing is new
-    -- which is a different statement from "nothing changed"."""
+    """
     conn, tmp = kitchen
     result = _deliver(conn, _export(tmp, "day1.csv"), NOW)
     run_id = result["run_id"]
@@ -101,7 +88,7 @@ def test_the_first_run_flags_nothing_as_new(kitchen):
 def test_an_unchanged_shelf_produces_a_recorded_run_with_zero_new_lines(kitchen):
     """FR-058. The day nothing happened must be visible in the history. A run
     that only appears when it found something turns silence into ambiguity:
-    nothing new, or nothing ran?"""
+    """
     conn, tmp = kitchen
     _deliver(conn, _export(tmp, "day1.csv"), NOW)
     day2 = _deliver(conn, _export(tmp, "day2.csv"), NOW + timedelta(days=1))
@@ -167,8 +154,7 @@ def _inject_recall(conn, description, *, record_id, firm="Overnight Foods LLC"):
 def test_a_recall_published_overnight_is_new_on_the_next_run(kitchen):
     """The other direction, and the reason `python -m pullsheet.match` exists:
     the corpus changed and the inventory did not. The shelf is re-matched, so an
-    item that has sat in the freezer untouched for a week becomes a pull line
-    the morning its recall is published."""
+    """
     conn, tmp = kitchen
     _deliver(conn, _export(tmp, "day1.csv"), NOW)
 
@@ -192,8 +178,7 @@ def test_a_recall_published_overnight_is_new_on_the_next_run(kitchen):
 def test_a_carried_over_item_is_not_new_every_single_morning(kitchen):
     """Five days, same shelf. A carried-over item is re-recorded under a fresh
     inventory_records id every morning, so a diff on row ids would report the
-    entire sheet as new on all four subsequent days and the word would stop
-    meaning anything. The diff is on item identity."""
+    """
     conn, tmp = kitchen
     counts = []
     for day in range(5):
@@ -209,7 +194,7 @@ def test_a_carried_over_item_is_not_new_every_single_morning(kitchen):
 def test_an_item_that_drops_off_one_export_and_returns_is_not_new(kitchen):
     """Inventory is superseded by a later export, never by silence. An item
     missing from one morning's file was never removed from the shelf, so it was
-    never absent from the sheet and there is nothing for it to be new against."""
+    """
     conn, tmp = kitchen
     _deliver(conn, _export(tmp, "day1.csv"), NOW)
     day2 = _deliver(conn, _export(tmp, "day2.csv", drop="BEEF CRUMBLES"),
@@ -224,7 +209,8 @@ def test_an_item_that_drops_off_one_export_and_returns_is_not_new(kitchen):
 
 def test_new_survives_a_restart_because_it_is_a_column_and_not_a_cache(kitchen):
     """There is no in-memory high-water mark to lose. `is_new` was written by
-    the matcher and finalized with the run."""
+    the matcher and finalized with the run.
+    """
     conn, tmp = kitchen
     _deliver(conn, _export(tmp, "day1.csv"), NOW)
     day2 = _deliver(conn, _export(tmp, "day2.csv", RECALLED_ROW), NOW + timedelta(days=1))
@@ -242,7 +228,8 @@ def test_new_survives_a_restart_because_it_is_a_column_and_not_a_cache(kitchen):
 
 def test_the_new_flag_is_never_edited_after_the_run_is_written(kitchen):
     """`matches` is written once. If `is_new` could be patched afterwards, a
-    line could become un-new without anybody watching it happen."""
+    line could become un-new without anybody watching it happen.
+    """
     conn, tmp = kitchen
     _deliver(conn, _export(tmp, "day1.csv"), NOW)
     day2 = _deliver(conn, _export(tmp, "day2.csv", RECALLED_ROW), NOW + timedelta(days=1))

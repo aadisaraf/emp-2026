@@ -47,15 +47,9 @@ function Cell({
 }
 
 /**
- * What the system found, in the two channels it is allowed to use: the status
- * word and the kind of evidence behind it.
- *
- * There is no percentage here and there is nothing to shade from green to red.
- * Tiering is an evidence ladder with six rungs, CONFIRMED and PROBABLE are
- * PULL and POSSIBLE is HELD, and the tier legend under the block says so in
- * the constitution's own words rather than leaving it to be inferred from a
- * colour.
- */
+  What the system found, in the two channels it is allowed to use: the status
+  word and the kind of evidence behind it.
+*/
 export function Verdict({
   match,
   recall,

@@ -1,10 +1,4 @@
-"""SC-010. One test per edge case in spec.md. All twelve.
-
-These are the cases a hostile reviewer reaches for, so each one is asserted
-against behaviour rather than against a comment claiming the behaviour. Where an
-edge case says "is not dropped" or "is not cleared", the test proves the line is
-still there -- an absence is never accepted as evidence.
-"""
+"""SC-010. One test per edge case in spec.md. All twelve."""
 
 from __future__ import annotations
 
@@ -51,11 +45,7 @@ def _lines(conn):
 
 
 def _rematch(conn):
-    """Re-run the matcher for a corpus that changed after the export arrived.
-
-    A new run, because a run is written once: injecting a recall and re-matching
-    into the same run would be editing a finalized record.
-    """
+    """Re-run the matcher for a corpus that changed after the export arrived."""
     run_id = db.open_run(conn, "rematch", f"rematch-{conn.total_changes}")
     # No new inventory: the matcher reads the ACTIVE set, so everything on the
     # shelves is re-matched against the corpus as it now stands.
@@ -193,7 +183,7 @@ def test_05_an_untracked_lot_produces_held_not_cleared(loaded):
 def test_06_one_line_per_lot(loaded):
     """One location, so the case that used to be "same product at two sites" is
     the same product in two lots -- which is the one that actually matters,
-    because a recall names lots and not buildings."""
+    """
     rows = loaded.execute(
         """SELECT i.lot_code, i.storage_location, i.raw_description, COUNT(*) c
              FROM matches m JOIN inventory_records i ON i.id = m.inventory_record_id
@@ -340,7 +330,6 @@ def test_10_a_later_export_supersedes_and_preserves_human_decisions(loaded, tmp_
 
     # The clearing was recorded against the FOOD and the RECALL, so the new
     # run's brand-new match row for the same pair is still cleared. A decision
-    # that expired overnight would have to be taken again every morning.
     today = [m for m in ordered_matches(loaded, result["run_id"])
              if db.subject_key(m["identity_key"], m["source"],
                                m["source_record_id"]) == subject]
@@ -360,7 +349,6 @@ def test_11_lot_formats_normalize_and_a_partial_overlap_is_held(loaded):
 
     # The fixture's chicken strips carry lot "4829-B". A recall quoting
     # "4829-B-07" contains it without equalling it: the honest answer is HELD
-    # with the relationship named, not a decision in either direction.
     assert lot_module.compare("4829-B", "4829-B-07") == "contained"
 
     _inject(loaded, "Cardinal Valley Chicken Strips Breaded Fully Cooked 2/5 lb",

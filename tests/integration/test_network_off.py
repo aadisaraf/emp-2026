@@ -1,18 +1,4 @@
-"""SC-004, FR-060. The whole flow works with no network at all.
-
-Unplugging a cable proves it once. This proves it on every run: name resolution
-and outbound connection are replaced with something that raises, so ANY attempt
-to reach the network -- ours or a library's -- fails loudly instead of silently
-succeeding because the laptop happened to be online.
-
-Local socketpairs are left alone deliberately. asyncio builds one for its own
-self-pipe, and blocking that would fail the test for a reason that has nothing
-to do with the network.
-
-Constitution Principle III: no external dependency at demo time. The one live
-path, recalls/fetch.py, is a refresh convenience and is never between a dropped
-file and a printed sheet.
-"""
+"""SC-004, FR-060. The whole flow works with no network at all."""
 
 from __future__ import annotations
 

@@ -13,18 +13,7 @@ export interface RunFactsProps {
   previousRunId: number | null;
 }
 
-/**
- * The four counts, then where they came from.
- *
- * PULL 42 and HELD 814 are two exact integers and they are rendered as two
- * exact integers. There is no donut, because 42 against 814 is a sliver against
- * a ring, and there is no count-up, because 856 is not a scoreboard.
- *
- * The counts, the business date, the channel and the delivery reference sit in
- * one panel deliberately: a number and its provenance are read together, and
- * the corpus_note underneath is the frozen sentence that says which snapshots
- * this run was matched against.
- */
+/** The four counts, then where they came from. */
 export function RunFacts({ run, counts, previousRunId }: RunFactsProps) {
   const facts: DefinitionItem[] = [
     { term: RUN_TERMS.status, value: <StatusBadge value={run.status} /> },

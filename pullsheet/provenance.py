@@ -1,16 +1,4 @@
-"""Every data source in PullSheet, and how it got here.
-
-Constitution Principle V (Disclosed Provenance): no surface may present authored
-data as sourced data. This module is the single dictionary the whole application
-reads from, so a label cannot drift between the screen, the print sheet, and the
-repository's own table in ``data/PROVENANCE.md``.
-
-Three labels, and only three:
-
-``live``            fetched from the agency at run time
-``dated-snapshot``  fetched once, committed, and shown with its capture date
-``hand-authored``   written by the build team; not sourced from anywhere
-"""
+"""Every data source in PullSheet, and how it got here."""
 
 from __future__ import annotations
 
@@ -91,7 +79,8 @@ SOURCES: dict[str, tuple[Provenance, str, str]] = {
 
 def provenance_of(key: str) -> Provenance:
     """The provenance of one source. Raises on an unknown key -- an unlabeled
-    source is a defect, not a default."""
+    source is a defect, not a default.
+    """
     return SOURCES[key][0]
 
 

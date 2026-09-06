@@ -1,21 +1,7 @@
 import { attempt, getMatch } from "@/lib/api";
 import type { SheetResponse } from "@/lib/api";
 
-/*
-  Who cleared a line, and when.
-
-  A sheet line carries cleared_count and nothing else, because clearing is not
-  a status: matches.status stays PULL or HELD and the row keeps its place in
-  the single order. The name of the person and the time they did it live in the
-  decisions table, which the match detail endpoint returns.
-
-  So the page asks for the detail of the cleared lines only. That set is small
-  by construction: every clearing costs a named human one deliberate action, and
-  the fixture sheet has one across 856 lines. The cap below exists so that a
-  pathological database cannot turn one page render into a thousand requests;
-  a line past the cap still renders as cleared, without the name, and the
-  ClearedMark component already says a person did it.
-*/
+/* Who cleared a line, and when. */
 
 export interface ClearedFact {
   actor: string | null;
@@ -29,13 +15,7 @@ export type ClearedFacts = Map<number, ClearedFact>;
 
 const MAX_LOOKUPS = 60;
 
-/**
- * Look up the clearing decisions behind every cleared line on this sheet.
- *
- * decided_before is honoured: on a past run the sheet shows clearings as they
- * stood the instant that sheet was replaced, so a decision taken afterwards is
- * counted by neither the server's cleared_count nor this name.
- */
+/** Look up the clearing decisions behind every cleared line on this sheet. */
 export async function clearedFacts(sheet: SheetResponse): Promise<ClearedFacts> {
   const facts: ClearedFacts = new Map();
 

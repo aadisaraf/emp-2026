@@ -21,26 +21,7 @@ export interface StateStatementProps {
   reachable: boolean;
 }
 
-/**
- * The state of this location, in the largest text on the page.
- *
- * The status word is this page's title, not "Today": the nav already says
- * Today, the masthead already says which location and which run, and the one
- * thing an operator opens this screen to find out is the word. It is the only
- * 20px line here.
- *
- * word and detail are rendered verbatim. They are constants in
- * pullsheet/runs.py, covered by Python tests, and a front end that paraphrases
- * them can drift into a claim the backend never made. The one string this page
- * authors is the next action.
- *
- * The six states read differently on purpose. `never` is the load-bearing one:
- * it is not green, it carries no counts, and it says in two more sentences that
- * silence is not an answer, because a blank page would be read as reassurance.
- * `clear` is also not green, because the claim is scoped to a corpus with a
- * capture date and that date is further down this page. `stale` tints this one
- * word and changes nothing else: every line on the sheet is byte-identical.
- */
+/** The state of this location, in the largest text on the page. */
 export function StateStatement({ status, reachable }: StateStatementProps) {
   const action =
     status.state === "overdue" && status.run_age_hours !== null
@@ -57,9 +38,11 @@ export function StateStatement({ status, reachable }: StateStatementProps) {
         <StatusBadge value={status.state} />
         <span className={styles.spacer} />
         <div className={cx(styles.actions, "no-print")}>
-          {/* The primary weight belongs to the sheet, which is the work. A
-              location that has never received an export has nothing to do yet,
-              so the way in is offered, not urged. */}
+          {/*
+            The primary weight belongs to the sheet, which is the work. A
+            location that has never received an export has nothing to do yet,
+            so the way in is offered, not urged.
+          */}
           {hasRun ? (
             <Link className={styles.primary} href="/sheet">
               {OPEN_SHEET}

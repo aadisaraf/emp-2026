@@ -158,7 +158,8 @@ pullsheet/
 ```
 
 Python 3.12, FastAPI, Jinja2, SQLite via `sqlite3` with hand-written SQL. No
-ORM. ~5,050 lines of application code, ~3,700 lines of tests.
+ORM. ~4,700 lines of application code, ~4,450 lines of tests, plus a ~9,300-line
+Next.js front end in `web/`.
 
 ### Three claims worth checking rather than believing
 
@@ -187,16 +188,17 @@ is the checklist for that session, not a record of it having happened.
 
 | Area | Files | Lines | Owner | Explained |
 |---|---|---|---|---|
-| `matching/` — the gate, ladder, screening | 9 | 1,208 | _unassigned_ | ☐ |
-| `db.py` + `schema.sql` — persistence, runs, supersession | 2 | 809 | _unassigned_ | ☐ |
-| `adapters/` — ingestion boundary | 6 | 675 | _unassigned_ | ☐ |
-| `recalls/` — corpus, parsing, refresh, amendment | 5 | 650 | _unassigned_ | ☐ |
-| `app.py` — routes | 1 | 633 | _unassigned_ | ☐ |
-| `artifacts/` — the four printed artifacts | 5 | 509 | _unassigned_ | ☐ |
-| `menu/` — cascade and substitution | 3 | 364 | _unassigned_ | ☐ |
-| `runs.py` + `deadlines.py` + `location.py` — status word, clocks, the location record | 3 | 273 | _unassigned_ | ☐ |
-| `provenance.py` — the source labels | 1 | 109 | _unassigned_ | ☐ |
-| `main.py` + `match.py` — the watcher and the deliberate re-match | 2 | 100 | _unassigned_ | ☐ |
+| `matching/` — the gate, ladder, screening | 9 | 887 | _unassigned_ | ☐ |
+| `api.py` — the JSON surface the dashboard reads | 1 | 691 | _unassigned_ | ☐ |
+| `db.py` + `schema.sql` — persistence, runs, supersession | 2 | 634 | _unassigned_ | ☐ |
+| `app.py` — routes | 1 | 578 | _unassigned_ | ☐ |
+| `recalls/` — corpus, parsing, refresh, amendment | 5 | 544 | _unassigned_ | ☐ |
+| `adapters/` — ingestion boundary | 6 | 522 | _unassigned_ | ☐ |
+| `artifacts/` — the four printed artifacts | 5 | 420 | _unassigned_ | ☐ |
+| `menu/` — cascade and substitution | 3 | 265 | _unassigned_ | ☐ |
+| `runs.py` + `deadlines.py` + `location.py` — status word, clocks, the location record | 3 | 198 | _unassigned_ | ☐ |
+| `provenance.py` — the source labels | 1 | 98 | _unassigned_ | ☐ |
+| `main.py` + `match.py` — the watcher and the deliberate re-match | 2 | 81 | _unassigned_ | ☐ |
 
 Start with `matching/gate.py` and `schema.sql`. Between them they hold every
 claim the demo makes, and they are the two files three minutes of hostile

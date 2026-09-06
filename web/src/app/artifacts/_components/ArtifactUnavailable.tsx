@@ -9,26 +9,7 @@ export interface ArtifactUnavailableProps {
   failure: ApiFailure;
 }
 
-/**
- * What an artifact route renders when the API refuses it.
- *
- * Three of the four cases are not errors at all, they are states, and each one
- * gets the sentence that belongs to it:
- *
- * - no_inventory   nothing has ever been ingested. This is the longest of the
- *                  three deliberately: a short line here would be read as
- *                  reassurance, and a document that does not exist because
- *                  nothing arrived is not the same as a document with nothing
- *                  in it.
- * - no_run         the run id in the address is not a run here.
- * - not_a_meal_program  the state report is a child nutrition artifact and
- *                  this deployment does not run a meal program. The route is
- *                  still reachable and still says why, because an invisible
- *                  route is not an explanation.
- *
- * Anything else is the backend not answering, which ErrorState states without
- * apologising and without inventing a number.
- */
+/** What an artifact route renders when the API refuses it. */
 export function ArtifactUnavailable({ title, failure }: ArtifactUnavailableProps) {
   if (failure.code === "no_inventory") {
     return (

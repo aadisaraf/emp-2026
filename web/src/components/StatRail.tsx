@@ -17,15 +17,7 @@ export interface StatRailProps {
   className?: string;
 }
 
-/**
- * One horizontal band of label and value pairs, separated by 1px rules.
- *
- * Not three cards in a row. PULL 42, HELD 814 and the clocks are not three
- * peers to be boxed and shadowed; they are the numbers an operator reads in one
- * saccade, so they sit on one line at one type size with the deadlines beside
- * them. Nothing counts up, and nothing here is a chart: 42 against 814 as a
- * donut is a sliver against a ring.
- */
+/** One horizontal band of label and value pairs, separated by 1px rules. */
 export function StatRail({ items, deadlines, className }: StatRailProps) {
   return (
     <div className={cx(styles.rail, className)} data-role="statrail">

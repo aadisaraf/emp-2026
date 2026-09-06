@@ -8,21 +8,16 @@ import styles from "./SideNav.module.css";
 
 export interface SideNavProps {
   /**
-   * The state report is a USDA child-nutrition artifact and exists only where
-   * the location runs a meal program. Defaults to showing it: a route that
-   * answers 404 not_a_meal_program is honest, an invisible one is not.
-   */
+    The state report is a USDA child-nutrition artifact and exists only where
+    the location runs a meal program. Defaults to showing it: a route that
+  */
   servesMealProgram?: boolean;
 }
 
 /**
- * One flat vertical list of the routes that exist. No icons, no accordions, no
- * collapse toggle, and no locations item.
- *
- * The active row carries a 3px left marker, which is the one place in this
- * design a coloured left strip is allowed: on a nav item it marks position,
- * not status, and status strips are what the tell is about.
- */
+  One flat vertical list of the routes that exist. No icons, no accordions, no
+  collapse toggle, and no locations item.
+*/
 export function SideNav({ servesMealProgram = true }: SideNavProps) {
   const pathname = usePathname();
   const artifacts = ARTIFACT_NAV.filter(

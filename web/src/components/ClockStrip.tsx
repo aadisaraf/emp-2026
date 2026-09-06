@@ -16,17 +16,9 @@ export interface ClockStripProps {
 }
 
 /**
- * The two USDA clocks: 24 hours to notify the distributor, 48 hours to finish
- * the inventory assessment, both measured from when the recall notice arrived
- * here.
- *
- * An elapsed clock keeps its place, keeps its due time, and states the overrun
- * in the API's own words. It does not reset, disappear, turn green, or move to
- * a past section, and a client-side tick may never flip overrun back to false.
- *
- * An empty array means this run matched no recall at all. That renders as "no
- * notice has arrived", never as a satisfied clock.
- */
+  The two USDA clocks: 24 hours to notify the distributor, 48 hours to finish
+  the inventory assessment, both measured from when the recall notice arrived
+*/
 export function ClockStrip({
   deadlines,
   variant = "rail",

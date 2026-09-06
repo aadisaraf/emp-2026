@@ -7,18 +7,7 @@ export interface HumanEntryMarkProps {
   ruled?: boolean;
 }
 
-/**
- * What a field the system cannot fill says instead of nothing.
- *
- * A blank box on a state form reads as "nothing to report". A box reading
- * REQUIRES HUMAN ENTRY reads as "you are not finished". The difference is the
- * whole point of this artifact, so the marker is a hollow chip in the ochre
- * that means unresolved everywhere else on this dashboard, and never an empty
- * cell, a dash, or the letters N/A.
- *
- * Hollow rather than filled: 13 of the 24 fields carry this, and 13 filled
- * chips would out-shout the 11 real values on the same page.
- */
+/** What a field the system cannot fill says instead of nothing. */
 export function HumanEntryMark({ marker, ruled }: HumanEntryMarkProps) {
   return (
     <span className={styles.wrap}>

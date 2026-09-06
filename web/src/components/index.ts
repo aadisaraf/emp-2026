@@ -1,10 +1,6 @@
 /*
   The shared component library. Import from "@/components", never from a file
   path inside it, so a page never has to know how this directory is arranged.
-
-  One naming collision to know about: the component EvidenceKind and the type
-  EvidenceKind (from "@/lib/api") share a name. If a file needs both, alias the
-  type: import type { EvidenceKind as EvidenceKindValue } from "@/lib/api".
 */
 
 export { ClearedMark } from "./ClearedMark";

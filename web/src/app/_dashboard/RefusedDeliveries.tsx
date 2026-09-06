@@ -10,18 +10,7 @@ export interface RefusedDeliveriesProps {
   runs: Run[];
 }
 
-/**
- * Deliveries that were refused.
- *
- * A rejection is louder than a quiet morning, so it gets a 2px outline and the
- * word REJECTED, and the reason is printed in full rather than clipped into a
- * table cell. A refused delivery never overwrote the sheet: the run above is
- * still the last export that was read, unchanged.
- *
- * This section does not render at all when nothing was refused. An empty panel
- * saying every delivery succeeded is noise on every normal day, and noise on a
- * normal day is how the abnormal day gets missed.
- */
+/** Deliveries that were refused. */
 export function RefusedDeliveries({ runs }: RefusedDeliveriesProps) {
   return (
     <Panel title={PANEL.refused} note={REFUSED_NOTE} printBlock>

@@ -32,18 +32,7 @@ export interface MatchPaneProps {
   onClose: () => void;
 }
 
-/*
-  One line, opened beside the sheet rather than on top of it.
-
-  A modal would cover the rows the operator is comparing this line against,
-  which is the whole reason they opened it. So this is a pane at a fixed width
-  that pushes the table, and the Jinja route at /match/{id} on the API origin
-  stays as the addressable, printable fallback.
-
-  Both records are shown verbatim, and the two pieces of text that agreed are
-  marked inside them. Nothing here is a score: the tier is the kind of evidence
-  and there is no percentage in this system to render.
-*/
+/* One line, opened beside the sheet rather than on top of it. */
 
 /** Wrap the first occurrence of each trigger component inside the source text. */
 function marked(text: string, trigger: string): ReactNode {
@@ -74,9 +63,10 @@ function marked(text: string, trigger: string): ReactNode {
   return out;
 }
 
-/** The agency writes its classes in Roman numerals, so class_rank is spelled
- *  back the way an inspector reads it. A record with no classification is not
- *  unranked: it is ranked with the most serious class. */
+/**
+  The agency writes its classes in Roman numerals, so class_rank is spelled
+  back the way an inspector reads it. A record with no classification is not
+*/
 const CLASS_NUMERAL: Record<number, string> = { 1: "I", 2: "II", 3: "III" };
 
 function Row({ term, children }: { term: string; children: ReactNode }) {
@@ -98,9 +88,11 @@ type PaneState =
   | { phase: "failed"; failure: ApiFailure };
 
 export function MatchPane({ matchId, onClose }: MatchPaneProps) {
-  /* Keyed by line id where it is used, so opening a different line mounts a new
-     pane that starts at "loading" on its own. Nothing resets this on the way in,
-     which means one line's record can never be shown under another line's name. */
+  /*
+    Keyed by line id where it is used, so opening a different line mounts a new
+    pane that starts at "loading" on its own. Nothing resets this on the way in,
+    which means one line's record can never be shown under another line's name.
+  */
   const [state, setState] = useState<PaneState>({ phase: "loading" });
 
   useEffect(() => {

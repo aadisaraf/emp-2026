@@ -39,18 +39,7 @@ import {
 } from "../_components/runsMeta";
 import styles from "./page.module.css";
 
-/*
-  One run.
-
-  What arrived, what it produced, what was refused and why, the corpus that was
-  in force at the time, and the way through to the sheet this run printed.
-
-  A refused delivery is a 200 from the API, not an error, and it gets the same
-  page as an accepted one: the same facts about what arrived, and then the
-  reason it was refused, stated plainly and first. What it must never get is a
-  page that reads as clear. A run with no lines because nothing could be read
-  is not a morning with nothing to pull.
-*/
+/* One run. */
 
 export const dynamic = "force-dynamic";
 

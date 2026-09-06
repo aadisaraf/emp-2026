@@ -1,10 +1,4 @@
-{#
-  The provenance macro is defined here and NOWHERE else. Principle V makes the
-  label load-bearing UI: it must appear wherever a source is shown, on screen and
-  on paper, and it may not be styled into invisibility. One macro means one place
-  to check that, and tests/unit/test_templates.py fails if the label strings
-  appear anywhere outside it.
-#}
+{# The provenance macro is defined here and NOWHERE else. Principle V makes the #}
 {% macro provenance(key, captured_at=None) -%}
 <span class="prov prov-{{ label_for(key) | replace(' ', '-') }}" data-provenance="{{ label_for(key) }}"
       title="How this data got here">{{ label_for(key) }}{% if captured_at %} &middot; captured {{ captured_at[:10] }}{% endif %}</span>

@@ -1,6 +1,7 @@
 """The adapter interface is frozen at this point in the build; every adapter
 after it is written against these shapes. A change here is a change to every
-adapter at once, so it should be hard to make by accident."""
+adapter at once, so it should be hard to make by accident.
+"""
 
 from __future__ import annotations
 
@@ -18,13 +19,10 @@ from pullsheet.adapters.base import (
 CONTRACT_FIELDS = (
     # The cooler, not the building. One deployment is one location, so there is
     # no site field: a school-name column in an export is recognised and then
-    # deliberately dropped, because letting it reach the sheet would send
-    # someone to a building instead of a freezer.
     "storage_location", "raw_description", "quantity", "unit", "pack_size",
     "gtin", "lot_code",
     # Supplier identity (FR-069). Ordered next to the other identifiers because
     # that is what they are: for most kitchen rows they are the ONLY identifiers,
-    # since barcode and lot coverage in item masters is partial.
     "brand", "manufacturer", "manufacturer_item_code", "vendor_name", "vendor_item_code",
     "unit_cost", "received_date", "source_row", "unpopulated",
 )
@@ -41,14 +39,15 @@ def test_sixteen_fields():
 def test_there_is_no_site_field():
     """The pivot, enforced. A `site` field would be the first step back toward a
     roster of buildings, and every downstream consumer would start carrying one
-    again."""
+    """
     assert "site" not in NormalizedRecord._fields
     assert "site" not in DECLARABLE
 
 
 def test_normalized_description_is_not_an_adapter_output():
     """Normalization has one implementation, in matching/normalize.py. An adapter
-    that could supply its own would be able to change matching behaviour."""
+    that could supply its own would be able to change matching behaviour.
+    """
     assert "normalized_description" not in NormalizedRecord._fields
     assert "identity_key" not in NormalizedRecord._fields
 

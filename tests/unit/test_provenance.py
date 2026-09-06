@@ -1,9 +1,5 @@
 """The provenance table and the provenance module must agree, and every path
 either of them names must exist.
-
-Constitution Principle V makes provenance load-bearing UI. A label that drifts
-between the code and the repository's own table is the exact failure this test
-exists to catch.
 """
 
 from __future__ import annotations
@@ -56,5 +52,6 @@ def test_only_three_labels_exist():
 
 def test_fsis_is_not_labelled_as_a_snapshot():
     """FSIS could not be fetched. Labelling it `dated-snapshot` would claim a
-    capture that never happened -- exactly what Principle V forbids."""
+    capture that never happened -- exactly what Principle V forbids.
+    """
     assert SOURCES["fsis"][0] == "hand-authored"

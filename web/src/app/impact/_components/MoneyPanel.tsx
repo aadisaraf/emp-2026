@@ -19,18 +19,7 @@ export interface MoneyPanelProps {
   runId: number;
 }
 
-/**
- * What the pulls cost, for every deployment.
- *
- * The rule the whole panel is built around: nothing is estimated. Extended
- * value is quantity times unit cost and nothing else, so a line the export did
- * not price has no extended value, is named as excluded, and keeps its
- * quantity. Three of the 27 fixture lines land there. The server's own
- * exclusion statement names all three and is printed above the table at body
- * size, not tucked into a footnote.
- *
- * Only PULL lines are here. A held line is undecided by definition.
- */
+/** What the pulls cost, for every deployment. */
 export function MoneyPanel({ claim, runId }: MoneyPanelProps) {
   const items: StatRailItem[] = [
     { label: MONEY.rail.claimable, value: formatMoney(claim.total) },
@@ -93,8 +82,6 @@ export function MoneyPanel({ claim, runId }: MoneyPanelProps) {
   Column order is fixed: the identity of the case first, then the three numbers
   that make the arithmetic, then the codes, then who sold it and what recalled
   it. Measures are right-aligned so magnitudes stack; lot codes and item codes
-  are left-aligned mono, because they are names spelled with digits and the
-  operator is comparing them against the case in their hands.
 */
 const LINE_COLUMNS: Column<ClaimLine>[] = [
   {

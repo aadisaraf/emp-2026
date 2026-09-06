@@ -1,27 +1,4 @@
-"""The single normalization implementation.
-
-Everything that compares two food descriptions goes through here: the matcher,
-the screening index, and the menu cascade. One implementation means a recalled
-item reaches recipes by the same code path it reaches inventory, and a change in
-normalization cannot make those two disagree.
-
-**Words are compared as written.** There is no spelling correction, no fuzzy
-character distance, and no abbreviation dictionary. Neither side of the
-comparison is freehand text: a kitchen's item master carries the string its
-distributor's catalog supplied, and agency notices quote the manufacturer's own
-catalog string back. They are the same dialect, written by the same industry:
-
-    inventory  BRD COD PORTIONS CRUNCHY ROW 3 OZ
-    recall     HFS 10/6lb Crunchy Row Breaded Cod Rectangles 3 oz.
-
-Both are database fields. Building machinery to recover ``chicken`` from
-``chkn`` would be solving a problem neither side has, and every entry in such a
-dictionary is a place where a wrong guess silently changes what matches.
-
-What normalization does do is discard the parts that are noise for *identity*:
-case, punctuation, pack sizes, units, and bare numbers. ``raw_description`` is
-untouched and is what the operator sees on the pull sheet.
-"""
+"""The single normalization implementation."""
 
 from __future__ import annotations
 
@@ -50,20 +27,12 @@ _PUNCT = re.compile(r"[^a-z0-9]+")
 
 
 def normalize(text: str | None) -> str:
-    """Lowercase, strip pack sizes and units, sort the remaining words.
-
-    Returns a stable string, so two descriptions that normalize the same way
-    compare equal as strings as well as as sets.
-    """
+    """Lowercase, strip pack sizes and units, sort the remaining words."""
     return " ".join(sorted(tokens(text)))
 
 
 def tokens(text: str | None) -> frozenset[str]:
-    """The significant words of a food description, exactly as they were spelled.
-
-    >>> sorted(tokens("HFS 10/6lb Crunchy Row Breaded Cod Rectangles 3 oz."))
-    ['breaded', 'cod', 'crunchy', 'hfs', 'rectangles', 'row']
-    """
+    """The significant words of a food description, exactly as they were spelled."""
     if not text:
         return frozenset()
 

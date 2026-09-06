@@ -15,19 +15,7 @@ import {
 import styles from "../_components/document.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
-/*
-  The distributor credit claim.
-
-  Quantity times unit cost, per line, summed. The one thing this document may
-  never do is estimate: a line whose export carried no price, or no quantity,
-  is listed with everything that is known about it and excluded from the total
-  by name. A claim with a guessed price in it is a claim that gets withdrawn,
-  and withdrawing a claim costs more credibility than the line was worth.
-
-  Only PULL lines are here. A held line is undecided by definition, and billing
-  a distributor for a case nobody has decided to remove is the same mistake in
-  the other direction.
-*/
+/* The distributor credit claim. */
 
 export const dynamic = "force-dynamic";
 
@@ -158,11 +146,9 @@ export default async function CreditClaimPage({
 }
 
 /**
- * The submission block. It is not a field on any API payload, and it is not a
- * distributor's own form: it is the part of a printed claim a person signs. The
- * sources footer says so in as many words rather than letting the layout imply
- * it came from somewhere.
- */
+  The submission block. It is not a field on any API payload, and it is not a
+  distributor's own form: it is the part of a printed claim a person signs. The
+*/
 const SUBMISSION_FIELDS = [
   "Submitted by (print name)",
   "Title",

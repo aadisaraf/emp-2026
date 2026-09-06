@@ -1,9 +1,4 @@
-"""FR-052, FR-053. The two USDA clocks, and what happens after zero.
-
-The verify in T065 is written as a single instant, so it is asserted as one:
-at received_at + 25h the 24-hour clock reads 1h overrun and the 48-hour clock
-reads 23h remaining.
-"""
+"""FR-052, FR-053. The two USDA clocks, and what happens after zero."""
 
 from __future__ import annotations
 
@@ -46,7 +41,6 @@ def test_both_clocks_exist_and_run_from_receipt_not_report_date(loaded, run_id):
 
     # The due time is receipt + the window exactly, whatever the agency's own
     # report_date says. A recall published weeks ago that a district learns of
-    # this morning starts its clock this morning.
     received = _received(loaded)
     assert clocks["distributor_notification"]["due_at"] == \
         (received + timedelta(hours=24)).isoformat(timespec="seconds")
@@ -84,7 +78,8 @@ def test_an_elapsed_deadline_never_hides_or_resets(loaded, run_id):
 
 def test_the_clock_reads_in_whole_minutes_not_sixty(loaded, run_id):
     """A remainder of 59.7 minutes rounded on its own prints "23h 60m", which
-    reads like a broken clock on the one screen that has to look trustworthy."""
+    reads like a broken clock on the one screen that has to look trustworthy.
+    """
     received = _received(loaded)
     for offset in (timedelta(hours=1, seconds=18), timedelta(hours=24, seconds=3),
                    timedelta(seconds=31), timedelta(hours=47, minutes=59, seconds=45)):

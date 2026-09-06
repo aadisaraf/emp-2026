@@ -13,18 +13,7 @@ import {
 } from "./_components/runsMeta";
 import styles from "./page.module.css";
 
-/*
-  Run history.
-
-  The log of every delivery, refused ones included. A rejected run is not an
-  error message that has been dealt with; it is the morning the kitchen worked
-  from yesterday's sheet, and it stays in the list saying so.
-
-  Above the table, one cell per calendar day. A run every day is the healthy
-  pattern at a location like this, so the thing worth seeing at a glance is a
-  date with nothing on it, and a strip that skipped those days would hide
-  exactly the fact it exists to show.
-*/
+/* Run history. */
 
 export const dynamic = "force-dynamic";
 

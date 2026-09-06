@@ -10,13 +10,7 @@ export interface EmptyStateProps {
   action?: ReactNode;
 }
 
-/**
- * An empty region, stated. No illustration, no checkmark, no green.
- *
- * The lengths of these are deliberately uneven: "nothing has been ingested yet"
- * is three sentences because a short one would be read as "clear", and "this
- * deployment runs no meal program" is one because it is uninteresting.
- */
+/** An empty region, stated. No illustration, no checkmark, no green. */
 export function EmptyState({ heading, body, action }: EmptyStateProps) {
   return (
     <div className={styles.empty}>

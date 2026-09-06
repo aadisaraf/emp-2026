@@ -92,8 +92,7 @@ def test_a_field_is_never_claimed_twice():
 def test_a_building_column_never_becomes_the_storage_location():
     """"Location" is a storage_location alias, so a "Location Name" column
     naming the school would land in the Storage column of the pull sheet and
-    send someone to a building instead of a freezer. It is recognised, and then
-    deliberately dropped."""
+    """
     for header in ["Site", "School", "Building", "Bldg", "Location Name", "Campus"]:
         mapping, ambiguous = detect([header, "Storage Location", "Item Description"])
         assert header not in mapping, f"{header} was mapped to {mapping.get(header)}"

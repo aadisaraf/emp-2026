@@ -7,15 +7,6 @@ import { clearedFacts } from "./_components/clearedFacts";
 /*
   The current pull sheet: the latest run that was read successfully, every line
   it produced, in the order it produced them.
-
-  This is the working screen and the printed artefact, so it is fetched fresh
-  on every render. The shell polls /api/v1/status every two seconds and
-  refreshes this page when the run id changes, which is what makes a file
-  landing in data/watched/ turn an open tab into today's sheet.
-
-  404 no_inventory is not an error here. It means no run has ever succeeded at
-  this location, and the page has to say that in words rather than render an
-  empty table that would be read as "clear".
 */
 
 export const dynamic = "force-dynamic";

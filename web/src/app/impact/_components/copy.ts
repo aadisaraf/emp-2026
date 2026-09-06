@@ -1,18 +1,4 @@
-/*
-  The strings this page owns, and only those.
-
-  Everything the API authors is rendered verbatim and is deliberately absent
-  from this file: claim.arithmetic, claim.exclusion_statement, menu.caveat,
-  proposal.caveat, proposal.reason, and every provenance label. Those are
-  covered by Python tests, and a front end that paraphrases them can drift into
-  a claim the backend never made.
-
-  House rules for anything added here: no em dash, no exclamation mark, digits
-  for every number including under ten, present tense for state, past tense with
-  a named actor for anything a person did, and one word per concept (run, pull
-  sheet, PULL, HELD, tier, evidence kind, storage location, corpus, delivery,
-  cleared, line, item).
-*/
+/* The strings this page owns, and only those. */
 
 import { plural } from "@/lib/format";
 
@@ -93,10 +79,9 @@ export const MENU = {
 } as const;
 
 /**
- * The two counts this page has to keep apart. 13 pulled inventory lines are not
- * 13 broken meals, and a page that ran them together would be wrong in both
- * directions.
- */
+  The two counts this page has to keep apart. 13 pulled inventory lines are not
+  13 broken meals, and a page that ran them together would be wrong in both
+*/
 export function cascadeCounts(input: {
   brokenLines: number;
   brokenMeals: number;

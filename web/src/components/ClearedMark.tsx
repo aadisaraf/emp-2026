@@ -11,18 +11,7 @@ export interface ClearedMarkProps {
   className?: string;
 }
 
-/**
- * A cleared line, marked in place.
- *
- * Clearing is not a status: matches.status stays PULL or HELD and the row stays
- * on the sheet, in its position, for every future run. What exists is an audit
- * row, and this is that row rendered on the line. Nothing is deleted, nothing
- * moves to a "resolved" section, and there is no filter that hides this.
- *
- * A clearing is always the act of a named person. When the payload only carries
- * the count, the text still says a person did it, because no automatic process
- * in this system can.
- */
+/** A cleared line, marked in place. */
 export function ClearedMark({ actor, when, count, className }: ClearedMarkProps) {
   const who = actor ? `cleared by ${actor}` : "cleared by a named person";
   const extra = count && count > 1 ? ` (${count} decisions)` : "";

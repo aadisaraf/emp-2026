@@ -10,29 +10,7 @@ import { MenuPanel, MoneyPanel, ProvenancePanel, SubstitutionPanel } from "./_co
 import styles from "./_components/impact.module.css";
 import { PRINT_LABEL } from "@/lib/nav";
 
-/*
-  Impact: what the pulls cost, and what came off the menu.
-
-  The page is two halves and they are deliberately not merged. The money applies
-  to every deployment, school or restaurant, and is always shown. The menu
-  cascade exists only where the location runs a meal program; on a restaurant
-  deployment it is one sentence saying so, not an empty panel dressed up as a
-  feature that is coming.
-
-  Three claims this page has to keep straight, because getting any of them wrong
-  would put a number on a document that goes to a distributor or a state agency:
-
-  1. Nothing is estimated. A pulled line the export did not price has no
-     extended value, is named as excluded, and keeps its quantity.
-  2. Every meal figure is a planning figure. None of them counts a meal that was
-     served, and the word travels with the number.
-  3. "No substitute" is a proof and not a failed search. It names the
-     meal-pattern component no clean recipe in this kitchen supplies and how
-     many candidates were tested to establish it.
-
-  Impact always reads the latest ok run. There is no run parameter here, and the
-  Jinja route does not take one either.
-*/
+/* Impact: what the pulls cost, and what came off the menu. */
 
 export const dynamic = "force-dynamic";
 

@@ -1,20 +1,4 @@
-"""FR-046, FR-047. The distributor credit claim.
-
-Plain arithmetic: quantity x unit cost, summed. No estimation anywhere, and that
-is the whole design.
-
-A line is excluded from the dollar total for exactly two reasons, and both are
-stated on the claim by name:
-
-  no unit cost   the export did not carry a price. Quantity is shown; no
-                 dollar figure is invented for it.
-  no quantity    the export left the count blank (FR-007 keeps the row). A price
-                 without a count is not an amount.
-
-A claim that quietly estimated either would be a claim a distributor could
-reject wholesale, and the kitchen would have no way to tell which number was
-guessed. Excluded lines are printed on the claim, not omitted from it.
-"""
+"""FR-046, FR-047. The distributor credit claim."""
 
 from __future__ import annotations
 
@@ -26,14 +10,15 @@ from typing import Any
 
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln", "unit_costs")
 
-#: Only pulled lines. A held line is undecided, and billing a distributor for a
-#: case you have not decided to remove is a claim you will have to withdraw.
+# Only pulled lines. A held line is undecided, and billing a distributor for a
+# case you have not decided to remove is a claim you will have to withdraw.
 CLAIM_STATUSES = ("PULL",)
 
 
 def claim_lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
     """One row per pulled inventory line in this run, deduplicated across its
-    recall matches."""
+    recall matches.
+    """
     grouped: dict[int, dict[str, Any]] = {}
     for row in conn.execute(
         """SELECT i.id, i.storage_location, i.raw_description, i.quantity,

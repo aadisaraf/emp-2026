@@ -26,20 +26,7 @@ export interface MenuPanelProps {
   servesMealProgram: boolean;
 }
 
-/**
- * The cascade: which planned meals a pull takes off the menu.
- *
- * Three counts live here and they are three different things, so they are
- * labelled as three different things. 13 pulled inventory lines reach a recipe.
- * Those lines break 9 menu items. 5 of those meals are on this week's menu,
- * across 5 service days, for 2,050 planned meals.
- *
- * Only PULL cascades. A held line is undecided, so cascading it would put a
- * meal on this page that nobody has decided to cancel; the number of held lines
- * left out is stated rather than left silent.
- *
- * Every meal figure is a planning figure. The word travels with the number.
- */
+/** The cascade: which planned meals a pull takes off the menu. */
 export function MenuPanel({ menu, proposals, runId, servesMealProgram }: MenuPanelProps) {
   const rows = brokenMeals(menu, proposals);
   const counts = proposalCounts(proposals);
@@ -127,7 +114,6 @@ export function MenuPanel({ menu, proposals, runId, servesMealProgram }: MenuPan
   One row per broken menu item. A recipe that is not on this week's menu still
   broke, so it keeps its row: the dates cell says it is not scheduled and the
   meal count is 0 rather than blank, because 0 planned meals is the true answer
-  there and a blank cell would read as unknown.
 */
 function mealColumns(caveat: string): Column<BrokenMeal>[] {
   return [
@@ -202,9 +188,6 @@ function mealColumns(caveat: string): Column<BrokenMeal>[] {
   One row per pulled inventory line that reaches a recipe. This is the evidence
   under the table above: which case in which cooler, which recall named it, and
   whether a person has already cleared that pairing. A cleared line is not
-  removed from the cascade. A menu that quietly un-breaks itself is exactly the
-  disappearance the system is built to refuse, so the clearing is shown beside
-  the line and the entry stays.
 */
 function entryColumns(caveat: string): Column<MenuEntry>[] {
   return [

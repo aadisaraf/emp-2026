@@ -1,15 +1,6 @@
 /*
   The words this pair of routes owns, in one file, so the list and the detail
   page cannot drift into two vocabularies for the same four channels.
-
-  Everything the backend authors is rendered verbatim from the payload and is
-  not repeated here: the status word and detail, the deadline labels and
-  phrases, the provenance labels, the rejection reason, and the frozen corpus
-  note. What follows is only what the dashboard is allowed to author.
-
-  House rules from the copy brief hold: no em dash, no exclamation mark, no
-  emoji, digits for numbers including under ten, present tense for state, and
-  one word per concept (run, delivery, corpus, line, item, storage location).
 */
 
 import type { RunChannel, RunStatus } from "@/lib/api";
@@ -17,19 +8,7 @@ import type { RunChannel, RunStatus } from "@/lib/api";
    place, while the label itself has a single definition in lib/strings. */
 export { channelLabel } from "@/lib/strings";
 
-/* ---------------------------------------------------------------------------
-   What each channel means, in a sentence.
-
-   The channel's own label lives in lib/strings, because the masthead, the
-   sheet letterhead and the artefacts all print it too and four spellings of
-   "SFTP drop" is three too many. What is local to this pair of routes is the
-   explanation, which only the runs pages have room for.
-
-   rematch is the one that has to be spelled out. It is a run with no delivery
-   behind it: the corpus changed and the inventory did not, so nothing arrived
-   that morning. A row that showed it a delivery reference, or a row count of
-   0, would claim a file arrived and was empty. Neither is true.
---------------------------------------------------------------------------- */
+/* What each channel means, in a sentence. */
 
 export const CHANNEL_EXPLANATION: Record<RunChannel, string> = {
   sftp_drop:

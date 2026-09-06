@@ -1,23 +1,4 @@
-"""FR-060. The one live path, and it is never on the demo path.
-
-Constitution Principle III: no external dependency at demo time. Everything
-between a dropped export and a printed sheet reads committed snapshot files.
-This module exists so a location can pull fresh data when it has a network, and
-it is designed around the assumption that it will fail.
-
-**An unreachable agency is never an error response.** It is a fact reported on
-the page: the fetch was attempted, it did not work, here is the cached snapshot
-being used instead and here is how old it is. A 500 in front of a nutrition
-director during a recall is worse than stale data they can see the age of.
-
-So there are exactly two outcomes and both return normally:
-
-    live              the agency answered; a new dated snapshot was written
-    cached_fallback   it did not; the most recent committed snapshot stands
-
-The timeout is bounded and short. A refresh that hangs is a refresh that has
-already failed -- it just has not admitted it yet.
-"""
+"""FR-060. The one live path, and it is never on the demo path."""
 
 from __future__ import annotations
 
@@ -32,7 +13,7 @@ from typing import Any
 
 from pullsheet.recalls.corpus import SNAPSHOT_DIR
 
-#: Seconds. Deliberately short: this is a convenience, not a dependency.
+# Seconds. Deliberately short: this is a convenience, not a dependency.
 TIMEOUT = 5.0
 
 ENDPOINT = ("https://api.fda.gov/food/enforcement.json"
@@ -52,11 +33,7 @@ def cached_snapshot(conn: sqlite3.Connection, source: str = "openfda") -> dict[s
 
 
 def fetch(url: str = ENDPOINT, timeout: float = TIMEOUT) -> dict[str, Any]:
-    """Attempt the poll. Returns the parsed document, or raises.
-
-    Isolated from ``refresh`` so the failure path can be tested by making this
-    raise, rather than by taking the network away from the test runner.
-    """
+    """Attempt the poll. Returns the parsed document, or raises."""
     with urllib.request.urlopen(url, timeout=timeout) as response:   # noqa: S310
         return json.loads(response.read().decode("utf-8"))
 
@@ -86,7 +63,6 @@ def refresh(conn: sqlite3.Connection, url: str = ENDPOINT,
 
     # Never overwrite a committed snapshot. Two refreshes on one day must not
     # be able to destroy the corpus a rehearsal was verified against -- and
-    # "nothing is ever deleted" has to hold for files too, not just rows.
     stamp = at.strftime("%Y-%m-%d")
     path = SNAPSHOT_DIR / f"openfda-{stamp}.json"
     serial = 2

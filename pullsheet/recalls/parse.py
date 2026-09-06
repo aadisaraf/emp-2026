@@ -1,14 +1,5 @@
 """Free-text ``code_info`` -> structured codes.
-
-openFDA's ``code_info`` is prose written by whoever filed the recall. There is no
-schema. This module is a documented regex table over the shapes that actually
-occur in the committed snapshot -- every pattern below carries a real example
-string from ``openfda-2026-09-05.json``.
-
 The governing rule (FR-067): **failure to parse must widen, never narrow.** When
-nothing is extractable the result is empty lists and ``unparsed: True``, which
-sends the pair down the name-evidence path and onto the sheet as HELD. It never
-raises, and it never returns something that looks like a confident non-match.
 """
 
 from __future__ import annotations
@@ -43,10 +34,6 @@ _LOT_TOKEN = re.compile(r"[A-Z0-9][A-Z0-9.\-]{2,}", re.I)
 
 # "Item Number: 10002800"  /  "Item #473015"  /  "SKU: 3107"  /  "Item # 74384"
 # The manufacturer's own catalog number. Kitchens carry these because they order
-# by them, and 239 of the 1000 committed openFDA records print one. A code is
-# only ever product identity ALONGSIDE an agreeing manufacturer (FR-070): item
-# number 02075 means a cod portion at High Liner and something else everywhere
-# else.
 _ITEM_CODE = re.compile(
     r"\b(?:ITEM|SKU|PRODUCT|CATALOG|CAT|MFR|MFG)\s*"
     r"(?:NUMBERS?|NOS?|CODES?|#)?\s*[:#.]?\s*([A-Z0-9][A-Z0-9\-]{3,19})\b", re.I)
@@ -93,11 +80,7 @@ def _dedupe(values):
 
 
 def parse_code_info(text: str | None) -> dict[str, Any]:
-    """Extract codes from an agency's free-text code field.
-
-    Returns ``{gtins, upcs, lots, date_codes, unparsed}``. Never raises: a
-    ``code_info`` we cannot read must still produce a usable, honest result.
-    """
+    """Extract codes from an agency's free-text code field."""
     empty = {"gtins": [], "upcs": [], "lots": [], "date_codes": [],
              "item_codes": [], "unparsed": True}
     if not text or not text.strip():
@@ -162,7 +145,6 @@ def parse_code_info(text: str | None) -> dict[str, Any]:
         "item_codes": item_codes,
         # `unparsed` means "no identifier came out of this", which is what the
         # matcher needs to know. Date codes alone do not count: a date window is
-        # not something a lot can be compared against.
         "unparsed": not (gtins or upcs or lots),
     }
 
@@ -170,17 +152,7 @@ def parse_code_info(text: str | None) -> dict[str, Any]:
 def parse_record(product_description: str | None,
                  code_info: str | None,
                  more_code_info: str | None = None) -> dict[str, Any]:
-    """Parse a whole recall record, not just its code field.
-
-    Agencies put barcodes wherever they land: ``H-0109-2026`` prints its UPC in
-    the product description and its lot codes in ``code_info``. Reading only
-    ``code_info`` loses the UPC, and losing a barcode is losing the strongest
-    evidence there is.
-
-    Lots are taken from the code fields ONLY. A word like "lot" appearing in a
-    product description is prose, and treating it as a label manufactures lot
-    codes out of sentences.
-    """
+    """Parse a whole recall record, not just its code field."""
     codes = parse_code_info(" ".join(filter(None, (code_info, more_code_info))))
     from_description = parse_code_info(product_description)
 

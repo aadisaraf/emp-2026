@@ -8,20 +8,7 @@ export interface SheetSurfaceProps {
   children: ReactNode;
 }
 
-/*
-  The sheet body, plus the detail pane when a line is open.
-
-  The tables inside are rendered on the server and stay there: this component
-  listens for clicks on the way up instead of turning 856 rows into 856 client
-  components. The button in each Item cell carries data-match-id, so a keyboard
-  user reaches it by tabbing and opens the line with Enter, exactly as a mouse
-  user does.
-
-  Opening a line changes nothing about the sheet: no row moves, no row is
-  filtered, and the order the matcher produced is the order still on screen.
-  data-pane is read by the stylesheet, which narrows the table to the columns
-  an operator walks by while the pane holds the rest of the open line.
-*/
+/* The sheet body, plus the detail pane when a line is open. */
 
 export function SheetSurface({ children }: SheetSurfaceProps) {
   const [selected, setSelected] = useState<number | null>(null);

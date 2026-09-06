@@ -1,16 +1,4 @@
-"""FR-043. The hold-and-destruction record for one run, ready to sign.
-
-This is a physical-custody document. It says "these cases were taken out of
-service, here is where they were, here is how much there was" -- and then it
-stops, because everything after that is a human act. The signature, the title,
-the date, and the destruction method are left BLANK. Pre-filling a signature
-field would be forging a custody record, and a system that guesses at one is a
-system nobody should sign anything from.
-
-Both PULL and HELD lines appear. A held case is off the menu while a person
-decides; leaving it off the custody record would mean a case in the freezer that
-no paperwork accounts for.
-"""
+"""FR-043. The hold-and-destruction record for one run, ready to sign."""
 
 from __future__ import annotations
 
@@ -21,7 +9,7 @@ from pullsheet import location
 from pullsheet.db import SUBJECT_KEY_SQL
 from typing import Any
 
-#: Left blank, always, by design. Rendered as ruled lines on the printed record.
+# Left blank, always, by design. Rendered as ruled lines on the printed record.
 SIGNATURE_FIELDS: tuple[str, ...] = (
     "Removed from service by (print name)",
     "Title",
@@ -33,17 +21,12 @@ SIGNATURE_FIELDS: tuple[str, ...] = (
     "Authorizing signature",
 )
 
-#: The sources every hold record draws on, labelled on the artifact (FR-048).
+# The sources every hold record draws on, labelled on the artifact (FR-048).
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln")
 
 
 def lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
-    """One row per inventory LINE in this run, with every recall that hit it.
-
-    Per line, not per match: a case with three recalls against it is still one
-    case in the freezer, and a custody record that lists it three times cannot
-    be counted.
-    """
+    """One row per inventory LINE in this run, with every recall that hit it."""
     grouped: dict[int, dict[str, Any]] = {}
     for row in conn.execute(
         """SELECT i.id, i.storage_location, i.raw_description, i.quantity,

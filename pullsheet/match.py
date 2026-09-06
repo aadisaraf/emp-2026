@@ -1,20 +1,4 @@
-"""Re-run the matcher against the current corpus: ``python -m pullsheet.match``.
-
-Not part of the daily cycle. An export that arrives is read, matched and
-finalized in one step, so there is normally nothing to run by hand.
-
-This exists for the other direction: the corpus changed and the inventory did
-not. ``POST /recalls/refresh`` writes a new dated snapshot but deliberately
-leaves the sheet alone, because silently re-deciding lines underneath an
-operator who is holding a printout is exactly the surprise this system must not
-spring. Re-matching is therefore a separate, deliberate act, and it produces a
-new run rather than editing the old one -- yesterday's sheet stays exactly as it
-was printed.
-
-The active inventory is whatever the last successful delivery left standing, so
-an item that has been carried over for a week is matched again today against
-today's recalls.
-"""
+"""Re-run the matcher against the current corpus: ``python -m pullsheet.match``."""
 
 from __future__ import annotations
 

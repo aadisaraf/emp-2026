@@ -1,18 +1,5 @@
 """The single boundary between the outside world and the matcher.
-
-``matching/`` imports nothing from here, and nothing here imports from
-``matching/`` -- ``tests/unit/test_boundaries.py`` fails the build if that ever
-stops being true. Adding a source means adding one file in this package and
 changing nothing else (SC-012).
-
-The six rules every adapter obeys are in
-``specs/001-recall-pull-sheet/contracts/adapter-interface.md``. The two that
-cost the most to get wrong:
-
-* **Never drop a row.** A row that will not parse is still yielded, with the
-  unreadable fields ``None`` and named in ``unpopulated``.
-* **Never invent a value.** No defaulting a quantity to 1, no inferring a unit,
-  no deriving a GTIN from a description. Absent means ``None``.
 """
 
 from __future__ import annotations
@@ -24,13 +11,7 @@ Provenance = Literal["live", "dated-snapshot", "hand-authored"]
 
 
 class NormalizedRecord(NamedTuple):
-    """One inventory row, as an adapter saw it.
-
-    ``normalized_description`` and ``identity_key`` are deliberately NOT fields.
-    They are computed downstream by ``matching/normalize.py``, so normalization
-    has exactly one implementation and a new adapter cannot change matching
-    behaviour by normalizing differently.
-    """
+    """One inventory row, as an adapter saw it."""
 
     storage_location: str | None  # the cooler, not the building -- one deployment
                                   # is one location, so there is no site field
@@ -43,7 +24,6 @@ class NormalizedRecord(NamedTuple):
 
     # Supplier identity (FR-069). Kitchens run on purchasing systems, so these
     # are present far more reliably than gtin or lot_code: an item master has to
-    # know who supplies a line in order to reorder it.
     brand: str | None                    # the label on the case
     manufacturer: str | None             # who made it. Joins to recalling_firm
     manufacturer_item_code: str | None   # the maker's catalog number, quoted in recall notices
@@ -58,12 +38,7 @@ class NormalizedRecord(NamedTuple):
 
 class AdapterRejection(Exception):
     """The whole source is unusable.
-
-    Raised instead of returning a partial read. The run is recorded as
-    ``rejected`` with the failing row or column named, and it leaves any
     existing pull sheet intact (FR-006, FR-009). Rejecting loudly is safer than
-    ingesting half a file, because half a file looks exactly like a kitchen
-    with fewer items in it.
     """
 
     def __init__(self, filename: str, row_or_column: str | int | None, reason: str):
@@ -79,23 +54,18 @@ class InventoryAdapter(ABC):
 
     name: str
     provenance: Provenance
-    #: How a delivery through this adapter arrives. Stored on every run, so the
-    #: history can say whether last Tuesday came in over SFTP or by mail.
+    # How a delivery through this adapter arrives. Stored on every run, so the
+    # history can say whether last Tuesday came in over SFTP or by mail.
     channel: str
 
     @abstractmethod
     def declares(self) -> frozenset[str]:
-        """Field names this adapter is capable of populating (FR-003).
-
-        Rendered in the UI as this adapter's field-coverage map, so it must be
-        honest: declaring a field this adapter cannot fill misrepresents the
-        data to the person deciding what to pull.
-        """
+        """Field names this adapter is capable of populating (FR-003)."""
 
     @abstractmethod
     def read(self, source) -> Iterator[NormalizedRecord]:
         """Yield one record per source row. Never fewer."""
 
 
-#: The field names an adapter may declare. Anything outside this set is a typo.
+# The field names an adapter may declare. Anything outside this set is a typo.
 DECLARABLE: frozenset[str] = frozenset(NormalizedRecord._fields) - {"source_row", "unpopulated"}

@@ -1,10 +1,4 @@
-"""T075. The emailed export.
-
-The point of this test is as much about the LABEL as the parsing. This adapter
-reads a committed fixture mailbox, not a mail server, and Principle V forbids
-presenting that as working. So the provenance assertion is not a formality here
--- it is the requirement.
-"""
+"""T075. The emailed export."""
 
 from __future__ import annotations
 
@@ -51,7 +45,8 @@ def test_supplier_identity_survives_the_email_round_trip(adapter):
 
 def test_it_reuses_the_sftp_drop_reader(adapter):
     """One row parser, not two. An emailed export and a dropped export must not
-    be able to disagree about what a row means."""
+    be able to disagree about what a row means.
+    """
     assert adapter.declares() == SftpDropAdapter().declares()
     assert adapter.declares() <= DECLARABLE
 

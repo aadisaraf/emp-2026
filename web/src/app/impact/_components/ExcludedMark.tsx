@@ -7,17 +7,7 @@ export interface ExcludedMarkProps {
   reason: string | null;
 }
 
-/**
- * A pulled line that is not in the total.
- *
- * Two of the fixture lines carry no unit cost and one carries no quantity, so
- * there is no arithmetic to do on them. Nothing is estimated in their place:
- * the line keeps its quantity, the chip says it is out of the total, and the
- * reason the export gave is printed beside the item.
- *
- * Hollow, not filled. Nothing on this page is an alert, and the word inside the
- * chip is what survives a grayscale printout.
- */
+/** A pulled line that is not in the total. */
 export function ExcludedMark({ reason }: ExcludedMarkProps) {
   return (
     <span

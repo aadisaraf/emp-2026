@@ -17,22 +17,6 @@ export interface SheetHeaderBlockProps {
   The header of the PRINTED artefact: which kitchen, which day, when this copy
   was generated, what corpus it was matched against, and the counts the run
   froze when it finalized.
-
-  On paper this is a letterhead and it earns its 256px, because a sheet that
-  leaves the office has to carry its own provenance. On screen it does not: the
-  masthead, the status line and the stat rail have already said the location,
-  the date, the run and the counts before this block renders, and repeating them
-  costs a quarter of the viewport on the one page where rows are the point. So
-  the block is print-only, and SheetView renders a one-line screen version of
-  the facts that are not already above it -- the corpus and its provenance.
-
-  The corpus block is the load-bearing part. For the current run it lists each
-  snapshot with its provenance label and capture date. For a past run the API
-  deliberately sends no snapshots and sends corpus_note instead, which is the
-  frozen sentence naming the corpora that run actually used. Printing tonight's
-  capture dates over yesterday's lines would make a document look sourced when
-  it is not, so this component renders whichever one it was given and never
-  substitutes the other.
 */
 
 export function CorpusValue({ header }: { header: SheetHeader }) {

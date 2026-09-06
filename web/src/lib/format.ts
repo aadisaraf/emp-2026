@@ -2,23 +2,6 @@ import { channelLabel } from "@/lib/strings";
 /*
   Formatting, in one place, so a quantity looks the same on the sheet, in the
   claim and on the printed hold record.
-
-  Three rules from the briefs are baked in here:
-
-  - Timestamps arrive in two different shapes ("2026-09-06T03:34:14+00:00" from
-    the run tables, "2026-09-05T09:12:00Z" from the committed snapshot files)
-    and both can appear in one response. Everything goes through new Date();
-    nothing is sliced at a fixed index or compared as a string.
-  - Absolute first, always. ISO date, 24-hour clock. A relative age may follow
-    an absolute value, never replace it.
-  - An empty field is the word "not recorded", which is the caller's job: these
-    functions return null for null so the caller renders <NotRecorded />
-    instead of a blank cell that reads as zero.
-
-  Times are rendered in the location's timezone, which is load-bearing: runs are
-  grouped by business date and the boundary is a local-midnight question. The
-  zone is fixed rather than read from the browser so the screen and the printout
-  agree no matter who is looking.
 */
 
 /** Matches pullsheet/location.py TIMEZONE_NAME. Override per call if needed. */

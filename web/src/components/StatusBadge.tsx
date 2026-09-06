@@ -3,10 +3,9 @@ import { cx } from "@/lib/cx";
 import styles from "./StatusBadge.module.css";
 
 /**
- * PULL and HELD are the only two line statuses, enforced by a SQLite CHECK.
- * The run states and run statuses are also accepted here so one chip shape
- * covers every status column on the site.
- */
+  PULL and HELD are the only two line statuses, enforced by a SQLite CHECK.
+  The run states and run statuses are also accepted here so one chip shape
+*/
 export type StatusValue = LineStatus | StatusState | RunStatus;
 
 export interface StatusBadgeProps {
@@ -34,11 +33,9 @@ const TONE: Record<string, string> = {
 };
 
 /**
- * PULL is the only filled chip on the sheet. HELD is a hollow chip with the
- * same footprint, because 814 filled ochre rows would be a wall of beige and
- * the distinction has to survive a grayscale printout and a deuteranope. The
- * channel is fill versus outline, not hue.
- */
+  PULL is the only filled chip on the sheet. HELD is a hollow chip with the
+  same footprint, because 814 filled ochre rows would be a wall of beige and
+*/
 export function StatusBadge({ value, title, className }: StatusBadgeProps) {
   const tone = TONE[value] ?? "neutral";
   return (

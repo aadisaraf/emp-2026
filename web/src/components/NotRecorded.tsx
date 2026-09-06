@@ -7,11 +7,9 @@ export interface NotRecordedProps {
 }
 
 /**
- * What an empty field says. 50 of the 56 export rows carry no barcode and 11
- * carry no lot code; a blank cell there would read as zero, and "N/A" reads as
- * "not applicable", which is a different claim from "the export did not carry
- * this".
- */
+  What an empty field says. 50 of the 56 export rows carry no barcode and 11
+  carry no lot code; a blank cell there would read as zero, and "N/A" reads as
+*/
 export function NotRecorded({ word = NOT_RECORDED }: NotRecordedProps) {
   return <span className={styles.missing}>{word}</span>;
 }

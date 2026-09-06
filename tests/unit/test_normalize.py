@@ -1,12 +1,6 @@
 """Normalization is the one place a food description is rewritten. If it is
 wrong, every downstream comparison is wrong in the same direction and nothing
 else in the system will notice.
-
-The governing decision these tests pin down: **words are compared as written.**
-Neither side is freehand text. A district item master carries the string its
-distributor's catalog supplied, and an agency notice quotes the manufacturer's
-own catalog string -- the same dialect, from the same industry. Normalization
-discards pack sizes, units, punctuation and case, and touches nothing else.
 """
 
 from __future__ import annotations
@@ -26,19 +20,14 @@ def test_the_recall_side_of_the_same_product():
 
 def test_the_two_sides_overlap_on_the_words_they_share():
     """No expansion, no spelling correction: three words agree because both
-    catalogs wrote the same three words."""
+    catalogs wrote the same three words.
+    """
     shared = tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB") & tokens("Frozen Chicken Strips, breaded")
     assert shared == {"chicken", "strips", "frozen"}
 
 
 def test_an_abbreviation_is_not_expanded():
-    """``BRD`` and ``breaded`` are different words and stay different words.
-
-    This is the deliberate limit of matching as-written. It costs one token of
-    overlap on this pair -- and the pair still matches on the other three, on
-    the supplier, and on the lot. What it buys is that no hand-authored guess
-    can silently change what matches.
-    """
+    """``BRD`` and ``breaded`` are different words and stay different words."""
     assert "brd" in tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB")
     assert "breaded" not in tokens("CHICKEN STRIPS BRD FC FROZEN 2/5 LB")
 
@@ -71,12 +60,7 @@ def test_normalization_is_deterministic():
 
 
 def test_there_is_no_abbreviation_dictionary():
-    """A regression guard on the decision, not just on its effects.
-
-    The dictionary was removed because it was solving a problem neither side of
-    the comparison has, and because every entry in it was a place a wrong guess
-    could change what matched without anyone noticing.
-    """
+    """A regression guard on the decision, not just on its effects."""
     import pullsheet.matching as matching
     from pathlib import Path
     assert not (Path(matching.__file__).parent / "abbreviations.py").exists()

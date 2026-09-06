@@ -232,7 +232,6 @@ property is being traded away and what replaces it.
 **Compliance review.** Every specification, plan, and task set produced by the Spec Kit
 workflow MUST be checked against these principles before implementation begins. Every code
 review MUST verify the quality gates above. Complexity MUST be justified against Principle
-VI at the point it is introduced. `SPECKIT-PROMPTS.md` provides the runtime workflow
-guidance that operates under this constitution; it does not override it.
+VI at the point it is introduced.
 
 **Version**: 1.1.0 | **Ratified**: 2026-09-05 | **Last Amended**: 2026-09-05

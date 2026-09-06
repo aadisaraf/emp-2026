@@ -1,18 +1,8 @@
 /*
-  PullSheet design tokens.
+  PullSheet design tokens. A page uses these values or none.
 
-  Every value here comes from the visual brief and none of them are negotiable
-  by a page. If a screen needs a colour, a size or a space that is not in this
-  file, the answer is one of the values that is.
-
-  Light theme only, deliberately. The primary output of this application is a
-  pull sheet printed on white paper and carried into a walk-in cooler; a screen
-  that does not match the paper is a screen that has to be reconciled with it.
-
-  Green is the institution, never "fine". The ordinary morning here is
-  "there are 42 items to pull", so a green that meant "no action" would almost
-  never appear and would be misread the one morning it did. Red means act now,
-  ochre means unresolved, neutral means recorded.
+  Light theme only: the output is a sheet printed on white paper. Red means act
+  now, ochre unresolved, neutral recorded. Green is the institution, not "fine".
 */
 
 :root {

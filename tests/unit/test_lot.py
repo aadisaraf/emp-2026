@@ -40,7 +40,8 @@ def test_different_lots_are_none():
 
 def test_date_ranges_are_unparseable_not_none():
     """FR-067: failure to parse must widen. Returning `none` here would let the
-    gate treat a window it could not read as a positive non-match."""
+    gate treat a window it could not read as a positive non-match.
+    """
     assert compare("4829B", "BEST BY 03/12-04/02") == "unparseable"
     assert compare("4829B", "BEST BY 03/12–04/02") == "unparseable"
     assert compare("Sell Thru Dates: SEP 25 25 Thru OCT 4 25", "4829B") == "unparseable"
