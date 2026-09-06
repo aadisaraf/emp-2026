@@ -168,6 +168,9 @@ def _line(row: sqlite3.Row) -> dict[str, Any]:
     out["is_new"] = bool(out["is_new"])
     out["merged_from"] = _parse(out.get("merged_from"))
     out["cleared"] = bool(out.get("cleared_count"))
+    # A named person said this case has physically left the shelf. Distinct
+    # from cleared, which says the match was wrong; both are "handled".
+    out["confirmed_pulled"] = bool(out.get("confirmed_count"))
     return _provenance_of_source(out)
 
 

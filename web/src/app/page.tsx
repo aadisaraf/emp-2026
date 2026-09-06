@@ -28,10 +28,13 @@ export default async function TodayPage({ searchParams }: { searchParams: Params
 
   /* The lines and the documents exist only when a run does. */
   const hasRun = status.run !== null;
+  // A restaurant claims credit from its distributor; a school is funded, so
+  // the claim is neither fetched nor offered there.
+  const claims = status.location.deployment_type === "restaurant";
   const [sheet, credit, report] = hasRun
     ? await Promise.all([
         attempt(getSheet()),
-        attempt(getCreditClaim()),
+        claims ? attempt(getCreditClaim()) : Promise.resolve(null),
         status.location.serves_meal_program
           ? attempt(getStateReport())
           : Promise.resolve(null),

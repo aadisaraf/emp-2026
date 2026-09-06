@@ -13,7 +13,7 @@ import styles from "./layout.module.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "PullSheet",
+  title: "Sift",
   description: "Recall response for one food-service location.",
 };
 

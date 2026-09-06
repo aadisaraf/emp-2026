@@ -1,4 +1,4 @@
-/* The typed client for the PullSheet JSON API. */
+/* The typed client for the Sift JSON API. */
 
 import type {
   CreditClaim,

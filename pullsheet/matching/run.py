@@ -141,7 +141,11 @@ def ordered_matches(conn: sqlite3.Connection, run_id: int,
                (SELECT COUNT(*) FROM decisions d
                  WHERE d.subject_key = """ + SUBJECT_KEY_SQL + """
                    AND d.kind = 'clear_match'
-                   AND (:before IS NULL OR d.created_at < :before)) AS cleared_count
+                   AND (:before IS NULL OR d.created_at < :before)) AS cleared_count,
+               (SELECT COUNT(*) FROM decisions d
+                 WHERE d.subject_key = """ + SUBJECT_KEY_SQL + """
+                   AND d.kind = 'confirm_pulled'
+                   AND (:before IS NULL OR d.created_at < :before)) AS confirmed_count
           FROM matches m
           JOIN inventory_records i ON i.id = m.inventory_record_id
           JOIN recall_records   r ON r.id = m.recall_record_id

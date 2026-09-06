@@ -91,7 +91,9 @@ export function SheetView({
             <Pill href={`/artifacts/hold?run=${run.id}`} tone="primary">
               Hold record
             </Pill>
-            <Pill href={`/artifacts/credit-claim?run=${run.id}`}>Credit claim</Pill>
+            {header.location.deployment_type === "restaurant" ? (
+              <Pill href={`/artifacts/credit-claim?run=${run.id}`}>Credit claim</Pill>
+            ) : null}
           </>
         }
       />

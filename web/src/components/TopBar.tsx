@@ -34,8 +34,8 @@ export function TopBar({ status }: TopBarProps) {
 
   return (
     <header className={styles.bar} data-role="topbar">
-      <Link href="/" className={styles.mark} aria-label="PullSheet, Today">
-        P
+      <Link href="/" className={styles.mark} aria-label="Sift, Today">
+        S
       </Link>
 
       <button
@@ -47,7 +47,7 @@ export function TopBar({ status }: TopBarProps) {
         <Icon name="back" />
       </button>
 
-      <h1 className={styles.title}>{status?.location.name ?? "PullSheet"}</h1>
+      <h1 className={styles.title}>{status?.location.name ?? "Sift"}</h1>
       {run ? (
         <span className={styles.chip}>
           run #{run.id} · {channelLabel(run.channel)}

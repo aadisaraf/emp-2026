@@ -34,7 +34,7 @@ function recallSummary(line: ClaimLine): string | null {
   return `${firm} · ${first.source_record_id}${rest > 0 ? ` +${rest}` : ""}`;
 }
 
-function ClaimRow({ line }: { line: ClaimLine }) {
+function ClaimRow({ line, money }: { line: ClaimLine; money: boolean }) {
   const excluded = line.excluded_because !== null;
   const recalls = recallSummary(line);
   return (
@@ -42,7 +42,7 @@ function ClaimRow({ line }: { line: ClaimLine }) {
       <td>
         <span className={ui.lead}>{line.raw_description}</span>
         {recalls ? <span className={ui.sub}>{recalls}</span> : null}
-        {excluded ? (
+        {money && excluded ? (
           <span className={cx(ui.sub, ui.subAttend)}>{line.excluded_because}</span>
         ) : null}
       </td>
@@ -50,14 +50,14 @@ function ClaimRow({ line }: { line: ClaimLine }) {
         <span className={ui.sub}>{line.storage_location ?? "—"}</span>
       </td>
       <td className={ui.num}>{formatQuantity(line.quantity, line.unit) ?? "—"}</td>
-      <td className={cx(ui.num, ui.optSm)}>{formatMoney(line.unit_cost) ?? "—"}</td>
-      <td className={ui.num}>
-        {excluded ? (
-          <Chip tone="held">excluded</Chip>
-        ) : (
-          (formatMoney(line.extended) ?? "—")
-        )}
-      </td>
+      {money ? (
+        <td className={cx(ui.num, ui.optSm)}>{formatMoney(line.unit_cost) ?? "—"}</td>
+      ) : null}
+      {money ? (
+        <td className={ui.num}>
+          {excluded ? <Chip tone="held">excluded</Chip> : (formatMoney(line.extended) ?? "—")}
+        </td>
+      ) : null}
     </tr>
   );
 }
@@ -162,35 +162,77 @@ export default async function ImpactPage() {
   const excluded = claim.excluded.length;
   const vendors = claim.by_vendor.length;
 
+  // A restaurant's impact is a bill it sends back. A school is funded, so its
+  // impact is the meals that came off the menu; nobody is invoiced.
+  const claims = header.location.deployment_type === "restaurant";
+  const date = formatDate(run.business_date) ?? run.business_date;
+
   return (
     <>
-      <PageHero
-        figure={formatMoney(claim.total) ?? "—"}
-        word="claimable"
-        money
-        actions={
-          <>
-            <Tag>run #{run.id}</Tag>
-            <Pill href={`/artifacts/credit-claim?run=${run.id}`} tone="primary">
-              Credit claim
-            </Pill>
-            <Pill href={`/artifacts/hold?run=${run.id}`}>Hold record</Pill>
-          </>
-        }
-      />
+      {claims ? (
+        <PageHero
+          figure={formatMoney(claim.total) ?? "—"}
+          word="claimable"
+          money
+          actions={
+            <>
+              <Tag>run #{run.id}</Tag>
+              <Pill href={`/artifacts/credit-claim?run=${run.id}`} tone="primary">
+                Credit claim
+              </Pill>
+              <Pill href={`/artifacts/hold?run=${run.id}`}>Hold record</Pill>
+            </>
+          }
+        />
+      ) : (
+        <PageHero
+          figure={formatCount(menu?.planned_meals ?? 0) ?? "0"}
+          word={menu ? "planned meals affected" : "lines pulled"}
+          alert={(menu?.planned_meals ?? 0) > 0}
+          actions={
+            <>
+              <Tag>run #{run.id}</Tag>
+              <Pill href={`/artifacts/hold?run=${run.id}`} tone="primary">
+                Hold record
+              </Pill>
+              {header.location.serves_meal_program ? (
+                <Pill href={`/artifacts/state-report?run=${run.id}`}>State report</Pill>
+              ) : null}
+            </>
+          }
+        />
+      )}
 
       <Facts
-        items={[
-          { label: "pulled lines", value: formatCount(claim.lines.length) ?? "0" },
-          { label: "priced", value: formatCount(claim.counted) ?? "0" },
-          {
-            label: "excluded",
-            value: formatCount(excluded) ?? "0",
-            tone: excluded > 0 ? "attend" : "plain",
-          },
-          { label: "vendors", value: formatCount(vendors) ?? "0" },
-          { label: "inventory of", value: formatDate(run.business_date) ?? run.business_date },
-        ]}
+        items={
+          claims
+            ? [
+                { label: "pulled lines", value: formatCount(claim.lines.length) ?? "0" },
+                { label: "priced", value: formatCount(claim.counted) ?? "0" },
+                {
+                  label: "excluded",
+                  value: formatCount(excluded) ?? "0",
+                  tone: excluded > 0 ? "attend" : "plain",
+                },
+                { label: "vendors", value: formatCount(vendors) ?? "0" },
+                { label: "inventory of", value: date },
+              ]
+            : [
+                { label: "pulled lines", value: formatCount(claim.lines.length) ?? "0" },
+                {
+                  label: "menu items broken",
+                  value: formatCount(menu?.broken_items ?? 0) ?? "0",
+                  tone: (menu?.broken_items ?? 0) > 0 ? "alert" : "plain",
+                },
+                { label: "recipes affected", value: formatCount(menu?.recipes ?? 0) ?? "0" },
+                {
+                  label: "held, not cascaded",
+                  value: formatCount(menu?.held_not_cascaded ?? 0) ?? "0",
+                  tone: (menu?.held_not_cascaded ?? 0) > 0 ? "attend" : "plain",
+                },
+                { label: "inventory of", value: date },
+              ]
+        }
       />
 
       <Body>
@@ -209,8 +251,8 @@ export default async function ImpactPage() {
                 <col />
                 <col className={ui.opt} style={{ width: "130px" }} />
                 <col style={{ width: "90px" }} />
-                <col className={ui.optSm} style={{ width: "90px" }} />
-                <col style={{ width: "110px" }} />
+                {claims ? <col className={ui.optSm} style={{ width: "90px" }} /> : null}
+                {claims ? <col style={{ width: "110px" }} /> : null}
               </colgroup>
               <thead>
                 <tr>
@@ -221,31 +263,37 @@ export default async function ImpactPage() {
                   <th scope="col" className={ui.num}>
                     Qty
                   </th>
-                  <th scope="col" className={cx(ui.num, ui.optSm)}>
-                    Unit cost
-                  </th>
-                  <th scope="col" className={ui.num}>
-                    Extended
-                  </th>
+                  {claims ? (
+                    <th scope="col" className={cx(ui.num, ui.optSm)}>
+                      Unit cost
+                    </th>
+                  ) : null}
+                  {claims ? (
+                    <th scope="col" className={ui.num}>
+                      Extended
+                    </th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
                 {claim.lines.map((line) => (
-                  <ClaimRow key={line.id} line={line} />
+                  <ClaimRow key={line.id} line={line} money={claims} />
                 ))}
               </tbody>
             </table>
           </TabCard>
 
-          <Note>{claim.arithmetic}</Note>
+          {claims ? <Note>{claim.arithmetic}</Note> : null}
         </Main>
 
         <Rail>
-          <TabCard title="Vendors" count={formatCount(vendors)}>
-            {claim.by_vendor.map((v) => (
-              <KvSplit key={v.vendor} term={v.vendor} value={formatMoney(v.total) ?? "—"} />
-            ))}
-          </TabCard>
+          {claims ? (
+            <TabCard title="Vendors" count={formatCount(vendors)}>
+              {claim.by_vendor.map((v) => (
+                <KvSplit key={v.vendor} term={v.vendor} value={formatMoney(v.total) ?? "—"} />
+              ))}
+            </TabCard>
+          ) : null}
 
           {menu ? <MenuCard menu={menu} /> : null}
 

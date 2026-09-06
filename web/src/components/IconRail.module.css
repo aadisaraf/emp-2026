@@ -23,7 +23,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   color: var(--text-muted);
   background: var(--surface-card);
   text-decoration: none;
