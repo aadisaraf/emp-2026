@@ -1,5 +1,19 @@
 <!--
 SYNC IMPACT REPORT
+Version change: 1.0.0 → 1.1.0
+Bump rationale: MINOR. The scope preamble is materially expanded -- a deployment
+is one LOCATION on a daily cadence rather than a district, and the system is no
+longer K-12-only. None of the seven principles is added, removed, or weakened;
+each governs the same behaviour it governed before, over a smaller subject.
+
+Principles changed: none. Principle I's clearing paths are still exactly three,
+and the audit test that enforces that (tests/unit/test_clearing_audit.py) passes
+unchanged across the rewire.
+
+Templates requiring updates: spec.md, plan.md, data-model.md, research.md,
+quickstart.md, contracts/*, README.md -- all updated in the same change.
+
+--- superseded report, retained because nothing here is deleted ---
 Version change: (unpopulated template) → 1.0.0
 Bump rationale: Initial ratification. All placeholder tokens replaced with concrete
 governance for PullSheet. MAJOR-line 1.0.0 establishes the baseline; no prior
@@ -29,10 +43,17 @@ constitution was first adopted.
 
 # PullSheet Constitution
 
-PullSheet is a recall-response system for K-12 school nutrition departments. When the FDA
-or FSIS recalls a food product, a district must find it, isolate it, count it, report it,
-and claim credit for it under a USDA clock. PullSheet ingests a district inventory export,
-matches it against recall records, and produces the artifacts that close that loop.
+PullSheet is a recall-response system for a single food-service location -- a school
+kitchen, and equally a restaurant. When the FDA or FSIS recalls a food product, that
+kitchen must find it, isolate it, count it, report it, and claim credit for it under a
+USDA clock. PullSheet reads the inventory export the location's own software already
+writes on a schedule, matches it against recall records, and produces the artifacts that
+close that loop -- once a day, without anyone logging into anything.
+
+One deployment is one location, deliberately. A district is many deployments, not one
+system with a roster of buildings inside it: the person acting on a pull sheet walks to a
+freezer, and every extra layer between them and that freezer is a place for an item to go
+missing. The same shape is what makes a restaurant a customer rather than a rewrite.
 
 The principles below are non-negotiable. They govern how PullSheet is built, not merely
 what it does. Where a principle and a convenience conflict, the principle wins.
@@ -75,7 +96,7 @@ by plain, unit-tested code.
 - Every decision rule MUST have unit tests covering its boundary — at the threshold, one
   step below, one step above.
 
-Rationale: a district acts on these numbers under a legal clock. A number nobody can
+Rationale: a kitchen acts on these numbers under a legal clock. A number nobody can
 re-derive by hand is a number nobody can defend.
 
 ### III. No External Dependency at Demo Time
@@ -90,7 +111,7 @@ The application MUST run end to end with the network unplugged.
 - Any network call MUST have a bounded timeout and a defined offline behavior. A hung or
   failed call may not block the production of a pull sheet.
 
-Rationale: the demo is in person on someone else's network, and a district kitchen is not
+Rationale: the demo is in person on someone else's network, and a working kitchen is not
 a place where connectivity is assumed.
 
 ### IV. Adapter-Based Ingestion
@@ -214,4 +235,4 @@ review MUST verify the quality gates above. Complexity MUST be justified against
 VI at the point it is introduced. `SPECKIT-PROMPTS.md` provides the runtime workflow
 guidance that operates under this constitution; it does not override it.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-05 | **Last Amended**: 2026-09-05
+**Version**: 1.1.0 | **Ratified**: 2026-09-05 | **Last Amended**: 2026-09-05

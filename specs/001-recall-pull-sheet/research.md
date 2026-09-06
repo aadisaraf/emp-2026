@@ -20,7 +20,7 @@ generate candidates only from index hits.
 - **Token index**: significant product word → recall record ids, built over normalized words —
   compared as written, with no expansion. See the amendment under R0-3.
 - **Firm index**: identifying word of `recalling_firm` → recall record ids. Populated on 100% of
-  the openFDA corpus, and the channel most district rows reach a recall through, because barcode
+  the openFDA corpus, and the channel most kitchen rows reach a recall through, because barcode
   and lot coverage in an item master is partial.
 - **Item index**: manufacturer catalog number, keyed *within* a firm (`liner|53374`). A catalog
   number means nothing across manufacturers, so it is never indexed on its own.
@@ -85,7 +85,7 @@ pair sharing nothing but the word `frozen` never enters the sheet.
 
 > **Amended 2026-09-05.** The abbreviation dictionary this decision sat alongside has been
 > removed, and words are now compared exactly as written. Neither side of the comparison is
-> freehand text: a district item master carries the string its distributor's catalog supplied,
+> freehand text: a kitchen's item master carries the string its distributor's catalog supplied,
 > and agency notices quote the manufacturer's own catalog string back — the same dialect, from
 > the same industry (`GRDL WFL MINI HSTYLE`, `HFS 10/6lb ... Item Number: 10003220`). A
 > dictionary that recovers `chicken` from `chkn` was solving a problem neither database has, and
@@ -141,20 +141,20 @@ hiding the gap, satisfying Principle V's disclosure intent.
 
 **Decision**: The window is measured from the **capture timestamp of the snapshot actually in
 use**, not from a recall's own `report_date`, and it is compared against an injected `now`. The
-window is 24 hours. When exceeded, `rollup/status.py` refuses to emit `clear` for any site and
+window is 24 hours. When exceeded, `runs.py::run_status` refuses to emit "no recalled items found" and
 substitutes `unconfirmed (stale recall data)`; matching itself is untouched.
 
 **Rationale**: The two dates answer different questions. `report_date` says when the agency
-published; capture time says when this district last had a chance to learn about it. The second is
+published; capture time says when this location last had a chance to learn about it. The second is
 what a `clear` claim actually depends on. Injecting `now` keeps the whole thing unit-testable and
 keeps a clock read out of the decision path (Principle II).
 
-The narrow scope matters: staleness gates one word in the roll-up. It does not suppress lines,
+The narrow scope matters: staleness gates one word on the dashboard. It does not suppress lines,
 downgrade tiers, or block a run, because all of those would be narrowing operations.
 
 **Alternatives considered**:
 - *Gate on the oldest source in the corpus.* Since the committed FSIS snapshot is permanently
-  stale by design, this would pin the district to `unconfirmed` forever and collapse the roll-up's
+  stale by design, this would pin the location to a permanent caveat and collapse the word's
   three states into two.
 - *Per-source freshness.* More precise and more machinery than a 24-hour build supports. Deferred;
   the FSIS snapshot's own capture date is displayed at point of use regardless, so nothing is
@@ -167,7 +167,7 @@ downgrade tiers, or block a run, because all of those would be narrowing operati
 **Decision**: Meal-pattern components are modelled as an explicit set per menu item — `grain`,
 `meat_or_alternate`, `fruit`, `vegetable`, `milk`. A candidate substitute is valid when its
 component set is a superset of the broken item's required components, it is in stock at the
-affected site, and it is not itself on the pull sheet. When no candidate qualifies, the system
+kitchen, and it is not itself on the pull sheet. When no candidate qualifies, the system
 names the specific components that could not be met.
 
 **Rationale**: Set containment is decidable, so "no substitute exists" is a proof rather than a
@@ -186,6 +186,6 @@ prose, and it is a much better answer under questioning than a similarity score 
 
 No `NEEDS CLARIFICATION` markers remain in Technical Context. One marker remains open in the spec
 itself — FR-044, which state's recall report to pre-fill — and it does not block Phase 1: the
-report generator is built against the interim default (a USDA-FNS-modelled district report labeled
+report generator is built against the interim default (a USDA-FNS-modelled recall report labeled
 `hand-authored`, plus a structured export), and swapping the target form later touches one
 template and one field map.

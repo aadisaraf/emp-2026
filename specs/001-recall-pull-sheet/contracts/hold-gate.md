@@ -35,9 +35,9 @@ inputs, same output, always. (FR-024, SC-011)
 | Agreeing manufacturer or brand, plus a distinctive shared product word | `PROBABLE` | `PULL` |
 | Name agreement only, **any score** | `POSSIBLE` | `HELD` |
 
-The two supplier rungs exist because most district rows carry no barcode and no lot — 46 of the
-53 rows in the committed fixture have no GTIN — while `recalling_firm` is populated on 100% of
-the openFDA corpus. Without them the ordinary case is `POSSIBLE`, and a sheet on which everything
+The two supplier rungs exist because most kitchen rows carry no barcode — 50 of the 56 rows in
+the committed fixture have no GTIN, and 11 have no lot code either — while `recalling_firm` is
+populated on all 1,012 records of the committed corpus. Without them the ordinary case is `POSSIBLE`, and a sheet on which everything
 is held is a sheet nobody reads.
 
 Neither supplier signal is sufficient alone, and that is asserted rather than asserted-about:

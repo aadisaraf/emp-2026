@@ -11,14 +11,13 @@ here and nothing else (SC-012).
 ```python
 # adapters/base.py
 class NormalizedRecord(NamedTuple):
-    site: str
-    storage_location: str | None
+    storage_location: str | None  # the cooler, not the building -- one deployment
+                                  # is one location, so there is no site field
     raw_description: str          # verbatim from source, never rewritten
-    quantity: float
+    quantity: float | None        # None when the source said nothing. Never 1
     unit: str | None
     pack_size: str | None
-    gtin: str | None              # digits only, or None
-    upc: str | None               # digits only, or None
+    gtin: str | None              # digits only, or None. Carries UPCs too
     lot_code: str | None          # VERBATIM. Adapters must not normalize it.
 
     # Supplier identity (FR-069). Present far more reliably than gtin or
@@ -89,7 +88,12 @@ gtin            ← "gtin", "gtin-14", "case upc", "upc", "item upc", "barcode"
 lot_code        ← "lot", "lot #", "lot code", "batch", "batch #"
 quantity        ← "qty", "quantity", "on hand", "qty on hand", "count"
 raw_desc        ← "item", "item name", "description", "product", "product description"
-site            ← "site", "school", "location", "building"
+storage_location← "storage location", "storage", "location", "where", "area", "room"
+                  (a BUILDING column -- "site", "school", "building", "campus" --
+                   is recognised and then deliberately dropped: "location" is a
+                   storage_location alias, and a school name allowed to drift
+                   there would print a building in the Storage column of the
+                   pull sheet and send someone to the wrong place)
 brand           ← "brand", "brand name", "label", "mfr brand"
 manufacturer    ← "manufacturer", "mfr", "mfr name", "maker", "producer", "packer"
 mfr_item_code   ← "manufacturer product code", "mfr item #", "mfr code", "item code"
@@ -100,14 +104,23 @@ vendor_item_code← "supc", "vendor item #", "distributor product code", "suppli
 
 `tests/adapters/fixtures/` carries the same three rows in four vocabularies, and a test asserts
 all four resolve to the identical set of internal fields — including the five supplier fields,
-which every real district export carries because purchasing is what an item master is for.
+which every real kitchen export carries because purchasing is what an item master is for.
 
-Matching is case-insensitive on punctuation-stripped headers. When a required field has no
-confident header match, the UI asks once and remembers the answer for that source. When a header
-is unrecognized but not required, its column is retained in the source row record and ignored.
+Matching is case-insensitive on punctuation-stripped headers. Exactly one field is required —
+`raw_description`, without which there is nothing to match — and its absence rejects the whole
+source, naming both the field and the headers actually seen.
+
+Detection runs on **every file**. Where a header is genuinely ambiguous ("Code", which half of
+kitchens mean as a lot and half as a product code), the UI asks once and remembers **the answer**.
+It never remembers a whole mapping: replaying one onto a differently-shaped file silently drops
+the columns the new file spells differently, and the sheet comes out short with nothing on screen
+to say so. Answers are remembered across channels, since it is the same kitchen answering.
+
+When a header is unrecognized but not required, its column is retained on the source row and
+ignored for matching. Never discarded.
 
 ## Adding a fifth adapter
 
 Write the class, add its fixture to `tests/adapters/fixtures/`, register it. No change to
-`matching/`, `artifacts/`, or `rollup/`. That zero-diff property is SC-012 and is asserted by a
+`matching/`, `artifacts/`, or `runs.py`. That zero-diff property is SC-012 and is asserted by a
 test that imports `matching` and fails if it can reach `adapters`.

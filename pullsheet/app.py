@@ -134,9 +134,7 @@ def api_status():
             "business_date": run["business_date"] if run else None,
             "pull_count": status.get("pull_count", 0),
             "held_count": (run["held_count"] if run else 0),
-            "new_count": (
-                conn.execute("SELECT COALESCE(SUM(is_new),0) FROM matches WHERE run_id = ?",
-                             (run["id"],)).fetchone()[0] if run else 0),
+            "new_count": status["new_count"],
             "deadlines": deadlines.clocks(conn, run["id"], at) if run else [],
             "corpus": corpus.corpus_summary(conn, at),
             "run_count": conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0],

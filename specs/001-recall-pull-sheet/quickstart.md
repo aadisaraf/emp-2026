@@ -49,7 +49,7 @@ Each maps to a success criterion in the spec. Run them in order — scenario 1 i
 cp data/fixtures/inventory_lincoln.csv data/watched/
 ```
 
-Watch `http://localhost:8000/sheet`. Within one poll interval the sheet appears, grouped by site,
+Watch `http://localhost:8000/sheet`. Within one poll interval the sheet appears, grouped by storage location,
 Class I first. The header states the corpus in use, its provenance label, and its capture date.
 The file moves to `data/archive/`.
 
@@ -100,17 +100,19 @@ status, score, and order.
 
 **Passes when**: the diff is empty.
 
-### V6 — Stale data cannot produce a green district (SC-013)
+### V6 — Stale data cannot produce a green page (SC-013)
 
 ```bash
 pytest tests/unit/test_freshness.py -v
 ```
 
-Injects a `now` 30 hours after the snapshot's capture time.
+Injects a `now` past the snapshot's capture time, on a run with nothing to pull — the only state
+in which "clear" and "stale" are distinguishable at all.
 
-**Passes when**: zero sites report `clear`, sites show `unconfirmed (stale recall data)`, and
-PULL/HELD lines are still produced unchanged. A run that suppresses lines is a failure — staleness
-gates one word, not the matcher.
+**Passes when**: the status word states the corpus is stale rather than that nothing was found,
+and every PULL/HELD line is byte-identical to the same run read inside the window. A run that
+suppresses lines is a failure — staleness gates one word, not the matcher. The same file also
+asserts that a location which never reported is not rendered as a quiet green page (FR-050).
 
 ### V7 — Adapters cannot reach the matcher (SC-012)
 
@@ -121,16 +123,20 @@ pytest tests/unit/test_boundaries.py -v
 Asserts `matching/` imports nothing from `adapters/`, and that lot codes arrive at the matcher
 byte-identical to the source.
 
-### V8 — The paste path never fails
+### V8 — A bad delivery never empties a good sheet
 
 ```bash
-pytest tests/adapters/test_paste.py -v
+pytest tests/integration/test_ingest.py tests/adapters/test_sftp_drop.py -v
 ```
 
-Feeds empty input, one blank line, 10,000 characters on one line, emoji, and a CSV pasted by
-mistake.
+Feeds a malformed export, an empty file, a file of null bytes, a headers-only file, a PDF, and the
+same good file twice.
 
-**Passes when**: every input produces records or an empty result, and nothing raises.
+**Passes when**: each is either read or rejected — never raising past the caller, because a drop
+poller that dies on a bad file stops watching the folder. A rejected run is recorded with the
+failing row or column named, leaves the existing sheet intact, and the file stays where it landed.
+The repeated delivery is refused as a duplicate rather than becoming the baseline the next
+new-since diff is measured against.
 
 ### V9 — Degradation is visible, not silent (SC-007, FR-013)
 
@@ -161,4 +167,5 @@ pytest -v
 
 Run V1 end to end with the network physically disconnected at least once before the demo. The
 freshness banner will be showing, and that is intended behavior worth narrating rather than
-apologizing for: the system knows how old its data is and refuses to call a site clear on it.
+apologizing for: the system knows how old its data is and refuses to call the kitchen clear on
+it.

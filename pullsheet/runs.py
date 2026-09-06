@@ -60,13 +60,15 @@ def run_status(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
                 "detail": "PullSheet has processed no inventory export for this "
                           "location. Nothing on this page is a statement about "
                           "the food in the building.",
+                "pull_count": 0, "match_count": 0, "new_count": 0,
                 "stale_corpus": corpus.is_stale(conn, now)}
 
     age = (now - corpus._parse_ts(run["started_at"])).total_seconds() / 3600.0
     overdue = age > OVERDUE_AFTER.total_seconds() / 3600.0
     stale = corpus.is_stale(conn, now)
     counts = conn.execute(
-        """SELECT SUM(status = 'PULL') AS pulls, COUNT(*) AS total
+        """SELECT SUM(status = 'PULL') AS pulls, COUNT(*) AS total,
+                  COALESCE(SUM(is_new), 0) AS news
              FROM matches WHERE run_id = ?""", (run["id"],)).fetchone()
     pulls = counts["pulls"] or 0
 
@@ -104,6 +106,7 @@ def run_status(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
     return {"word": word, "state": state, "run": dict(run), "detail": detail,
             "run_age_hours": round(age, 1), "stale_corpus": stale,
             "pull_count": pulls, "match_count": counts["total"] or 0,
+            "new_count": counts["news"] or 0,
             "rejected_since": rejected_since}
 
 

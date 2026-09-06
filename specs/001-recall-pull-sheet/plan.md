@@ -6,11 +6,11 @@
 
 ## Summary
 
-PullSheet watches a folder for the inventory export a district's nutrition software already
+PullSheet watches a drop folder for the inventory export a location's own software already
 produces, normalizes it through an adapter, matches every line against a cached recall corpus,
 and emits a printable pull sheet. Uncertain matches are HELD on the same sheet, never cleared.
-Downstream it cascades into broken menus, compliance paperwork, a district roll-up with USDA
-deadline clocks, and a standing monitor.
+Downstream it cascades into broken menus, compliance paperwork, one status word for the location
+with USDA deadline clocks, and a run history that keeps every past day readable as it was printed.
 
 The technical shape is deliberately plain: FastAPI serving server-rendered Jinja2 pages, SQLite
 through hand-written SQL, and a matcher written from scratch — normalization, screening,
@@ -46,7 +46,8 @@ index rather than comparing all 500,000 pairs — see Phase 0 research.
 **Constraints**: Runs end to end with the network unplugged (FR-060). One command to start. No
 authentication anywhere (FR-061). Every network call bounded and optional (FR-062).
 
-**Scale/Scope**: One district, ~10 sites, a few thousand inventory lines, a recall corpus in the
+**Scale/Scope**: One location, a few hundred to a couple of thousand active inventory lines
+re-matched daily, a recall corpus in the
 low thousands. Single operator, no concurrency beyond one browser and one folder poller.
 
 ## Reconciliations
@@ -152,11 +153,10 @@ pullsheet/
 │
 ├── adapters/
 │   ├── base.py              # InventoryAdapter ABC + NormalizedRecord
-│   ├── column_map.py        # tolerant header detection + remembered mappings
-│   ├── watched_folder.py    # primary path; polls, ingests, archives
-│   ├── spreadsheet_upload.py
-│   ├── email_drop.py        # local mailbox file
-│   └── paste.py             # the floor; must never raise
+│   ├── column_map.py        # header detection; asks once, remembers the ANSWER
+│   ├── sftp_drop.py         # primary path; polls, ingests, archives
+│   ├── spreadsheet_upload.py # the fallback for the morning the drop fails
+│   └── email_drop.py        # local mailbox file
 │
 ├── recalls/
 │   ├── fetch.py             # openFDA poll, bounded timeout, snapshot write
@@ -183,11 +183,11 @@ pullsheet/
 │   ├── state_report.py
 │   └── credit_claim.py      # quantity × unit_cost, plain arithmetic
 │
-├── rollup/
-│   ├── status.py            # clear | holding | unconfirmed, incl. stale gate
-│   └── deadlines.py         # 24h / 48h from receipt, injected now
-│
-├── monitor.py               # scheduled corpus diff → alerts
+├── runs.py                  # one status word for the location, incl. stale gate;
+│                            # run history; new-since-previous diff
+├── deadlines.py             # 24h / 48h from receipt, injected now
+├── location.py              # who this deployment is. Config, not a table
+├── match.py                 # deliberate re-match when the corpus moved
 ├── templates/               # Jinja2; print.css handles all four artifacts
 ├── static/                  # one poll.js, one stylesheet. No build step.
 └── data/
@@ -221,9 +221,9 @@ Three judgements that need stating out loud rather than being discovered in revi
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| `openpyxl` dependency | The input specifies "standard library plus httpx", but the `WatchedFolderAdapter` must read XLSX and the standard library cannot. XLSX parsing is uninteresting work under Principle VI — it hides no logic a judge would ask about. | CSV-only support was rejected because real districts export XLSX, and the watched-folder path is the demo centerpiece. Writing an XLSX reader by hand would spend hours of a 24-hour build on ZIP and XML plumbing that proves nothing. |
+| `openpyxl` dependency | The input specifies "standard library plus httpx", but the `SftpDropAdapter` must read XLSX and the standard library cannot. XLSX parsing is uninteresting work under Principle VI — it hides no logic a judge would ask about. | CSV-only support was rejected because real kitchens export XLSX, and the scheduled-drop path is the demo centerpiece. Writing an XLSX reader by hand would spend hours of a 24-hour build on ZIP and XML plumbing that proves nothing. |
 | `jinja2` + `python-multipart` beyond the stated stack | Server-rendered HTML and browser file upload. Both are transport and templating, not logic. | Hand-rolling multipart parsing or string-concatenating HTML would be more code, less readable, and would still hide nothing interesting. |
-| SQLite schema is twelve tables, not "one screen" | The spec's twelve entities do not compress below twelve tables without hiding relationships in JSON blobs, which would put safety-relevant data beyond SQL's reach. | Collapsing `matches` and `decisions` into one table was rejected specifically because Principle I depends on machine-produced candidates and human clearings being separately queryable. Mitigation: `schema.sql` is ordered so the four safety-critical tables — `inventory_records`, `recall_records`, `matches`, `decisions` — appear first and do fit one screen, with menu and monitor tables below. |
+| SQLite schema is ten tables, not "one screen" | The entities do not compress below ten tables without hiding relationships in JSON blobs, which would put safety-relevant data beyond SQL's reach. It was twelve; amendment 3 collapsed `inventory_sources` and `ingest_runs` into `runs` and removed `monitor_runs`. | Collapsing `matches` and `decisions` into one table was rejected specifically because Principle I depends on machine-produced candidates and human clearings being separately queryable. Mitigation: `schema.sql` is ordered so the four safety-critical tables — `inventory_records`, `recall_records`, `matches`, `decisions` — appear first and do fit one screen, with the run, corpus, and menu tables below. |
 
 ## Risks
 
@@ -232,4 +232,4 @@ Three judgements that need stating out loud rather than being discovered in revi
 | openFDA `code_info` is free text; regex extraction will miss some UPCs and lots | Every extraction failure widens rather than narrows: an unparsed `code_info` means the recall keeps only name evidence, so its candidates land in `POSSIBLE`/HELD instead of vanishing. Parser coverage is reported in the UI as a count, not hidden. |
 | `EmailDropAdapter` may not be finished in 24h | It is fourth in build order and stubbed against a fixture mailbox if time runs short. Principle V requires the stub be labeled `hand-authored` in the UI, not quietly presented as working. |
 | Screening index tuning could over-narrow and hide a real match | `screen.py` is unit-tested with a corpus of known-positive pairs, and the UI states the screening rule verbatim. SC-005 (every seeded correspondence appears) is the regression test. |
-| Demo machine has no network and the FSIS snapshot is stale | That is the designed state, not a failure. FR-068's freshness window means sites show `unconfirmed (stale recall data)` rather than a false `clear`. Worth rehearsing so the team can narrate it as intended behavior. |
+| Demo machine has no network and the FSIS snapshot is stale | That is the designed state, not a failure. FR-068's freshness window means the status word states the corpus is stale rather than reading a false "no recalled items found" — and not one line on the sheet differs. Worth rehearsing so the team can narrate it as intended behavior. |

@@ -16,6 +16,14 @@ description: "Copy-paste /speckit-implement prompts for a three-person PullSheet
 >
 > `tests/integration/test_abbreviations.py` is now `tests/integration/test_seeded_correspondences.py`.
 
+> **Amendment 3, 2026-09-05 — this file is a historical record.** It was written for the district
+> model and executed against it. The system it describes building is not the system that exists:
+> one deployment is now one location, deliveries arrive on a daily schedule over SFTP or email,
+> and each one produces a dated run. `rollup/`, `monitor.py` and `adapters/paste.py` were all
+> removed. See [spec.md](./spec.md), [plan.md](./plan.md) and
+> [tasks.md](./tasks.md) for
+> what the system is now. Nothing here should be followed as an instruction.
+
 # Implement Prompts — Three-Person Team
 
 **Companion to**: [parallel-plan.md](./parallel-plan.md) · [tasks.md](./tasks.md)

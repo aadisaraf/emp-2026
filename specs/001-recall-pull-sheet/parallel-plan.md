@@ -6,6 +6,14 @@ description: "Branch and ownership plan — how a small team builds PullSheet's 
 
 **Companion to**: [tasks.md](./tasks.md) · [plan.md](./plan.md) · [constitution](../../.specify/memory/constitution.md)
 
+> **Amendment 3, 2026-09-05 — this file is a historical record.** It was written for the district
+> model and executed against it. The system it describes building is not the system that exists:
+> one deployment is now one location, deliveries arrive on a daily schedule over SFTP or email,
+> and each one produces a dated run. `rollup/`, `monitor.py` and `adapters/paste.py` were all
+> removed. See [spec.md](./spec.md), [plan.md](./plan.md) and
+> [tasks.md](./tasks.md) for
+> what the system is now. Nothing here should be followed as an instruction.
+
 `tasks.md` has eight phases, sequenced by **dependency and demo priority**. That is the right
 order for one person and the wrong axis for four. Phases 3 through 8 each assume the previous
 phase has landed; hand four people four phases and three of them are blocked immediately.
