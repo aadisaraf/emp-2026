@@ -1,4 +1,4 @@
-import { Facts, Jumps, PageHero, Pill, Tag } from "@/components";
+import { Empty, Facts, Jumps, PageHero, Pill, Tag } from "@/components";
 import type { SheetResponse } from "@/lib/api";
 import { formatCount, formatDate } from "@/lib/format";
 import { SheetFooter } from "./SheetFooter";
@@ -14,16 +14,63 @@ export interface SheetViewProps {
   screeningRule: string | null;
   /** The run that is current now, used only to point a past run back at it. */
   currentRunId: number | null;
+  /** The search in the top bar. Empty means the whole sheet. */
+  query?: string;
+}
+
+/** Every place a person would expect a word they typed to be found. */
+function hit(line: { raw_description: string; product_description: string;
+                     lot_code: string | null; recalling_firm: string | null;
+                     source_record_id: string }, needle: string): boolean {
+  return (
+    line.raw_description.toLowerCase().includes(needle) ||
+    line.product_description.toLowerCase().includes(needle) ||
+    (line.lot_code ?? "").toLowerCase().includes(needle) ||
+    (line.recalling_firm ?? "").toLowerCase().includes(needle) ||
+    line.source_record_id.toLowerCase().includes(needle)
+  );
 }
 
 /* The pull sheet, current or past. One code path, so a past run cannot
    quietly become a different document. */
 
-export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps) {
+export function SheetView({
+  sheet,
+  screeningRule,
+  currentRunId,
+  query = "",
+}: SheetViewProps) {
   const { header, run } = sheet;
-  const hasLines = sheet.sections.length > 0;
   const refused = run.status !== "ok";
-  const counts = header.counts;
+
+  /* A search narrows the sheet in place. The counts follow it, so the figure
+     on screen is always the count of what is on screen. */
+  const needle = query.trim().toLowerCase();
+  const sections = needle
+    ? sheet.sections
+        .map((s) => {
+          const lines = s.lines.filter((l) => hit(l, needle));
+          return {
+            ...s,
+            lines,
+            pull: lines.filter((l) => l.status === "PULL").length,
+            held: lines.filter((l) => l.status === "HELD").length,
+            cleared: lines.filter((l) => l.cleared).length,
+          };
+        })
+        .filter((s) => s.lines.length > 0)
+    : sheet.sections;
+
+  const hasLines = sections.length > 0;
+  const shown = sections.flatMap((s) => s.lines);
+  const counts = needle
+    ? {
+        pull_count: shown.filter((l) => l.status === "PULL").length,
+        held_count: shown.filter((l) => l.status === "HELD").length,
+        new_count: shown.filter((l) => l.is_new).length,
+        total: shown.length,
+      }
+    : header.counts;
 
   return (
     <>
@@ -33,11 +80,14 @@ export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps
         alert={counts.pull_count > 0}
         actions={
           <>
+            {needle ? <Tag tone="attend">matching {query.trim()}</Tag> : null}
             {refused ? <Tag tone="alert">refused</Tag> : <Tag>run #{run.id}</Tag>}
             <Pill href={`/artifacts/hold?run=${run.id}`} tone="primary">
               Hold record
             </Pill>
-            <Pill href={`/artifacts/credit-claim?run=${run.id}`}>Credit claim</Pill>
+            {header.location.deployment_type === "restaurant" ? (
+              <Pill href={`/artifacts/credit-claim?run=${run.id}`}>Credit claim</Pill>
+            ) : null}
           </>
         }
       />
@@ -73,12 +123,19 @@ export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps
 
       {refused ? <RunWithoutLines run={run} showCurrentLink={!sheet.is_current} /> : null}
 
-      {!refused && counts.total === 0 ? <ZeroMatchNotice header={header} /> : null}
+      {!refused && !needle && counts.total === 0 ? <ZeroMatchNotice header={header} /> : null}
+
+      {needle && !hasLines ? (
+        <Empty>
+          No line on this sheet matches &ldquo;{query.trim()}&rdquo;. The sheet still holds{" "}
+          {formatCount(header.counts.total)} lines.
+        </Empty>
+      ) : null}
 
       {hasLines ? (
         <>
           <Jumps
-            items={sheet.sections.map((section) => ({
+            items={sections.map((section) => ({
               href: `#${locationId(section.storage_location)}`,
               label: section.storage_location,
               count: formatCount(section.pull + section.held),
@@ -87,7 +144,7 @@ export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps
 
           <SheetSurface>
             <div className={styles.sections}>
-              <StorageSections sections={sheet.sections} />
+              <StorageSections sections={sections} />
             </div>
           </SheetSurface>
         </>

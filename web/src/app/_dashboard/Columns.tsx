@@ -4,12 +4,13 @@ import type {
   CorpusSnapshot,
   Location,
   Run,
-  SheetLine,
   SheetResponse,
 } from "@/lib/types";
 import { formatCount, formatDate, formatMoney, shortDeliveryRef } from "@/lib/format";
+import { byTier } from "@/lib/tier";
 import { channelLabel } from "@/lib/strings";
 import { Icon } from "@/components/Icon";
+import { LineCard } from "./LineCard";
 import { cx } from "@/lib/cx";
 import type { ArtifactFacts, Filters } from "./TodayBoard";
 import styles from "./dashboard.module.css";
@@ -88,18 +89,6 @@ export function RunCard({ run, corpus }: { run: Run; corpus: CorpusSnapshot[] })
 /* ------------------------------------------------------------------------ */
 /* The lines, as a list of things to do.                                     */
 
-const ROMAN: Record<SheetLine["class_rank"], string> = { 1: "I", 2: "II", 3: "III" };
-
-const EVIDENCE: Record<string, string> = {
-  gtin: "Barcode",
-  upc: "Barcode",
-  mfr_item: "Catalog no.",
-  lot: "Lot code",
-  secondary_code: "Code",
-  firm_and_name: "Supplier and name",
-  name: "Name",
-};
-
 function href(filters: Filters, patch: Partial<Filters>): string {
   const next = { ...filters, ...patch };
   const params = new URLSearchParams();
@@ -108,43 +97,6 @@ function href(filters: Filters, patch: Partial<Filters>): string {
   if (next.show) params.set("show", next.show);
   const qs = params.toString();
   return qs ? `/?${qs}` : "/";
-}
-
-function LineCard({ line, done }: { line: SheetLine; done: boolean }) {
-  const qty =
-    line.quantity !== null ? `${formatCount(line.quantity)} ${line.unit ?? ""}`.trim() : null;
-  const meta = [qty, line.lot_code ? `lot ${line.lot_code}` : null, EVIDENCE[line.evidence_kind]]
-    .filter(Boolean)
-    .join(" · ");
-  const open = `/match/${line.id}`;
-
-  return (
-    <li className={styles.lineRow}>
-      <div className={styles.gutter} aria-hidden="true">
-        <span className={styles.gutterDot} data-rank={line.class_rank}>
-          {ROMAN[line.class_rank]}
-        </span>
-        <span className={styles.gutterLabel}>{line.storage_location ?? ""}</span>
-      </div>
-      <article className={styles.lineCard}>
-        <Link
-          href={open}
-          className={cx(styles.checkbox, done && styles.checkboxDone)}
-          aria-label={done ? "Recorded. Open this line" : "Open this line to record who pulled it"}
-        >
-          {done ? <Icon name="check" size={14} /> : null}
-        </Link>
-        <span className={styles.lineTitle}>{line.raw_description}</span>
-        <span className={styles.lineChip} data-status={line.status}>
-          {line.tier}
-        </span>
-        <Link href={open} className={styles.lineMore} aria-label="Open this line">
-          <Icon name="more" size={16} />
-        </Link>
-        {meta ? <p className={styles.lineMeta}>{meta}</p> : null}
-      </article>
-    </li>
-  );
 }
 
 const TODO_LIMIT = 6;
@@ -177,8 +129,8 @@ export function LinesColumn({
         l.raw_description.toLowerCase().includes(q) ||
         l.product_description.toLowerCase().includes(q),
     );
-  const todo = pool.filter((l) => !l.cleared);
-  const done = pool.filter((l) => l.cleared);
+  const todo = byTier(pool.filter((l) => !l.cleared && !l.confirmed_pulled));
+  const done = byTier(pool.filter((l) => l.cleared || l.confirmed_pulled));
   const heldCount = sheet.header.counts.held_count;
   const pullCount = sheet.header.counts.pull_count;
 
@@ -216,7 +168,7 @@ export function LinesColumn({
         ) : (
           <ul className={styles.list}>
             {todo.slice(0, TODO_LIMIT).map((l) => (
-              <LineCard key={l.id} line={l} done={false} />
+              <LineCard key={l.id} line={l} />
             ))}
           </ul>
         )}
@@ -231,11 +183,11 @@ export function LinesColumn({
       <div className={styles.group}>
         <h3 className={styles.groupTitle}>Recorded</h3>
         {done.length === 0 ? (
-          <p className={styles.empty}>No one has recorded a pull yet.</p>
+          <p className={styles.empty}>Nothing recorded yet.</p>
         ) : (
           <ul className={styles.list}>
             {done.slice(0, DONE_LIMIT).map((l) => (
-              <LineCard key={l.id} line={l} done />
+              <LineCard key={l.id} line={l} />
             ))}
           </ul>
         )}
@@ -286,11 +238,14 @@ export function DocumentsColumn({
   sheet,
   artifacts,
   servesMealProgram,
+  claims,
 }: {
   run: Run;
   sheet: SheetResponse | null;
   artifacts: ArtifactFacts;
   servesMealProgram: boolean;
+  /** A restaurant claims credit from its distributor. A school does not. */
+  claims: boolean;
 }) {
   const date = formatDate(run.business_date) ?? run.business_date;
   const holdLines = sheet
@@ -307,7 +262,9 @@ export function DocumentsColumn({
     <section className={styles.docs}>
       <h3 className={styles.docTitle}>Documents</h3>
       <DocCard href="/artifacts/hold" title="Hold record" date={date} lines={holdLines} />
-      <DocCard href="/artifacts/credit-claim" title="Credit claim" date={date} lines={creditLines} />
+      {claims ? (
+        <DocCard href="/artifacts/credit-claim" title="Credit claim" date={date} lines={creditLines} />
+      ) : null}
       {servesMealProgram ? (
         <DocCard href="/artifacts/state-report" title="State report" date={date} lines={reportLines} />
       ) : null}

@@ -33,7 +33,9 @@ export function LineDecisions({ detail, timeZone }: {
 }) {
   const router = useRouter();
 
-  // What the last write returned, until the server render catches up with it.
+  // What the last write returned, shown until the server render catches up
+  // with it. Derived, not synchronised: once the server's copy carries as many
+  // decisions as the written one, the written one simply stops being used.
   const [written, setWritten] = useState<MatchDetailResponse | null>(null);
   const view = written && written.decisions.length > detail.decisions.length ? written : detail;
 

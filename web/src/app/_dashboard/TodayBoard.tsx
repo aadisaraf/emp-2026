@@ -44,6 +44,7 @@ export function TodayBoard({ status, sheet, artifacts, filters }: TodayBoardProp
             sheet={sheet}
             artifacts={artifacts}
             servesMealProgram={status.location.serves_meal_program}
+            claims={status.location.deployment_type === "restaurant"}
           />
         </div>
       ) : null}

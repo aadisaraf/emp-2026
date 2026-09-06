@@ -1,77 +1,79 @@
-import { DefinitionList, PageHeader, Panel } from "@/components";
-import { API_BASE } from "@/lib/api";
-import { PAGE_TITLES } from "@/lib/strings";
+import { Facts, Kv, Note, PageHero, Pill, TabCard } from "@/components";
+import { getSources, getStatus } from "@/lib/api";
+import { channelLabel } from "@/lib/strings";
+import { formatCount, formatDate } from "@/lib/format";
+import { plural } from "@/lib/format";
+import { UploadPanel } from "./UploadPanel";
 import styles from "./ingest.module.css";
 
-/* The three ways an export reaches this location. */
+/*
+  The ways an export reaches this location, and what to do when the scheduled
+  one does not arrive. The list of ways is the API's, not a copy of it: an
+  adapter added to the server appears here without anyone editing this file.
+*/
 
 export const dynamic = "force-dynamic";
 
-const CHANNELS = [
-  {
-    term: "SFTP drop",
-    detail:
-      "The normal path. Your inventory software writes one export a morning into " +
-      "the drop directory and PullSheet reads it. Nobody signs in. Files are read " +
-      "only once they have finished writing, and a file that is read successfully " +
-      "moves to the archive.",
-    path: "data/watched/",
-  },
-  {
-    /* Not working mail: the reader parses an attachment into the same
-        record a dropped file would produce. */
-    term: "Email",
-    detail:
-      "The same reader, behind an attachment instead of a file. There is no " +
-      "mail server: this reads a committed fixture mailbox, so it demonstrates " +
-      "that a row parses identically either way and nothing more.",
-    path: "data/fixtures/inbox.mbox",
-  },
-  {
-    term: "Upload",
-    detail:
-      "For the morning the scheduled drop does not arrive. One file, read once. " +
-      "If a column heading is ambiguous you are asked about that heading, and the " +
-      "answer is remembered.",
-    path: null,
-  },
-];
+export default async function AddInventoryPage() {
+  const [statusResult, sourcesResult] = await Promise.all([getStatus(), getSources()]);
+  const status = statusResult.ok ? statusResult.data : null;
+  const run = status?.run ?? null;
+  const adapters = sourcesResult.ok ? sourcesResult.data.adapters : [];
 
-export default function AddInventoryPage() {
   return (
     <>
-      <PageHeader
-        title={PAGE_TITLES.addInventory}
-        context="The scheduled drop is the normal path. This page is for the morning it fails."
+      {/* The figure is the run a new file would replace, because that is the
+          thing a person is deciding about when they stand on this page. */}
+      <PageHero
+        figure={run ? `#${run.id}` : "0"}
+        word={run ? "in force now" : "deliveries so far"}
+        actions={run ? <Pill href="/sheet">Open sheet</Pill> : undefined}
       />
 
-      <Panel title="Upload one export">
-        <p className={styles.lede}>
-          The file is read once, matched against the recall corpus, and finalized as a
-          run of its own. It does not replace the scheduled drop.
-        </p>
-        <a className={styles.action} href={`${API_BASE}/ingest`}>
-          Open the upload form
-        </a>
-        <p className={styles.note}>
-          Accepts CSV and XLSX. A file that cannot be read is refused by name, with the
-          row or column that failed, and the sheet on screen is left alone.
-        </p>
-      </Panel>
-
-      <Panel title="Where inventory comes from">
-        <DefinitionList
-          items={CHANNELS.map((channel) => ({
-            term: channel.term,
-            value: (
-              <>
-                {channel.detail}
-                {channel.path ? <code className={styles.path}>{channel.path}</code> : null}
-              </>
-            ),
-          }))}
+      {run ? (
+        <Facts
+          items={[
+            { label: "channel", value: channelLabel(run.channel) },
+            {
+              label: "received",
+              value: formatDate(run.business_date) ?? run.business_date,
+            },
+            { label: "rows read", value: formatCount(run.rows_read) ?? "0" },
+            { label: "deliveries", value: formatCount(status?.run_count ?? 0) ?? "0" },
+          ]}
         />
-      </Panel>
+      ) : null}
+
+      <UploadPanel />
+
+      <TabCard
+        title="Where inventory comes from"
+        count={formatCount(adapters.length)}
+        tone="sunken"
+      >
+        {adapters.length === 0 ? (
+          <Note>The API did not answer, so the list of readers is not shown.</Note>
+        ) : (
+          adapters.map((adapter) => (
+            <Kv
+              key={adapter.name}
+              term={channelLabel(adapter.channel)}
+              value={
+                <>
+                  {adapter.doc || "No description is declared for this reader."}
+                  <span className={styles.path}>
+                    {adapter.provenance_label} ·{" "}
+                    {plural(adapter.declares.length, "field")} declared
+                    {adapter.cannot.length > 0
+                      ? ` · cannot read ${adapter.cannot.join(", ")}`
+                      : ""}
+                  </span>
+                </>
+              }
+            />
+          ))
+        )}
+      </TabCard>
     </>
   );
 }

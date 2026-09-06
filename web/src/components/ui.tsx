@@ -240,4 +240,9 @@ export function Note({ children }: { children: ReactNode }) {
   return <p className={styles.note}>{children}</p>;
 }
 
+/** A page that has nothing to show, saying so rather than showing nothing. */
+export function Empty({ children }: { children: ReactNode }) {
+  return <p className={styles.empty}>{children}</p>;
+}
+
 export { styles as ui };

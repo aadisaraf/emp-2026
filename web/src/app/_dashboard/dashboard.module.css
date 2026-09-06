@@ -10,7 +10,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-5);
-  padding: var(--space-3) 0 var(--space-5);
+  padding: var(--space-2) 0 var(--space-5);
 }
 
 .figureBlock {
@@ -63,7 +63,7 @@
   gap: var(--space-2);
   height: 40px;
   padding: 0 var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-control);
   color: var(--text-secondary);
   font-size: var(--fs-body);
@@ -95,7 +95,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--surface-control);
   color: var(--text-primary);
   text-decoration: none;
@@ -144,7 +144,7 @@
   gap: var(--space-3);
   height: 44px;
   padding: 0 var(--space-4);
-  border-radius: 12px;
+  border-radius: var(--radius-inner);
   font-size: var(--fs-body);
   white-space: nowrap;
   overflow: hidden;
@@ -226,7 +226,7 @@
   gap: var(--space-2);
   height: 40px;
   padding: 0 var(--space-4);
-  border-radius: 14px 14px 0 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   font-size: var(--fs-body);
   font-weight: var(--weight-strong);
 }
@@ -288,7 +288,7 @@
   gap: var(--space-2);
   height: 40px;
   padding: 0 var(--space-4);
-  border-radius: 14px 14px 0 0;
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   background: var(--surface-card);
   color: var(--text-primary);
   font-weight: var(--weight-strong);
@@ -301,7 +301,7 @@
   height: 36px;
   margin-bottom: 2px;
   padding: 0 var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-control);
   color: var(--text-secondary);
   text-decoration: none;
@@ -319,8 +319,9 @@
 }
 
 .groupTitle {
-  font-size: var(--fs-page);
-  line-height: var(--lh-page);
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: -0.01em;
   font-weight: var(--weight-normal);
   color: var(--text-primary);
 }
@@ -332,26 +333,45 @@
 
 .lineRow {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 48px minmax(0, 1fr);
   gap: var(--space-3);
   align-items: start;
 }
 
-/* The gutter: the recall class in a circle, and where the case is. */
+/* The gutter is a timeline: the recall class in a circle on a rule that runs
+   from card to card, and under it where the case is. */
 .gutter {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: var(--space-1);
   padding-top: var(--space-2);
+  align-self: stretch;
+}
+
+.gutter::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: calc(-1 * var(--space-3));
+  left: 50%;
+  width: 1px;
+  background: var(--border);
+}
+
+.lineRow:last-child .gutter::before {
+  bottom: auto;
+  height: var(--space-2);
 }
 
 .gutterDot {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-round);
   background: var(--surface-control);
   color: var(--text-secondary);
   font-size: var(--fs-micro);
@@ -364,11 +384,14 @@
 }
 
 .gutterLabel {
+  position: relative;
+  padding: 0 2px;
+  background: var(--surface-page);
   font-size: 10px;
   line-height: 12px;
   color: var(--text-muted);
   text-align: center;
-  max-width: 44px;
+  max-width: 48px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -379,12 +402,12 @@
   grid-template-columns: 20px minmax(0, 1fr) auto 28px;
   grid-template-areas:
     "box title chip more"
-    "box meta  meta more";
+    "box meta  chip more";
   column-gap: var(--space-3);
-  row-gap: 2px;
+  row-gap: var(--space-1);
   align-items: center;
-  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
-  border-radius: 16px;
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
   background: var(--surface-card);
 }
 
@@ -395,11 +418,69 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 5px;
+  padding: 0;
+  border-radius: var(--radius-chip);
   border: 1.5px solid var(--border-strong);
+  background: transparent;
   color: var(--text-inverse);
-  text-decoration: none;
   align-self: center;
+  cursor: pointer;
+}
+
+.checkbox:disabled {
+  cursor: progress;
+}
+
+.lineCardDone .lineTitle {
+  color: var(--text-secondary);
+}
+
+/* The one question the box can ask: whose name goes on the record. */
+.lineAsk {
+  grid-area: meta;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.lineAskInput {
+  height: 28px;
+  width: 160px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-inner);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-body);
+}
+
+.lineAskButton,
+.lineAskCancel {
+  height: 28px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: var(--fs-micro);
+  font-weight: var(--weight-strong);
+  cursor: pointer;
+}
+
+.lineAskButton {
+  background: var(--green-800);
+  color: var(--text-inverse);
+}
+
+.lineAskCancel {
+  background: var(--surface-control);
+  color: var(--text-secondary);
+}
+
+.lineFailed {
+  color: var(--alert-ink);
+  white-space: normal;
 }
 
 .checkboxDone {
@@ -409,6 +490,8 @@
 
 .lineTitle {
   grid-area: title;
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -417,22 +500,33 @@
 
 .lineChip {
   grid-area: chip;
+  align-self: center;
   padding: 2px var(--space-3);
-  border-radius: 999px;
+  border-radius: var(--radius-chip);
   font-size: 11px;
   line-height: 16px;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
-.lineChip[data-status="PULL"] {
+/* The chip carries the tier word, so it takes the tier's colour. Confirmed is
+   the terracotta that means act now; probable the ochre that means unresolved;
+   possible stays quiet, because it is here to be read, not acted on. Which
+   list it sits in already says whether it is a pull or a hold. */
+
+.lineChip[data-tier="CONFIRMED"] {
   background: var(--alert-fill);
   color: var(--text-inverse);
 }
 
-.lineChip[data-status="HELD"] {
+.lineChip[data-tier="PROBABLE"] {
   background: var(--attend-tint);
   color: var(--attend-ink);
+}
+
+.lineChip[data-tier="POSSIBLE"] {
+  background: var(--surface-control);
+  color: var(--text-secondary);
 }
 
 .lineMore {
@@ -442,7 +536,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   color: var(--text-muted);
   text-decoration: none;
 }
@@ -454,12 +548,43 @@
 
 .lineMeta {
   grid-area: meta;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
   color: var(--text-muted);
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* One fact and its mark. The last one gives way first when the row is tight. */
+.lineFact {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lineFact > svg {
+  flex: none;
+  opacity: 0.7;
+}
+
+.lineFact:last-child {
+  flex: 0 1 auto;
+}
+
+.lineDot {
+  width: 3px;
+  height: 3px;
+  margin-right: var(--space-1);
+  border-radius: var(--radius-round);
+  background: var(--border-strong);
+  flex: none;
 }
 
 .more {
@@ -470,7 +595,7 @@
   color: var(--text-secondary);
   font-size: var(--fs-body);
   text-decoration: none;
-  padding-left: calc(44px + var(--space-3));
+  padding-left: calc(48px + var(--space-3));
 }
 
 .more:hover {
@@ -478,7 +603,7 @@
 }
 
 .empty {
-  padding-left: calc(44px + var(--space-3));
+  padding-left: calc(48px + var(--space-3));
   color: var(--text-muted);
 }
 
@@ -490,8 +615,9 @@
 }
 
 .docTitle {
-  font-size: var(--fs-page);
-  line-height: var(--lh-page);
+  font-size: 26px;
+  line-height: 32px;
+  letter-spacing: -0.01em;
   font-weight: var(--weight-normal);
   color: var(--text-primary);
   margin-bottom: var(--space-1);
@@ -501,7 +627,7 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-3) var(--space-3);
-  border-radius: 16px;
+  border-radius: var(--radius-card);
   background: var(--surface-card);
   color: var(--text-primary);
   text-decoration: none;
@@ -537,7 +663,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--surface-control);
   color: var(--text-secondary);
   flex: none;
@@ -548,7 +674,7 @@
   display: grid;
   gap: 6px;
   padding: 12px 12px 14px;
-  border-radius: 6px;
+  border-radius: var(--radius-chip);
   background: var(--paper);
   color: var(--paper-ink);
   border: 1px solid var(--border-hairline);

@@ -1,4 +1,4 @@
-// PullSheet API v1 types, transcribed from brief/API.md section 21.
+// Sift API v1 types, transcribed from brief/API.md section 21.
 // Do not edit a field name, a type or a nullability here without editing
 // brief/API.md and pullsheet/api.py to match.
 
@@ -151,6 +151,8 @@ export interface SheetLine {
   reason_for_recall: string | null;
   cleared_count: number; // > 0 means a person cleared it, and the line STAYS
   cleared: boolean;
+  confirmed_count: number; // confirm_pulled decisions on this subject
+  confirmed_pulled: boolean; // a named person said the case left the shelf
 }
 
 export interface SheetSection {

@@ -1,7 +1,8 @@
-import { Chip, ChipRow, TabCard, ui } from "@/components";
+import { Chip, ChipRow, TabCard, TierBadge, ui } from "@/components";
 import type { SheetLine, SheetSection } from "@/lib/api";
 import { EVIDENCE_LABEL, NOT_RECORDED } from "@/lib/strings";
 import { formatQuantity } from "@/lib/format";
+import { byTier } from "@/lib/tier";
 import { cx } from "@/lib/cx";
 
 const ROMAN: Record<1 | 2 | 3, string> = { 1: "I", 2: "II", 3: "III" };
@@ -36,7 +37,7 @@ function LineRow({ line }: { line: SheetLine }) {
       <td>
         <ChipRow>
           <Chip tone={line.status === "PULL" ? "pull" : "held"}>{line.status}</Chip>
-          <Chip tone="quiet">{line.tier}</Chip>
+          <TierBadge tier={line.tier} />
           {line.is_new ? <Chip tone="quiet">new</Chip> : null}
           {line.recall_status === "amended" ? <Chip tone="quiet">amended</Chip> : null}
         </ChipRow>
@@ -95,7 +96,7 @@ export function StorageSections({ sections }: {
               </tr>
             </thead>
             <tbody>
-              {section.lines.map((line) => (
+              {byTier(section.lines).map((line) => (
                 <LineRow key={line.id} line={line} />
               ))}
             </tbody>

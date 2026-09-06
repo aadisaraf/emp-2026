@@ -15,10 +15,14 @@ export function NotRecorded({ word = NOT_RECORDED }: { word?: string }) {
   return <span className={styles.missing}>{word}</span>;
 }
 
-/** The tier word, uncoloured. */
-export function TierBadge({ tier }: { tier: Tier }) {
+/** The tier word, coloured by tier: confirmed reads as act now. */
+export function TierBadge({ tier, className }: { tier: Tier; className?: string }) {
   return (
-    <span className={styles.tier} title={TIER_EXPLANATION[tier]}>
+    <span
+      className={cx(styles.tier, className)}
+      data-tier={tier}
+      title={TIER_EXPLANATION[tier]}
+    >
       {tier}
     </span>
   );

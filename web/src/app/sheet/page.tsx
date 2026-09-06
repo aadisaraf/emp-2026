@@ -7,7 +7,11 @@ import { SheetView } from "./_components/SheetView";
 
 export const dynamic = "force-dynamic";
 
-export default async function PullSheetPage() {
+type Params = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function PullSheetPage({ searchParams }: { searchParams: Params }) {
+  const params = await searchParams;
+  const q = Array.isArray(params.q) ? (params.q[0] ?? "") : (params.q ?? "");
   const [sheet, sources] = await Promise.all([getSheet(), getSources()]);
 
   if (!sheet.ok) {
@@ -36,6 +40,7 @@ export default async function PullSheetPage() {
       sheet={sheet.data}
       screeningRule={sources.ok ? sources.data.screening_rule : null}
       currentRunId={sheet.data.run.id}
+      query={q}
     />
   );
 }

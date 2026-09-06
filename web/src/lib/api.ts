@@ -1,4 +1,4 @@
-/* The typed client for the PullSheet JSON API. */
+/* The typed client for the Sift JSON API. */
 
 import type {
   CreditClaim,
@@ -76,7 +76,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<Attempt<T>>
       ...init,
       headers: {
         Accept: "application/json",
-        ...(init?.body ? { "Content-Type": "application/json" } : {}),
+        // FormData carries its own multipart boundary. Naming a content type
+        // here would overwrite it and the file would arrive unreadable.
+        ...(init?.body && !(init.body instanceof FormData)
+          ? { "Content-Type": "application/json" }
+          : {}),
         ...init?.headers,
       },
     });
@@ -227,5 +231,64 @@ export function refreshRecalls(): Promise<Attempt<RefreshResponse>> {
   return request<RefreshResponse>("/api/v1/recalls/refresh", {
     method: "POST",
     body: JSON.stringify({}),
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   Inventory in, by hand. Three answers, and the caller must handle all three:
+   the file was read, a heading needs one question answered, or the delivery
+   was refused. A refusal is still a run; it is never silence.
+--------------------------------------------------------------------------- */
+
+export interface IngestOk {
+  status: "ok";
+  run_id: number;
+  filename: string;
+  matches?: number;
+  [key: string]: unknown;
+}
+
+export interface IngestDuplicate {
+  status: "duplicate";
+  run_id: number;
+  filename: string;
+  reason: string;
+}
+
+export interface IngestRejected {
+  status: "rejected";
+  run_id: number;
+  filename: string;
+  reason: string;
+}
+
+export interface IngestAmbiguous {
+  status: "ambiguous";
+  filename: string;
+  headers: string[];
+  mapping: Record<string, string>;
+  /** Heading -> the fields it could mean. Exactly one question per heading. */
+  ambiguous: Record<string, string[]>;
+  /** Every field a heading may be mapped to. */
+  fields: string[];
+}
+
+export type IngestResult = IngestOk | IngestDuplicate | IngestRejected | IngestAmbiguous;
+
+/** Send one export. The file is read once. */
+export function uploadInventory(file: File): Promise<Attempt<IngestResult>> {
+  const body = new FormData();
+  body.append("file", file);
+  return request<IngestResult>("/api/v1/ingest/upload", { method: "POST", body });
+}
+
+/** Answer the heading question, and read the file with the answer. */
+export function answerMapping(
+  filename: string,
+  answers: Record<string, string>,
+): Promise<Attempt<IngestResult>> {
+  return request<IngestResult>("/api/v1/ingest/mapping", {
+    method: "POST",
+    body: JSON.stringify({ filename, answers }),
   });
 }

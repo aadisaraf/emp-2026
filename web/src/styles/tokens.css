@@ -1,5 +1,5 @@
 /*
-  PullSheet design tokens. A page uses these values or none.
+  Sift design tokens. A page uses these values or none.
 
   Cream and sage. The screen is paper-coloured because the product's output is
   paper; the chrome is sage because that is the institution's colour. Nothing
@@ -118,8 +118,10 @@
 
   /* ---- radius by role ---------------------------------------------- */
   --radius-flat:       0;      /* table cells and rows stay square */
-  --radius-chip:       999px;  /* chips, badges, pill buttons */
-  --radius-card:       18px;   /* panels and cards */
-  --radius-inner:      12px;   /* a row inside a card: outer minus the gap */
-  --radius-drop:       12px;   /* the upload dropzone */
+  --radius-chip:       4px;    /* chips and badges */
+  --radius-pill:       6px;    /* pill buttons, filters, the search field */
+  --radius-card:       8px;    /* panels and cards */
+  --radius-inner:      6px;    /* a row inside a card: outer minus the gap */
+  --radius-drop:       6px;    /* the upload dropzone */
+  --radius-round:      999px;  /* the few true circles: icon buttons, the class dot */
 }
