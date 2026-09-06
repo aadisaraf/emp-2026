@@ -68,12 +68,22 @@ def _inventory_objects(conn) -> list[SimpleNamespace]:
 
 
 def run_matcher(conn: sqlite3.Connection, now: datetime | None = None,
-                first_seen_run_id: int | None = None) -> dict[str, int]:
+                first_seen_run_id: int | None = None,
+                only_recall_ids: set[int] | None = None) -> dict[str, int]:
     """Match every current inventory row against the loaded corpus.
 
     Rebuilds the indexes each run rather than caching them. At this corpus size
     that costs under a second, and a cache is a place for the corpus and the
     index to disagree about what exists.
+
+    ``only_recall_ids`` narrows which recalls may PRODUCE a line -- the standing
+    monitor uses it to evaluate just the records it has not seen before, so a
+    second pass does not duplicate every existing match. The indexes are still
+    built over the WHOLE corpus, because word distinctiveness is a property of
+    the corpus and would be meaningless measured against three new records. This
+    is a re-run filter, not a narrowing of what the matcher can find: every id
+    in the set is evaluated against every inventory row exactly as a full run
+    would evaluate it.
     """
     created_at = (now or datetime.now(timezone.utc)).isoformat(timespec="seconds")
 
@@ -90,7 +100,10 @@ def run_matcher(conn: sqlite3.Connection, now: datetime | None = None,
 
     for inv in _inventory_objects(conn):
         stats["inventory_rows"] += 1
-        for recall_id in sorted(generate_candidates(inv, indexes)):
+        candidates = generate_candidates(inv, indexes)
+        if only_recall_ids is not None:
+            candidates = {r for r in candidates if r in only_recall_ids}
+        for recall_id in sorted(candidates):
             stats["candidate_pairs"] += 1
             rec = by_id[recall_id]
             evidence = build_evidence(inv, rec, indexes.is_distinctive)

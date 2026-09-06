@@ -39,6 +39,24 @@ def fixed_now():
 
 
 @pytest.fixture
+def bind_app(monkeypatch):
+    """Point the FastAPI app at a specific database file.
+
+    ``app._conn()`` resolves ``db.DB_PATH`` at call time, so patching the module
+    attribute is enough. Without this a TestClient reads the developer's own
+    working database, and the test passes or fails on whatever was last left
+    there -- which is not a test.
+    """
+    from pullsheet import db as db_module
+
+    def _bind(path):
+        monkeypatch.setattr(db_module, "DB_PATH", Path(path))
+        return path
+
+    return _bind
+
+
+@pytest.fixture
 def fixture_path():
     """Resolve a fixture file by name, searching the three fixture directories."""
 

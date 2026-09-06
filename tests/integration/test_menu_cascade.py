@@ -19,8 +19,8 @@ from pullsheet.recalls import corpus
 
 
 @pytest.fixture
-def loaded(tmp_path):
-    path = tmp_path / "menu.db"
+def loaded(tmp_path, bind_app):
+    path = bind_app(tmp_path / "menu.db")
     db.reset(path)
     conn = db.connect(path)
     corpus.load_snapshots(conn)

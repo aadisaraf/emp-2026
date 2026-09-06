@@ -51,6 +51,13 @@ SOURCES: dict[str, tuple[Provenance, str, str]] = {
         "data/fixtures/expected_matches.json",
         "The seeded correspondence map. The oracle for SC-005.",
     ),
+    "sites": (
+        "hand-authored",
+        "data/fixtures/sites.csv",
+        "The district's site roster. A site on this list with no processed export is "
+        "how 'unconfirmed' becomes visible -- without a roster, a building that never "
+        "reported would simply not appear, which is the failure FR-050 exists to catch.",
+    ),
     "unit_costs": (
         "hand-authored",
         "data/fixtures/unit_costs.csv",

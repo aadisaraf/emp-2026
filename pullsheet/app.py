@@ -22,11 +22,14 @@ from pullsheet.adapters.column_map import ALIASES
 from pullsheet.adapters.paste import PasteAdapter
 from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
 from pullsheet.artifacts import credit_claim, hold_record, pull_sheet, state_report
+from pullsheet import monitor
 from pullsheet.matching.run import run_matcher
 from pullsheet.menu import cascade as menu_cascade
 from pullsheet.menu import substitute as menu_substitute
 from pullsheet.matching.screen import SCREENING_RULE
 from pullsheet.provenance import LABELS, SOURCES, label_for
+from pullsheet.rollup import deadlines as rollup_deadlines
+from pullsheet.rollup import status as rollup_status
 
 ROOT = Path(__file__).resolve().parent.parent
 HERE = Path(__file__).resolve().parent
@@ -86,14 +89,19 @@ def _sync_form(request: Request) -> dict:
 
 @app.get("/api/status")
 def api_status():
+    """What poll.js reads. Numbers only -- it can change no decision."""
     conn = _conn()
     try:
-        head = pull_sheet.header(conn, now())
+        at = now()
+        head = pull_sheet.header(conn, at)
         return {
             "sheet_generated_at": head["generated_at"],
             "pull_count": head["counts"]["pull_count"],
             "held_count": head["counts"]["held_count"],
             "sites": pull_sheet.sites(conn),
+            "site_status": rollup_status.site_statuses(conn, at),
+            "deadlines": rollup_deadlines.clocks(conn, at),
+            "alerts": len(monitor.open_alerts(conn)),
             "corpus": head["corpora"],
             "last_ingest": head["last_ingest"],
         }
@@ -107,13 +115,16 @@ def api_status():
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
+    """US4. The district on one screen: every site, both clocks, any new alerts."""
     conn = _conn()
     try:
-        head = pull_sheet.header(conn, now())
-        return templates.TemplateResponse("index.html", {
+        at = now()
+        return templates.TemplateResponse("rollup.html", {
             "request": request,
-            "header": head,
-            "sections": pull_sheet.by_site(conn),
+            "header": pull_sheet.header(conn, at),
+            "rollup": rollup_status.summary(conn, at),
+            "deadlines": rollup_deadlines.clocks(conn, at),
+            "alerts": monitor.open_alerts(conn),
             "rejections": pull_sheet.rejections(conn),
             "sources": SOURCES,
         })
@@ -352,6 +363,72 @@ def ingest_mapping(request: Request, filename: str = Form(...)):
         return RedirectResponse("/ingest", status_code=303)
     finally:
         conn.close()
+
+
+@app.post("/site/{site}/confirm")
+def confirm_site(site: str, actor: str = Form("")):
+    """FR-054. A named person says this building has physically been pulled.
+
+    Writes a `confirm_site_pulled` decision and nothing else. It touches no
+    match and no inventory row, so it changes exactly one site's word and
+    cannot make a line disappear from any sheet -- including this one's.
+    """
+    if not actor or not actor.strip():
+        raise HTTPException(400, "an actor name is required to confirm a site")
+    conn = _conn()
+    try:
+        known = set(rollup_status.roster()) | set(pull_sheet.sites(conn))
+        resolved = next(
+            (k for k in known
+             if k.lower().replace(" ", "-") == site.lower() or k.lower() == site.lower()),
+            None)
+        if resolved is None:
+            raise HTTPException(404, f"no site named {site!r}")
+        conn.execute(
+            """INSERT INTO decisions (kind, target_type, target_id, actor, note, created_at)
+               VALUES ('confirm_site_pulled', 'site', ?, ?, NULL, ?)""",
+            (resolved, actor.strip(), now().isoformat(timespec="seconds")))
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/alerts/{match_id}/ack")
+def acknowledge_alert(match_id: int, actor: str = Form("")):
+    """FR-057. A named person says they have seen this alert.
+
+    Acknowledging says somebody LOOKED. It does not clear the line, does not
+    touch the match row, and does not change the pull sheet -- which is exactly
+    why it is safe to make a one-click action. Clearing is a different route
+    with a different word on the button.
+    """
+    if not actor or not actor.strip():
+        raise HTTPException(400, "an actor name is required to acknowledge an alert")
+    conn = _conn()
+    try:
+        if conn.execute("SELECT 1 FROM matches WHERE id = ?", (match_id,)).fetchone() is None:
+            raise HTTPException(404, f"no match {match_id}")
+        conn.execute(
+            """INSERT INTO decisions (kind, target_type, target_id, actor, note, created_at)
+               VALUES ('acknowledge_alert', 'match', ?, ?, NULL, ?)""",
+            (str(match_id), actor.strip(), now().isoformat(timespec="seconds")))
+        conn.commit()
+    finally:
+        conn.close()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/recalls/monitor")
+def run_monitor():
+    """Run one monitor pass now. The scheduled path and the button are the same
+    function, so the thing demonstrated is the thing that runs unattended."""
+    conn = _conn()
+    try:
+        monitor.run(conn, now())
+    finally:
+        conn.close()
+    return RedirectResponse("/", status_code=303)
 
 
 @app.post("/match/{match_id}/clear")

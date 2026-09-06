@@ -95,15 +95,51 @@ def test_nothing_in_the_package_removes_rows():
     assert not offenders, f"row-removing SQL found in {offenders}"
 
 
-def test_only_the_clearing_route_writes_a_decision():
-    """`decisions` is the human-action table. If anything else could write to it,
-    'cleared by a person' would stop meaning what it says."""
-    writers = []
+#: Every route that may write a `decisions` row, and the one kind each writes.
+#: `decisions` is the human-action table: three human actions, three writers.
+DECISION_WRITERS = {
+    "app.py::clear_match": "clear_match",
+    "app.py::confirm_site": "confirm_site_pulled",
+    "app.py::acknowledge_alert": "acknowledge_alert",
+}
+
+
+def _decision_writers():
+    found = {}
     for path, node in _functions():
         source = ast.get_source_segment(path.read_text(), node) or ""
         if re.search(r"INSERT\s+INTO\s+decisions", source, re.I):
-            writers.append(_qualname(path, node))
-    assert writers == ["app.py::clear_match"], f"decisions is written by {writers}"
+            found[_qualname(path, node)] = source
+    return found
+
+
+def test_only_named_routes_write_a_decision():
+    """`decisions` is the human-action table. If anything else could write to it,
+    'a person did this' would stop meaning what it says."""
+    writers = _decision_writers()
+    assert set(writers) == set(DECISION_WRITERS), (
+        f"expected {sorted(DECISION_WRITERS)}, found {sorted(writers)}. "
+        f"A fourth writer is a defect until it is justified the same way.")
+
+
+def test_every_decision_writer_requires_a_named_actor():
+    """The invariant that actually matters. A decision is only auditable if a
+    person's name is attached, so no writer may reach the INSERT without one --
+    which is also what makes it impossible for a scheduled process to take any
+    of these routes. The schema CHECK is the second lock; this is the first."""
+    for name, source in _decision_writers().items():
+        assert "actor" in source, f"{name} writes a decision without an actor"
+        assert re.search(r"if not actor|actor\.strip\(\)", source), (
+            f"{name} does not require a non-empty actor before writing")
+
+
+def test_only_one_route_can_clear_a_match():
+    """Two of the three human actions are deliberately harmless: confirming a
+    site and acknowledging an alert say a person LOOKED, and neither touches a
+    line. Only one route in the codebase can write the kind that means cleared."""
+    clearing = [name for name, source in _decision_writers().items()
+                if "'clear_match'" in source]
+    assert clearing == ["app.py::clear_match"], f"clear_match is written by {clearing}"
 
 
 def test_the_matcher_cannot_write_a_decision():
@@ -115,6 +151,15 @@ def test_the_matcher_cannot_write_a_decision():
                              source, re.I), (
             f"{path.name} writes to the decisions table; the matcher must not be "
             f"able to reach human actions")
+
+
+def test_no_decision_route_touches_a_match_or_an_inventory_row():
+    """Acknowledging an alert and confirming a site must not be able to change
+    what they are about. They write one row and read nothing else."""
+    for name, source in _decision_writers().items():
+        for table in ("matches", "inventory_records", "recall_records"):
+            assert not re.search(rf"UPDATE\s+{table}", source, re.I), (
+                f"{name} updates {table}")
 
 
 def test_no_status_is_ever_updated_on_a_match():

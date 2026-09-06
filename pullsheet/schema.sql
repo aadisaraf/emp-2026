@@ -220,6 +220,10 @@ CREATE TABLE IF NOT EXISTS monitor_runs (
     records_evaluated INTEGER NOT NULL DEFAULT 0,
     new_records       INTEGER NOT NULL DEFAULT 0,
     new_matches       INTEGER NOT NULL DEFAULT 0,
+    -- The high-water mark: the largest recall_records.id this run had seen. The
+    -- next run evaluates only what is above it, which is what makes "new" mean
+    -- new rather than "matched nothing last time".
+    max_record_id     INTEGER NOT NULL DEFAULT 0,
     -- A run that found nothing is still a run (FR-058). Stored, not inferred
     -- from an absence of rows -- "nothing found" and "never ran" must not look
     -- the same to an operator.

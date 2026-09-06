@@ -139,3 +139,15 @@ mark { background: #ffe680; padding: 0 .1em; }
 .signatures { margin-top: 1.5rem; break-inside: avoid; }
 .checkbox { font-size: 1.1rem; text-align: center; }
 .artifact-links { margin: -.4rem 0 .6rem; font-size: .85rem; }
+
+/* Roll-up (US4). The status word is the load-bearing element on this page, so
+   it is legible before it is decorative. */
+.status-word { font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+               font-size: .8rem; }
+.status-holding .status-word { color: #8a1c1c; }
+.status-unconfirmed .status-word { color: #7a5a00; }
+.status-clear .status-word { color: #1c5c2a; }
+.deadlines .overrun .clock { color: #8a1c1c; font-weight: 700; }
+.alerts { border-left: 3px solid #8a1c1c; padding-left: .8rem; }
+form.inline { display: inline-flex; gap: .3rem; }
+form.inline input { width: 7rem; }

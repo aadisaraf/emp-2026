@@ -24,8 +24,8 @@ NOW = datetime(2026, 9, 5, 14, 30, tzinfo=timezone.utc)
 
 
 @pytest.fixture
-def loaded(tmp_path):
-    path = tmp_path / "artifacts.db"
+def loaded(tmp_path, bind_app):
+    path = bind_app(tmp_path / "artifacts.db")
     db.reset(path)
     conn = db.connect(path)
     corpus.load_snapshots(conn)
