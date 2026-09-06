@@ -44,19 +44,12 @@ SOURCES: dict[str, tuple[Provenance, str, str]] = {
     "inventory_lincoln": (
         "hand-authored",
         "data/fixtures/inventory_lincoln.csv",
-        "District inventory export, PrimeroEdge column layout. Not a real district's data.",
+        "One location's inventory export, PrimeroEdge column layout. Not real customer data.",
     ),
     "expected_matches": (
         "hand-authored",
         "data/fixtures/expected_matches.json",
         "The seeded correspondence map. The oracle for SC-005.",
-    ),
-    "sites": (
-        "hand-authored",
-        "data/fixtures/sites.csv",
-        "The district's site roster. A site on this list with no processed export is "
-        "how 'unconfirmed' becomes visible -- without a roster, a building that never "
-        "reported would simply not appear, which is the failure FR-050 exists to catch.",
     ),
     "inbox": (
         "hand-authored",

@@ -1,11 +1,13 @@
 {% import "base.html" as ui with context %}
-<title>Hold record &mdash; {{ record.site }}</title>
+<title>Hold record &mdash; {{ record.location.name }}</title>
 {% include "base.html" %}
 
 <main>
   <h1>Hold and Destruction Record</h1>
-  <p class="generated">{{ record.district }} &mdash; <strong>{{ record.site }}</strong><br>
-     Generated {{ record.generated_at }}</p>
+  <p class="generated"><strong>{{ record.location.name }}</strong>
+     &mdash; {{ record.location.operator }}<br>
+     {{ record.location.address }}<br>
+     Inventory run #{{ record.run_id }} &middot; generated {{ record.generated_at }}</p>
 
   <p class="note">
     {{ record.pull_count }} line(s) to remove from service, {{ record.held_count }} held
@@ -41,7 +43,8 @@
         <td class="checkbox">&#9744;</td>
       </tr>
     {% else %}
-      <tr><td colspan="8" class="zero">No lines at this site.</td></tr>
+      <tr><td colspan="8" class="zero">No line in this run matched a recall,
+        so there is nothing to hold.</td></tr>
     {% endfor %}
     </tbody>
   </table>

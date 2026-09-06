@@ -226,7 +226,7 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     """
     hits: set = set()
 
-    for code in (getattr(inv, "gtin", None), getattr(inv, "upc", None)):
+    for code in (getattr(inv, "gtin", None),):
         key = code_key(code)
         if key and key in indexes.by_code:
             hits |= indexes.by_code[key]

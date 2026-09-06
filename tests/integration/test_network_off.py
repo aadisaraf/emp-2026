@@ -22,9 +22,9 @@ from pathlib import Path
 import pytest
 
 from pullsheet import db
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 from pullsheet.artifacts import pull_sheet
-from pullsheet.matching.run import ordered_matches, run_matcher
+from pullsheet.matching.run import ordered_matches
 from pullsheet.recalls.corpus import load_snapshots
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -67,19 +67,22 @@ def test_the_whole_flow_runs_with_the_network_down(network_off, tmp_path):
     counts = load_snapshots(conn)
     assert sum(counts.values()) > 500, "the committed corpus did not load from disk"
 
-    result = db.ingest_file(conn, FIXTURE, WatchedFolderAdapter(), "Lincoln USD watched folder")
+    # One call: the delivery is read, matched and finalized without a network
+    # and without a person. That is the whole daily cycle.
+    result = db.ingest_file(conn, FIXTURE, SftpDropAdapter())
     assert result["status"] == "ok"
+    assert result["matches"]["PULL"] > 0, "no pull lines were produced offline"
 
-    stats = run_matcher(conn)
-    assert stats["PULL"] > 0, "no pull lines were produced offline"
-
-    lines = ordered_matches(conn)
+    run = db.latest_ok_run(conn)
+    lines = ordered_matches(conn, run["id"])
     assert lines
     assert {line["status"] for line in lines} <= {"PULL", "HELD"}
+    pulls = sum(1 for line in lines if line["status"] == "PULL")
+    assert pulls == result["matches"]["PULL"]
 
     from datetime import datetime, timezone
-    head = pull_sheet.header(conn, datetime(2026, 9, 5, 14, 0, tzinfo=timezone.utc))
-    assert head["counts"]["pull_count"] == stats["PULL"]
+    head = pull_sheet.header(conn, run, datetime(2026, 9, 5, 14, 0, tzinfo=timezone.utc))
+    assert head["counts"]["pull_count"] == pulls
 
     # The header names the cached snapshot and its capture date -- the thing to
     # narrate during the demo, not to apologise for.
@@ -99,15 +102,15 @@ def test_the_pages_render_with_the_network_down(network_off, tmp_path):
     db.reset(path)
     conn = db.connect(path)
     load_snapshots(conn)
-    db.ingest_file(conn, FIXTURE, WatchedFolderAdapter(), "Lincoln USD watched folder")
-    run_matcher(conn)
+    db.ingest_file(conn, FIXTURE, SftpDropAdapter())
     conn.close()
 
     monkey = pytest.MonkeyPatch()
     monkey.setattr(app_module.db, "DB_PATH", path)
     try:
         client = TestClient(app_module.app)
-        for url in ("/", "/sheet", "/api/status", "/ingest"):
+        for url in ("/", "/sheet", "/impact", "/runs", "/sources",
+                    "/api/status", "/ingest"):
             response = client.get(url)
             assert response.status_code == 200, f"{url} -> {response.status_code}"
         assert client.get("/api/status").json()["pull_count"] > 0

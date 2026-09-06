@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from pullsheet import db
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 FIXTURE = ROOT / "data" / "fixtures" / "inventory_lincoln.csv"
@@ -27,21 +27,25 @@ def conn(tmp_path):
 
 @pytest.fixture
 def adapter():
-    return WatchedFolderAdapter()
+    return SftpDropAdapter()
 
 
 def test_row_counts_reconcile(conn, adapter):
-    result = db.ingest_file(conn, FIXTURE, adapter, "Lincoln USD watched folder")
-    run = conn.execute("SELECT * FROM ingest_runs WHERE id = ?", (result["run_id"],)).fetchone()
+    result = db.ingest_file(conn, FIXTURE, adapter)
+    run = db.get_run(conn, result["run_id"])
     written = conn.execute(
-        "SELECT COUNT(*) c FROM inventory_records WHERE source_export_id = ?",
+        "SELECT COUNT(*) c FROM inventory_records WHERE run_id = ?",
         (result["run_id"],)).fetchone()["c"]
     assert run["status"] == "ok"
-    assert run["row_count"] == written == result["records_written"]
+    # rows READ is the file's row count; records WRITTEN is lower when two rows
+    # of one export are the same item (FR-065). Both are on the run, and the
+    # difference is the merge -- neither number silently absorbs the other.
+    assert run["rows_read"] == result["rows_read"]
+    assert written == result["records_written"] <= run["rows_read"]
 
 
 def test_every_partially_parsed_row_is_present_and_flagged(conn, adapter):
-    db.ingest_file(conn, FIXTURE, adapter, "Lincoln USD watched folder")
+    db.ingest_file(conn, FIXTURE, adapter)
     rows = conn.execute("SELECT raw_description, quantity, unpopulated_fields "
                         "FROM inventory_records").fetchall()
     partial = [r for r in rows if json.loads(r["unpopulated_fields"])]
@@ -55,7 +59,7 @@ def test_every_partially_parsed_row_is_present_and_flagged(conn, adapter):
 
 
 def test_normalized_description_is_computed_downstream(conn, adapter):
-    db.ingest_file(conn, FIXTURE, adapter, "Lincoln USD watched folder")
+    db.ingest_file(conn, FIXTURE, adapter)
     row = conn.execute(
         "SELECT normalized_description FROM inventory_records "
         "WHERE raw_description = 'CHICKEN STRIPS BRD FC FROZEN 2/5 LB'").fetchone()
@@ -64,17 +68,17 @@ def test_normalized_description_is_computed_downstream(conn, adapter):
 
 def test_a_rejection_is_recorded_and_leaves_the_sheet_intact(conn, adapter):
     """FR-006, FR-009. A bad export must not be able to empty a good sheet."""
-    db.ingest_file(conn, FIXTURE, adapter, "Lincoln USD watched folder")
+    db.ingest_file(conn, FIXTURE, adapter)
     before = conn.execute("SELECT COUNT(*) c FROM inventory_records").fetchone()["c"]
 
-    result = db.ingest_file(conn, ADAPTER_FIXTURES / "malformed.csv", adapter,
-                            "Lincoln USD watched folder")
+    result = db.ingest_file(conn, ADAPTER_FIXTURES / "malformed.csv", adapter)
     after = conn.execute("SELECT COUNT(*) c FROM inventory_records").fetchone()["c"]
 
     assert result["status"] == "rejected"
     assert after == before, "a rejected export changed the inventory"
 
-    run = conn.execute("SELECT * FROM ingest_runs WHERE status = 'rejected'").fetchone()
+    run = db.get_run(conn, result["run_id"])
+    assert run["status"] == "rejected"
     assert run["rejection_reason"]
     assert "malformed.csv" in run["rejection_reason"]
     assert "row 1" in run["rejection_reason"], "the failing row is not named"
@@ -82,7 +86,7 @@ def test_a_rejection_is_recorded_and_leaves_the_sheet_intact(conn, adapter):
 
 
 def test_an_empty_file_is_rejected_by_name(conn, adapter):
-    result = db.ingest_file(conn, ADAPTER_FIXTURES / "empty.csv", adapter, "test source")
+    result = db.ingest_file(conn, ADAPTER_FIXTURES / "empty.csv", adapter)
     assert result["status"] == "rejected"
     assert "empty" in result["reason"]
 
@@ -94,13 +98,28 @@ def test_ingest_never_raises_past_the_caller(conn, adapter, tmp_path):
                           ("one_column.csv", "Whatever\nvalue\n")]:
         path = tmp_path / name
         path.write_text(content)
-        result = db.ingest_file(conn, path, adapter, "test source")
+        result = db.ingest_file(conn, path, adapter)
         assert result["status"] in {"ok", "rejected"}
 
 
-def test_the_source_and_its_provenance_are_recorded(conn, adapter):
-    db.ingest_file(conn, FIXTURE, adapter, "Lincoln USD watched folder")
-    source = conn.execute("SELECT * FROM inventory_sources").fetchone()
-    assert source["adapter"] == "watched_folder"
-    assert source["provenance"] == "live"
-    assert source["name"] == "Lincoln USD watched folder"
+def test_the_delivery_and_its_channel_are_recorded(conn, adapter):
+    """A run names the channel it arrived on and the delivery it came from, so
+    "which file produced this sheet" is answerable a week later."""
+    result = db.ingest_file(conn, FIXTURE, adapter)
+    run = db.get_run(conn, result["run_id"])
+    assert run["channel"] == "sftp_drop"
+    assert FIXTURE.name in run["delivery_ref"]
+    assert run["business_date"] and run["finalized_at"]
+    assert run["corpus_note"] is not None
+
+
+def test_the_same_delivery_twice_is_refused_rather_than_double_counted(conn, adapter):
+    """The drop folder can hand the same file back after a retry. Ingesting it
+    again would make it the baseline tomorrow's "new since" diff is measured
+    against, and the day would report nothing new while hiding the change."""
+    first = db.ingest_file(conn, FIXTURE, adapter)
+    again = db.ingest_file(conn, FIXTURE, adapter)
+    assert first["status"] == "ok"
+    assert again["status"] == "duplicate"
+    assert again["run_id"] == first["run_id"]
+    assert conn.execute("SELECT COUNT(*) c FROM runs").fetchone()["c"] == 1

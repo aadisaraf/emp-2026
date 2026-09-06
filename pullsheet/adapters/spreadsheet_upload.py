@@ -1,10 +1,12 @@
-"""Browser upload. The same reading logic as the watched folder, reached a
-different way -- because the folder is a network share and network shares go
-down on the morning you need them.
+"""Browser upload. The same reading logic as the SFTP drop, reached a different
+way -- because the drop is a network share and network shares go down on the
+morning you need them.
 
-Column detection runs on upload. When a header is ambiguous the operator is
-asked ONCE, and the answer is stored on ``inventory_sources.column_map`` and
-reused silently for that source thereafter.
+Column detection runs on every upload -- it is never replayed from memory, or a
+column whose header changed would be silently dropped. What IS remembered is the
+operator's ANSWER to an ambiguous header: it is stored on the run
+(``runs.column_map``) and reused the next time the same header turns up, so the
+question is asked once and not every morning.
 """
 
 from __future__ import annotations
@@ -14,20 +16,21 @@ from typing import Iterator
 
 from pullsheet.adapters.base import AdapterRejection, NormalizedRecord
 from pullsheet.adapters.column_map import detect
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
 
-class SpreadsheetUploadAdapter(WatchedFolderAdapter):
+class SpreadsheetUploadAdapter(SftpDropAdapter):
     """Same reader, different door.
 
     Subclassing rather than duplicating is deliberate: two implementations of
-    "read a district export" would eventually disagree, and the disagreement
+    "read an inventory export" would eventually disagree, and the disagreement
     would be invisible until a sheet came out different depending on how the
     file arrived.
     """
 
     name = "spreadsheet_upload"
     provenance = "live"
+    channel = "spreadsheet_upload"
 
     def inspect(self, path) -> tuple[list[str], dict[str, str], dict[str, tuple[str, ...]]]:
         """Headers, confident mapping, and anything that needs asking about."""

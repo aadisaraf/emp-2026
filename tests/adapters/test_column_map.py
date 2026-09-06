@@ -75,14 +75,27 @@ def test_canonical():
 
 
 def test_unrecognised_columns_are_kept_not_dropped():
-    mapping, _ = detect(["Site", "Item Description", "Vendor Notes"])
-    row = {"Site": "Lincoln", "Item Description": "CHICKEN STRIPS BRD FC FROZEN",
+    mapping, _ = detect(["Storage Location", "Item Description", "Vendor Notes"])
+    row = {"Storage Location": "Freezer A",
+           "Item Description": "CHICKEN STRIPS BRD FC FROZEN",
            "Vendor Notes": "substitute approved"}
     out = apply(mapping, row)
-    assert out["site"] == "Lincoln"
+    assert out["storage_location"] == "Freezer A"
     assert out["_extra"] == {"Vendor Notes": "substitute approved"}
 
 
 def test_a_field_is_never_claimed_twice():
-    mapping, _ = detect(["Site", "School", "Item Description"])
-    assert list(mapping.values()).count("site") == 1
+    mapping, _ = detect(["Storage Location", "Storage Area", "Item Description"])
+    assert list(mapping.values()).count("storage_location") == 1
+
+
+def test_a_building_column_never_becomes_the_storage_location():
+    """"Location" is a storage_location alias, so a "Location Name" column
+    naming the school would land in the Storage column of the pull sheet and
+    send someone to a building instead of a freezer. It is recognised, and then
+    deliberately dropped."""
+    for header in ["Site", "School", "Building", "Bldg", "Location Name", "Campus"]:
+        mapping, ambiguous = detect([header, "Storage Location", "Item Description"])
+        assert header not in mapping, f"{header} was mapped to {mapping.get(header)}"
+        assert header not in ambiguous, f"{header} was asked about rather than ignored"
+        assert mapping["Storage Location"] == "storage_location"

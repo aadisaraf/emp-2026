@@ -1,6 +1,6 @@
--- PullSheet schema. Twelve tables, no ORM, every query hand-written where it is used.
+-- PullSheet schema. Ten tables, no ORM, every query hand-written where it is used.
 --
--- Two rules run through the whole file:
+-- Three rules run through the whole file:
 --
 --   1. Machine output and human action live in different tables. `matches` is
 --      written only by the matcher; `decisions` only by a route that requires an
@@ -9,6 +9,9 @@
 --   2. Nothing is ever deleted. No table has a delete path. Supersession,
 --      amendment, and clearing are all new rows or status columns, so a pull
 --      sheet can be reconstructed as it stood at any moment.
+--   3. One deployment is ONE LOCATION -- one school, one kitchen. There is no
+--      site column and no roster. What varies day to day is the RUN, not the
+--      building, so `runs` is the axis everything else hangs from.
 --
 -- The four safety-critical tables come first, deliberately: they fit one screen,
 -- and they are the ones a reviewer should read before anything else.
@@ -19,18 +22,16 @@
 
 CREATE TABLE IF NOT EXISTS inventory_records (
     id                     INTEGER PRIMARY KEY,
-    site                   TEXT    NOT NULL,
-    storage_location       TEXT,
+    storage_location       TEXT,               -- the cooler, not the building (FR-063)
     raw_description        TEXT    NOT NULL,   -- verbatim from source, never rewritten
     normalized_description TEXT    NOT NULL,
     quantity               REAL,               -- NULL when the source left it blank (FR-007)
     unit                   TEXT,
     pack_size              TEXT,
     gtin                   TEXT,
-    upc                    TEXT,
     lot_code               TEXT,               -- verbatim from source (R3)
 
-    -- Supplier identity (FR-069). A district item master is built around
+    -- Supplier identity (FR-069). A kitchen item master is built around
     -- purchasing, so it always knows who supplies a line even when it carries no
     -- barcode and no lot. These are the join keys that survive that absence.
     brand                  TEXT,               -- the label on the case: 'High Liner', 'Simplot'
@@ -41,18 +42,16 @@ CREATE TABLE IF NOT EXISTS inventory_records (
                                                -- notice; carried for the credit claim (P3).
     unit_cost              REAL,
     received_date          TEXT,
-    source_export_id       INTEGER REFERENCES ingest_runs(id),
+    run_id                 INTEGER NOT NULL REFERENCES runs(id),  -- the delivery that carried it
     unpopulated_fields     TEXT    NOT NULL DEFAULT '[]',  -- JSON array (FR-003)
     identity_key           TEXT    NOT NULL,
     merged_from            TEXT,               -- JSON array of source row numbers (FR-065)
     superseded_by          INTEGER REFERENCES inventory_records(id),
-    created_at             TEXT    NOT NULL,
 
     -- A negative quantity is a data error, not a small quantity.
     CHECK (quantity IS NULL OR quantity >= 0),
     -- Digits only, or absent. Never a partially-cleaned string.
-    CHECK (gtin IS NULL OR gtin GLOB '[0-9]*'),
-    CHECK (upc  IS NULL OR upc  GLOB '[0-9]*')
+    CHECK (gtin IS NULL OR gtin GLOB '[0-9]*')
 );
 
 CREATE TABLE IF NOT EXISTS recall_records (
@@ -70,7 +69,7 @@ CREATE TABLE IF NOT EXISTS recall_records (
     -- most serious until an agency says otherwise. Widening, not narrowing.
     class_rank             INTEGER NOT NULL,
     report_date            TEXT,
-    received_at            TEXT    NOT NULL,   -- when this district first saw it (FR-051)
+    received_at            TEXT    NOT NULL,   -- when this location first saw it (FR-051)
     reason_for_recall      TEXT,
     status                 TEXT    NOT NULL,   -- 'active' | 'terminated' | 'amended'
     -- FR-016. What this record's status was BEFORE the agency changed it, so a
@@ -87,8 +86,16 @@ CREATE TABLE IF NOT EXISTS recall_records (
     CHECK (status IN ('active', 'terminated', 'amended'))
 );
 
+-- A daily cadence re-reads the same agency feeds every morning. Without this key
+-- a refresh would INSERT the corpus a second time and re-stamp received_at,
+-- resetting the USDA clocks that are derived from MIN(received_at) -- which
+-- FR-053 forbids. The key is what makes a refresh an update rather than a reload.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_recall_identity
+    ON recall_records(source, source_record_id);
+
 CREATE TABLE IF NOT EXISTS matches (
     id                     INTEGER PRIMARY KEY,
+    run_id                 INTEGER NOT NULL REFERENCES runs(id),
     inventory_record_id    INTEGER NOT NULL REFERENCES inventory_records(id),
     recall_record_id       INTEGER NOT NULL REFERENCES recall_records(id),
     tier                   TEXT    NOT NULL,
@@ -98,7 +105,11 @@ CREATE TABLE IF NOT EXISTS matches (
     trigger_recall_text    TEXT    NOT NULL,   -- exact substring from the recall side
     score                  REAL,               -- POSSIBLE only; orders lines, never sets status
     lot_note               TEXT,               -- FR-027, FR-067
-    first_seen_run_id      INTEGER REFERENCES monitor_runs(id),
+    -- FR-059. True when the previous good run produced no match for this same
+    -- (item, recall) pair. Computed at finalize by diffing against that run, and
+    -- frozen -- so "new" means new relative to a named run rather than relative
+    -- to whenever the page happened to be opened.
+    is_new                 INTEGER NOT NULL DEFAULT 0,
     created_at             TEXT    NOT NULL,
 
     CHECK (tier IN ('CONFIRMED', 'PROBABLE', 'POSSIBLE')),
@@ -106,55 +117,89 @@ CREATE TABLE IF NOT EXISTS matches (
     -- cleared item is not merely forbidden by policy -- it cannot be represented.
     -- Covered by tests/unit/test_gate.py::test_no_input_can_auto_clear.
     CHECK (status IN ('PULL', 'HELD')),
+    -- 'upc' is the RECALL side's parsed barcode (recalls/parse.py -> parsed_codes
+    -- ['upcs']). The inventory side carries only a GTIN.
     CHECK (evidence_kind IN ('gtin', 'upc', 'mfr_item', 'lot', 'secondary_code',
                             'firm_and_name', 'name'))
 );
 
+-- The matcher runs every day against carried-over inventory, so without this the
+-- same (item, recall) pair accumulates a fresh row every morning. It is served by
+-- a PLAIN INSERT: an INSERT OR IGNORE would silently refuse a match write, which
+-- is a narrowing path, and narrowing paths must be visible (tests/unit/test_clearing_audit.py).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_matches_run_pair
+    ON matches(run_id, inventory_record_id, recall_record_id);
+
 CREATE TABLE IF NOT EXISTS decisions (
     id          INTEGER PRIMARY KEY,
     kind        TEXT NOT NULL,
-    target_type TEXT NOT NULL,
-    target_id   TEXT NOT NULL,
+    match_id    INTEGER NOT NULL REFERENCES matches(id),
+    -- The same judgement, keyed to the THING rather than to the row. A nightly
+    -- run writes new match rows for inventory that has not moved, so a decision
+    -- keyed only to match_id would silently stop applying the next morning --
+    -- and an operator would have to clear the same false positive every day
+    -- until they stopped reading the sheet. Shape: identity_key U+241F source
+    -- U+241F source_record_id.
+    subject_key TEXT NOT NULL,
     actor       TEXT NOT NULL,
     note        TEXT,
     created_at  TEXT NOT NULL,
 
-    CHECK (kind IN ('clear_match', 'confirm_site_pulled', 'acknowledge_alert')),
-    CHECK (target_type IN ('match', 'site')),
+    CHECK (kind IN ('clear_match', 'confirm_pulled')),
     -- No accounts in this build, so the actor is typed rather than authenticated.
     -- An empty actor is not an auditable record (FR-022).
     CHECK (length(trim(actor)) > 0)
 );
 
 -- ===========================================================================
--- Ingestion
+-- Runs. One table for the whole daily cycle.
 -- ===========================================================================
+--
+-- A run is one delivery of one inventory export, from arrival to finalized
+-- sheet. It replaces what were three separate half-records (a source, an ingest
+-- run, and a monitor run) and is the only thing the dashboard navigates by.
+--
+-- The lifecycle is deliberate. A run is 'running' from the moment rows are
+-- committed until its counts are frozen, which closes the window where a crash
+-- between persistence and matching left an empty sheet with no visible error.
+-- Only a run that reached 'ok' is ever shown as the current picture.
 
-CREATE TABLE IF NOT EXISTS inventory_sources (
-    id         INTEGER PRIMARY KEY,
-    name       TEXT NOT NULL,
-    adapter    TEXT NOT NULL,
-    column_map TEXT,                 -- JSON; the remembered header mapping (asked once)
-    provenance TEXT NOT NULL,
-
-    CHECK (adapter IN ('watched_folder', 'spreadsheet_upload', 'email_drop', 'paste')),
-    CHECK (provenance IN ('live', 'dated-snapshot', 'hand-authored'))
-);
-
-CREATE TABLE IF NOT EXISTS ingest_runs (
+CREATE TABLE IF NOT EXISTS runs (
     id               INTEGER PRIMARY KEY,
-    source_id        INTEGER REFERENCES inventory_sources(id),
-    filename         TEXT,
-    arrived_at       TEXT NOT NULL,
-    row_count        INTEGER NOT NULL DEFAULT 0,
-    rows_parsed      INTEGER NOT NULL DEFAULT 0,
-    rows_partial     INTEGER NOT NULL DEFAULT 0,
+    channel          TEXT NOT NULL,   -- how it arrived
+    -- What was delivered, identified well enough to recognise a redelivery:
+    -- filename + content hash for a drop or an upload, Message-ID + attachment
+    -- name for mail. UNIQUE so the same file dropped twice cannot become the
+    -- baseline that the next day's "new since" diff is measured against.
+    delivery_ref     TEXT UNIQUE,
+    column_map       TEXT,            -- JSON; the header mapping this delivery used
+    business_date    TEXT NOT NULL,   -- the local day this run belongs to
+    started_at       TEXT NOT NULL,
+    finalized_at     TEXT,
     status           TEXT NOT NULL,
-    rejection_reason TEXT,           -- names the failing row or column (FR-006)
-    adapter          TEXT NOT NULL,
+    rejection_reason TEXT,            -- names the failing row or column (FR-006)
+    -- The corpus this run was matched against, rendered at finalize. Frozen text
+    -- rather than a foreign key because a snapshot is taken per SOURCE and there
+    -- are always two of them -- a single FK could only ever name one, and a past
+    -- run's page would silently print today's corpus over yesterday's lines.
+    corpus_note      TEXT,
+    rows_read        INTEGER NOT NULL DEFAULT 0,
+    rows_partial     INTEGER NOT NULL DEFAULT 0,
+    -- Frozen at finalize, for the same reason as corpus_note: a run's own page
+    -- must show the totals that run produced, not tonight's.
+    match_count      INTEGER NOT NULL DEFAULT 0,
+    pull_count       INTEGER NOT NULL DEFAULT 0,
+    held_count       INTEGER NOT NULL DEFAULT 0,
 
+    -- Three delivery channels, plus 'rematch': a run with no delivery behind it,
+    -- produced when the corpus changed and the inventory did not. It is named
+    -- rather than disguised as an SFTP drop, so the run history never claims a
+    -- file arrived on a morning when none did.
+    CHECK (channel IN ('sftp_drop', 'spreadsheet_upload', 'email_drop', 'rematch')),
     -- A rejected run is RECORDED, and never replaces a prior good sheet (FR-009).
-    CHECK (status IN ('ok', 'rejected'))
+    CHECK (status IN ('running', 'ok', 'rejected')),
+    -- A rejection that does not say what was wrong is not a record (FR-006).
+    CHECK (status <> 'rejected' OR rejection_reason IS NOT NULL)
 );
 
 CREATE TABLE IF NOT EXISTS recall_snapshots (
@@ -173,6 +218,11 @@ CREATE TABLE IF NOT EXISTS recall_snapshots (
 
 -- ===========================================================================
 -- Menu (P2). All hand-authored, and labelled as such wherever it is shown.
+--
+-- This half of the system is K-12 specific: the components are the USDA meal
+-- pattern and the planned-meal counts are a child nutrition program's. A
+-- restaurant deployment runs the same ingest, matching and pull sheet and does
+-- not use these four tables. Saying that is cheaper than pretending otherwise.
 -- ===========================================================================
 
 CREATE TABLE IF NOT EXISTS recipes (
@@ -205,7 +255,6 @@ CREATE TABLE IF NOT EXISTS recipe_components (
 CREATE TABLE IF NOT EXISTS service_days (
     id            INTEGER PRIMARY KEY,
     date          TEXT NOT NULL,
-    site          TEXT NOT NULL,
     recipe_id     TEXT NOT NULL REFERENCES recipes(id),
     -- Planned, never measured. The affected-meal count says "planned" on every
     -- surface that shows it (FR-039).
@@ -214,34 +263,14 @@ CREATE TABLE IF NOT EXISTS service_days (
     CHECK (planned_meals >= 0)
 );
 
--- ===========================================================================
--- Monitor (P5)
--- ===========================================================================
+-- Alerts are deliberately NOT a table. An alert IS a match with is_new set,
+-- computed once at finalize by diffing against the previous good run. There is
+-- nothing durable to acknowledge, so there is nothing to store.
 
-CREATE TABLE IF NOT EXISTS monitor_runs (
-    id                INTEGER PRIMARY KEY,
-    ran_at            TEXT NOT NULL,
-    snapshot_id       INTEGER REFERENCES recall_snapshots(id),
-    records_evaluated INTEGER NOT NULL DEFAULT 0,
-    new_records       INTEGER NOT NULL DEFAULT 0,
-    new_matches       INTEGER NOT NULL DEFAULT 0,
-    -- The high-water mark: the largest recall_records.id this run had seen. The
-    -- next run evaluates only what is above it, which is what makes "new" mean
-    -- new rather than "matched nothing last time".
-    max_record_id     INTEGER NOT NULL DEFAULT 0,
-    -- A run that found nothing is still a run (FR-058). Stored, not inferred
-    -- from an absence of rows -- "nothing found" and "never ran" must not look
-    -- the same to an operator.
-    zero_hit          INTEGER NOT NULL DEFAULT 0
-);
-
--- Alerts are deliberately NOT a table. An alert IS a match carrying a
--- first_seen_run_id, acknowledged by a decisions row of kind 'acknowledge_alert'.
--- One less table is one less place for state to disagree with itself.
-
-CREATE INDEX IF NOT EXISTS idx_inventory_site       ON inventory_records(site);
-CREATE INDEX IF NOT EXISTS idx_inventory_identity   ON inventory_records(identity_key);
-CREATE INDEX IF NOT EXISTS idx_recall_source        ON recall_records(source, source_record_id);
-CREATE INDEX IF NOT EXISTS idx_matches_inventory    ON matches(inventory_record_id);
-CREATE INDEX IF NOT EXISTS idx_matches_recall       ON matches(recall_record_id);
-CREATE INDEX IF NOT EXISTS idx_decisions_target     ON decisions(target_type, target_id);
+-- Supersession is looked up on every ingest and the sheet reads the active set;
+-- identity_key alone is never filtered on (the merge is done in Python).
+CREATE INDEX IF NOT EXISTS idx_inventory_active    ON inventory_records(superseded_by, run_id);
+CREATE INDEX IF NOT EXISTS idx_matches_run         ON matches(run_id);
+CREATE INDEX IF NOT EXISTS idx_matches_inventory   ON matches(inventory_record_id);
+CREATE INDEX IF NOT EXISTS idx_matches_recall      ON matches(recall_record_id);
+CREATE INDEX IF NOT EXISTS idx_decisions_subject   ON decisions(subject_key);

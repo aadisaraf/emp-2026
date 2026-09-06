@@ -21,8 +21,6 @@ from typing import Iterable
 
 #: internal field -> header spellings seen in the wild
 ALIASES: dict[str, set[str]] = {
-    "site": {"site", "school", "building", "bldg", "location name", "site name",
-             "facility", "campus"},
     "storage_location": {"storage location", "storage", "location", "where",
                          "storage area", "area", "room"},
     "raw_description": {"item description", "product description", "description",
@@ -61,6 +59,19 @@ ALIASES: dict[str, set[str]] = {
                       "receipt date", "delivered", "delivery date"},
 }
 
+#: Headers that name the BUILDING, deliberately recognised and then ignored.
+#:
+#: One deployment is one location, so these carry nothing. They are listed
+#: rather than left to fall through, because ``storage_location``'s aliases
+#: already contain "location" -- a "Building" column allowed to drift there
+#: would print the school's name in the Storage column of the pull sheet, and
+#: send someone to look in a building instead of a freezer. A wrong answer that
+#: reads as a right one is worse than a missing one.
+IGNORED: frozenset[str] = frozenset({
+    "site", "school", "building", "bldg", "location name", "site name",
+    "facility", "campus", "site id", "school name",
+})
+
 #: Headers that genuinely could be two things. We ask; we do not guess.
 #: "Code" is the common one -- half the districts mean the lot code by it and
 #: half mean a product code.
@@ -68,7 +79,6 @@ AMBIGUOUS: dict[str, tuple[str, ...]] = {
     "code": ("lot_code", "gtin"),
     "number": ("lot_code", "gtin"),
     "no": ("lot_code", "gtin"),
-    "id": ("gtin", "site"),
     # Bare "item" is the description in PrimeroEdge and the catalog number in
     # some LINQ exports. Guessing wrong puts a number where a name belongs.
     "item no": ("manufacturer_item_code", "vendor_item_code"),
@@ -107,6 +117,9 @@ def detect(headers: Iterable[str]) -> tuple[dict[str, str], dict[str, tuple[str,
         key = canonical(header)
         if not key:
             continue
+        if key in IGNORED:
+            # Recognised, and deliberately not mapped. See IGNORED.
+            continue
         if key in AMBIGUOUS:
             ambiguous[header] = AMBIGUOUS[key]
             continue
@@ -125,8 +138,13 @@ def detect(headers: Iterable[str]) -> tuple[dict[str, str], dict[str, tuple[str,
 
 
 def required_missing(mapping: dict[str, str]) -> set[str]:
-    """Fields without which a row cannot be matched at all."""
-    return {"site", "raw_description"} - set(mapping.values())
+    """Fields without which a row cannot be matched at all.
+
+    Exactly one. A single-location export has no reason to carry a building
+    column, so requiring one would reject the normal shape of the file and
+    record the run as a bad export rather than as the bug it would be.
+    """
+    return {"raw_description"} - set(mapping.values())
 
 
 def apply(mapping: dict[str, str], row: dict[str, str]) -> dict[str, str | None]:

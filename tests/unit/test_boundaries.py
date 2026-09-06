@@ -80,5 +80,10 @@ def test_lot_code_reaches_the_matcher_byte_identical(tmp_path):
     )]
     conn.close()
 
-    assert stored == source_lots, "a lot code was rewritten between the source and the database"
+    # Compared as sets, not as lists: two export rows for the same item, storage
+    # and lot are one record (FR-065), so the stored list is legitimately
+    # shorter. What may never change is the STRING.
+    assert set(stored) == set(source_lots), (
+        "a lot code was rewritten between the source and the database: "
+        f"{set(stored) ^ set(source_lots)}")
     assert "4829-B" in stored, "the mismatched-format lot is missing from the fixture"

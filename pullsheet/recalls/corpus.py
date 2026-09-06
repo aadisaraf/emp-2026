@@ -71,10 +71,15 @@ def snapshot_files() -> list[tuple[str, Path, Path]]:
 def load_snapshots(conn: sqlite3.Connection, received_at: str | None = None) -> dict[str, int]:
     """Load every committed snapshot into ``recall_snapshots`` and ``recall_records``.
 
-    ``received_at`` is when THIS DISTRICT first saw the recall, which is what the
+    ``received_at`` is when THIS LOCATION first saw the recall, which is what the
     24-hour and 48-hour USDA FNS clocks run from (FR-051) -- not the agency's own
-    report date. It is injected so a rehearsal can place the district anywhere in
+    report date. It is injected so a rehearsal can place the kitchen anywhere in
     that window on purpose.
+
+    A daily cadence re-reads the same feeds every morning, so a record already
+    held is UPDATED and its ``received_at`` is left exactly as it was. FR-053:
+    a deadline never resets. Re-stamping it would quietly hand the kitchen a
+    fresh 24 hours every time the corpus refreshed.
     """
     counts: dict[str, int] = {}
     now = received_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -104,7 +109,19 @@ def load_snapshots(conn: sqlite3.Connection, received_at: str | None = None) -> 
                     product_description, normalized_description, code_info,
                     parsed_codes, classification, class_rank, report_date,
                     received_at, reason_for_recall, status, raw_json)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT (source, source_record_id) DO UPDATE SET
+                       snapshot_id            = excluded.snapshot_id,
+                       recalling_firm         = excluded.recalling_firm,
+                       product_description    = excluded.product_description,
+                       normalized_description = excluded.normalized_description,
+                       code_info              = excluded.code_info,
+                       parsed_codes           = excluded.parsed_codes,
+                       classification         = excluded.classification,
+                       class_rank             = excluded.class_rank,
+                       report_date            = excluded.report_date,
+                       reason_for_recall      = excluded.reason_for_recall,
+                       raw_json               = excluded.raw_json""",
                 (key, rec.get("recall_number") or "", snapshot_id,
                  rec.get("recalling_firm"), description, normalize(description),
                  rec.get("code_info"), json.dumps(parsed),
@@ -188,3 +205,23 @@ def corpus_summary(conn: sqlite3.Connection, now: datetime) -> list[dict]:
             "fetch_status": row["fetch_status"],
         })
     return out
+
+
+def corpus_note(conn: sqlite3.Connection) -> str:
+    """One line naming every snapshot this run was matched against.
+
+    Frozen onto the run at finalize, and printed on that run's page thereafter.
+    Reading it live instead would put tonight's corpus and capture date above
+    yesterday's lines -- a document that looks sourced and is not.
+    """
+    parts = [
+        f"{row['source']} {row['captured_at']} ({row['record_count']} records, "
+        f"{row['provenance']})"
+        for row in conn.execute(
+            """SELECT source, captured_at, record_count, provenance
+                 FROM recall_snapshots
+                WHERE id IN (SELECT MAX(id) FROM recall_snapshots GROUP BY source)
+                ORDER BY source"""
+        )
+    ]
+    return "; ".join(parts) if parts else "no recall snapshot loaded"

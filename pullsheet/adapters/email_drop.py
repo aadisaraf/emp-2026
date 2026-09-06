@@ -1,11 +1,11 @@
 """FR-005. The export that arrives as an email attachment.
 
-Many districts do not have a network folder to write to; they have a food
-service secretary who emails a spreadsheet. This adapter reads a local mailbox
-file (mbox), pulls CSV attachments out of it, and hands each one to the watched
-folder adapter -- literally the same reader, not a parallel one. An emailed
-export and a dropped export therefore take the same code path, so there is no
-second place for row parsing to drift.
+Many kitchens have no network folder to write to; they have a manager who
+emails a spreadsheet. This adapter reads a local mailbox file (mbox), pulls CSV
+attachments out of it, and hands each one to the drop adapter -- literally the
+same reader, not a parallel one. An emailed export and a dropped export
+therefore take the same code path, so there is no second place for row parsing
+to drift.
 
 **Provenance is `hand-authored`, and that is not a placeholder.** This reads a
 committed fixture mailbox, not a live mail server -- no IMAP, no credentials, no
@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Iterator
 
 from pullsheet.adapters.base import AdapterRejection, InventoryAdapter, NormalizedRecord
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 MAILBOX = ROOT / "data" / "fixtures" / "inbox.mbox"
@@ -35,11 +35,12 @@ class EmailDropAdapter(InventoryAdapter):
     name = "email_drop"
     #: Reads a committed fixture mailbox, not a mail server. Labelled honestly.
     provenance = "hand-authored"
+    channel = "email_drop"
 
     def declares(self) -> frozenset[str]:
-        """Whatever the attached spreadsheet carries -- identical to the watched
-        folder, because after extraction the attachment IS a dropped file."""
-        return WatchedFolderAdapter().declares()
+        """Whatever the attached spreadsheet carries -- identical to the drop,
+        because after extraction the attachment IS a dropped file."""
+        return SftpDropAdapter().declares()
 
     def attachments(self, path: Path = MAILBOX) -> list[tuple[str, str]]:
         """(filename, text) for every CSV attachment in the mailbox."""
@@ -71,7 +72,7 @@ class EmailDropAdapter(InventoryAdapter):
             raise AdapterRejection(path.name, None,
                                    "no CSV attachment found in the mailbox")
 
-        inner = WatchedFolderAdapter()
+        inner = SftpDropAdapter()
         with tempfile.TemporaryDirectory() as workspace:
             for filename, text in found:
                 extracted = Path(workspace) / Path(filename).name

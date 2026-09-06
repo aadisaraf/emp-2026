@@ -4,12 +4,15 @@
 #
 # Afterwards:
 #   - the database exists, with the recall corpus and menu fixtures loaded
-#   - there is NO inventory and therefore no pull sheet: /api/status reads 0 0
+#   - there is NO run, and therefore no pull sheet. The dashboard does NOT read
+#     "clear": it reads "no inventory has ever been received", which is a
+#     different sentence and the one that is true.
 #   - data/watched/ and data/archive/ are empty
 #   - the app keeps running; the browser only needs a refresh
 #
-# The next thing that happens is a person dropping inventory_lincoln.csv into
-# data/watched/, which is the demo.
+# The next thing that happens is the location's export landing in data/watched/,
+# which is the demo: the file is read, matched and finalized into one dated run
+# with nobody touching anything.
 #
 # Idempotent: running it twice in a row produces identical output.
 
@@ -43,6 +46,6 @@ rm -rf data/uploads
 mkdir -p data/watched data/archive
 
 echo
-echo "ready. Inventory: none. Pull sheet: empty."
-echo "Drop the export to start the demo:"
+echo "ready. Runs: none. The dashboard reads 'no inventory has ever been received'."
+echo "Land today's export to start the demo:"
 echo "    cp data/fixtures/inventory_lincoln.csv data/watched/"

@@ -1,0 +1,69 @@
+{% import "base.html" as ui with context %}
+{% import "_lines.html" as parts with context %}
+<title>Run #{{ run.id }} &mdash; {{ LOCATION.name }}</title>
+{% include "base.html" %}
+
+<main class="run-detail">
+  <p class="crumb"><a href="/runs">&larr; every run</a></p>
+  <h1>Run #{{ run.id }} &mdash; inventory of {{ run.business_date }}</h1>
+
+  <dl class="run-facts">
+    <dt>Delivered by</dt><dd>{{ run.channel | replace('_', ' ') }}</dd>
+    <dt>Delivery</dt><dd><code>{{ run.delivery_ref or 'not named' }}</code></dd>
+    <dt>Started</dt><dd>{{ run.started_at }}</dd>
+    <dt>Finalized</dt><dd>{{ run.finalized_at or 'never &mdash; this run did not finish' | safe }}</dd>
+    <dt>Result</dt>
+    <dd>{% if run.status == 'ok' %}accepted
+        {% elif run.status == 'rejected' %}<strong class="rejected">refused</strong>
+          &mdash; {{ run.rejection_reason }}
+        {% else %}still running{% endif %}</dd>
+    <dt>Rows read</dt>
+    <dd>{{ run.rows_read if run.rows_read is not none else 'none' }}{% if run.rows_partial %},
+      of which {{ run.rows_partial }} were partial and were kept anyway{% endif %}</dd>
+    <dt>Recall corpus</dt><dd>{{ parts.corpus_line(header) }}</dd>
+    <dt>Lines</dt>
+    <dd>{{ header.counts.pull_count }} to pull, {{ header.counts.held_count }} held,
+      {{ header.counts.new_count }} new against run
+      #{{ previous_run_id if previous_run_id else '&mdash;' | safe }}</dd>
+  </dl>
+
+  {% if run.status != 'ok' %}
+  <section class="zero">
+    <h2>This delivery was refused, so it has no lines.</h2>
+    <p>It is listed here rather than discarded. The last accepted run before it
+       remained in force &mdash; a bad export never overwrites a good one.</p>
+  </section>
+  {% else %}
+
+  {% if new_lines %}
+  <section class="whats-new">
+    <h2>New on this run</h2>
+    <ul class="new-list">
+    {% for m in new_lines %}
+      <li>{{ ui.tier_badge(m.tier, m.status) }} <strong>{{ m.status }}</strong>
+        <a href="/match/{{ m.id }}">{{ m.raw_description }}</a>
+        <span class="fine">{{ m.storage_location or 'storage not recorded' }}
+          &middot; {{ m.source }} {{ m.source_record_id }}</span></li>
+    {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <p class="artifact-links">
+    <a href="/sheet/{{ run.id }}">Printable sheet for this run</a>
+    &middot; <a href="/artifacts/hold?run={{ run.id }}">Hold record</a>
+    &middot; <a href="/artifacts/credit-claim?run={{ run.id }}">Credit claim</a>
+    {% if SERVES_MEAL_PROGRAM %}
+    &middot; <a href="/artifacts/state-report?run={{ run.id }}">State report</a>{% endif %}
+  </p>
+
+  {{ parts.storage_sections(sections) }}
+  {% endif %}
+
+  <footer class="sheet-footer">
+    <p class="held-note">
+      Clearings are shown as they stood when this run was replaced, not as they
+      stand now. A line cleared after this run ended is not back-dated onto it.
+    </p>
+  </footer>
+</main>

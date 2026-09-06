@@ -1,10 +1,11 @@
 {% import "base.html" as ui with context %}
-<title>District recall report &mdash; {{ report.district }}</title>
+<title>Recall report &mdash; {{ report.location.name }}</title>
 {% include "base.html" %}
 
 <main>
-  <h1>District Child Nutrition Recall Report</h1>
-  <p class="generated">{{ report.district }} &mdash; generated {{ report.generated_at }}</p>
+  <h1>Child Nutrition Recall Report</h1>
+  <p class="generated">{{ report.location.name }} &mdash; {{ report.location.operator }}<br>
+     Inventory run #{{ report.run_id }} &middot; generated {{ report.generated_at }}</p>
 
   <p class="note">
     <strong>{{ report.caveat }}</strong>
@@ -17,7 +18,7 @@
   </p>
 
   {% for section, fields in report.sections.items() %}
-  <section class="site-section">
+  <section class="storage-section">
     <h2>{{ section }}</h2>
     <table class="lines">
       <thead><tr><th>Field</th><th>Value</th><th>Where it came from</th></tr></thead>
@@ -37,7 +38,7 @@
   </section>
   {% endfor %}
 
-  <section class="site-section">
+  <section class="storage-section">
     <h2>Structured export</h2>
     <p class="fine">Copy these values into your own state agency's form.</p>
     <pre class="verbatim">{% for k, v in report.export.items() %}{{ "%-46s"|format(k) }}{{ v }}

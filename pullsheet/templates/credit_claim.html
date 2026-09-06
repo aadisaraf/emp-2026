@@ -1,10 +1,11 @@
 {% import "base.html" as ui with context %}
-<title>Credit claim &mdash; {{ claim.district }}</title>
+<title>Credit claim &mdash; {{ claim.location.name }}</title>
 {% include "base.html" %}
 
 <main>
   <h1>Distributor Credit Claim</h1>
-  <p class="generated">{{ claim.district }} &mdash; generated {{ claim.generated_at }}</p>
+  <p class="generated">{{ claim.location.name }} &mdash; {{ claim.location.operator }}<br>
+     Inventory run #{{ claim.run_id }} &middot; generated {{ claim.generated_at }}</p>
 
   <section class="tally">
     <div class="stat stat-pull"><span class="n">${{ "{:,.2f}".format(claim.total) }}</span>
@@ -18,13 +19,13 @@
 
   <table class="lines">
     <thead><tr>
-      <th>Site</th><th>Item</th><th>Vendor item #</th><th>Lot</th>
+      <th>Storage</th><th>Item</th><th>Vendor item #</th><th>Lot</th>
       <th>Qty</th><th>Unit cost</th><th>Extended</th><th>Recall</th>
     </tr></thead>
     <tbody>
     {% for l in claim.lines %}
       <tr class="{{ 'line-held' if l.extended is none else 'line-pull' }}">
-        <td>{{ l.site }}</td>
+        <td>{{ l.storage_location or '' }}</td>
         <td class="verbatim">{{ l.raw_description }}</td>
         <td>{{ l.vendor_item_code or '' }}
           {% if l.vendor_name %}<span class="fine">{{ l.vendor_name }}</span>{% endif %}</td>
@@ -44,7 +45,7 @@
     {% endfor %}
     </tbody>
     <tfoot>
-      <tr><th colspan="6">District total (excludes the lines marked above)</th>
+      <tr><th colspan="6">Total for this run (excludes the lines marked above)</th>
           <th class="num">${{ "{:,.2f}".format(claim.total) }}</th><th></th></tr>
     </tfoot>
   </table>

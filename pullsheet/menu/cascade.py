@@ -1,15 +1,15 @@
 """US2. What was this case going to become?
 
 A recalled item is not just a case in a freezer. It is a meal that was going to
-be served on a specific day at a specific school, to a specific number of
-children. This module walks that chain:
+be served on a specific day, to a specific number of children. This module walks
+that chain:
 
     inventory line -> recipes using it -> service days -> planned meals
 
 Four deliberate choices:
 
 1. **The join is exact-normalized-name equality.** A recipe's ingredient row and
-   an inventory row are the district's own catalog strings for the same product,
+   an inventory row are the kitchen's own catalog strings for the same product,
    normalized by the SAME function the matcher uses. There is no fuzzy matching
    here on purpose: a near-miss on a menu is a wrong count on a screen, and a
    wrong count is worse than a missing one.
@@ -19,14 +19,18 @@ Four deliberate choices:
    lines is reported alongside so the omission is stated, never silent.
 
 3. **The count is planned, never measured.** ``service_days.planned_meals`` is
-   what the district planned to serve. Nothing here knows what was eaten, and
+   what the kitchen planned to serve. Nothing here knows what was eaten, and
    every surface that shows the number says so.
 
-4. **The district total counts each service day once.** One inventory line can
-   carry several recall matches, and two lots of the same product can sit at one
-   site -- but the Tuesday taco bar at Central is one Tuesday taco bar. Totals
-   are summed over the distinct (site, recipe, date) set, not per match. Getting
-   this wrong inflates the number an operator would repeat to a superintendent.
+4. **The total counts each service day once.** One inventory line can carry
+   several recall matches, and two lots of the same product can sit in two
+   coolers -- but Tuesday's taco bar is one Tuesday taco bar. Totals are summed
+   over the distinct (recipe, date) set, not per match. Getting this wrong
+   inflates the number an operator would repeat to a superintendent.
+
+This is a child-nutrition surface. A restaurant deployment runs the same recall
+pipeline and has no meal pattern; ``location.serves_meal_program()`` is what
+decides whether this is shown.
 """
 
 from __future__ import annotations
@@ -34,13 +38,16 @@ from __future__ import annotations
 import sqlite3
 from typing import Any
 
+from pullsheet.db import SUBJECT_KEY_SQL
+
 #: Every count this module produces is planned, not served. Rendered verbatim
 #: wherever the number appears, so the caveat cannot be styled off the page.
 PLANNED_CAVEAT = "planned, not served"
 
 
-def _broken_lines(conn: sqlite3.Connection, statuses: tuple[str, ...]) -> list[sqlite3.Row]:
-    """Current inventory lines carrying a match in one of ``statuses``.
+def _broken_lines(conn: sqlite3.Connection, run_id: int,
+                  statuses: tuple[str, ...]) -> list[sqlite3.Row]:
+    """This run's inventory lines carrying a match in one of ``statuses``.
 
     Cleared lines are still returned. Clearing is a human decision recorded
     against a match; it is not this module's business to act on it, and a menu
@@ -49,22 +56,22 @@ def _broken_lines(conn: sqlite3.Connection, statuses: tuple[str, ...]) -> list[s
     """
     placeholders = ",".join("?" * len(statuses))
     return list(conn.execute(
-        f"""SELECT i.id, i.site, i.raw_description, i.normalized_description,
+        f"""SELECT i.id, i.raw_description, i.normalized_description,
                    i.quantity, i.unit, i.storage_location, i.lot_code,
                    i.brand, i.manufacturer,
                    m.id AS match_id, m.status, m.tier, m.evidence_kind,
                    r.source, r.source_record_id, r.recalling_firm, r.classification,
                    r.class_rank, r.status AS recall_status,
                    (SELECT COUNT(*) FROM decisions d
-                     WHERE d.target_type = 'match' AND d.target_id = CAST(m.id AS TEXT)
+                     WHERE d.subject_key = {SUBJECT_KEY_SQL}
                        AND d.kind = 'clear_match') AS cleared_count
               FROM matches m
               JOIN inventory_records i ON i.id = m.inventory_record_id
               JOIN recall_records   r ON r.id = m.recall_record_id
-             WHERE i.superseded_by IS NULL
+             WHERE m.run_id = ?
                AND m.status IN ({placeholders})
-             ORDER BY r.class_rank, i.site, i.raw_description, m.id""",
-        statuses))
+             ORDER BY r.class_rank, i.storage_location, i.raw_description, m.id""",
+        (run_id, *statuses)))
 
 
 def _recipes_using(conn: sqlite3.Connection, normalized: str) -> list[sqlite3.Row]:
@@ -76,25 +83,18 @@ def _recipes_using(conn: sqlite3.Connection, normalized: str) -> list[sqlite3.Ro
             ORDER BY rc.id""", (normalized,)))
 
 
-def _service_days(conn: sqlite3.Connection, recipe_id: str, site: str) -> list[sqlite3.Row]:
-    """Service days for this recipe AT THIS SITE.
+def _service_days(conn: sqlite3.Connection, recipe_id: str) -> list[sqlite3.Row]:
+    """Service days on which this recipe is planned.
 
-    Site-scoped because you cannot serve from another building's cooler. A site
-    that serves the same recipe but where this item was not found is reported
-    separately as ``also_served_at``, rather than folded into the count.
+    The whole calendar belongs to this location, so there is nothing to scope
+    it to beyond the recipe itself.
     """
     return list(conn.execute(
-        """SELECT date, site, planned_meals FROM service_days
-            WHERE recipe_id = ? AND site = ? ORDER BY date""", (recipe_id, site)))
+        """SELECT date, planned_meals FROM service_days
+            WHERE recipe_id = ? ORDER BY date""", (recipe_id,)))
 
 
-def _other_sites_serving(conn: sqlite3.Connection, recipe_id: str, site: str) -> list[str]:
-    return [r["site"] for r in conn.execute(
-        """SELECT DISTINCT site FROM service_days
-            WHERE recipe_id = ? AND site != ? ORDER BY site""", (recipe_id, site))]
-
-
-def cascade(conn: sqlite3.Connection,
+def cascade(conn: sqlite3.Connection, run_id: int,
             statuses: tuple[str, ...] = ("PULL",)) -> list[dict[str, Any]]:
     """One entry per broken inventory LINE that reaches at least one recipe.
 
@@ -104,26 +104,24 @@ def cascade(conn: sqlite3.Connection,
     is omitted for being *unclear*; only for having no menu to break.
     """
     entries: dict[int, dict[str, Any]] = {}
-    for row in _broken_lines(conn, statuses):
+    for row in _broken_lines(conn, run_id, statuses):
         entry = entries.get(row["id"])
         if entry is None:
             recipes = []
             for recipe in _recipes_using(conn, row["normalized_description"]):
-                days = [dict(d) for d in _service_days(conn, recipe["recipe_id"], row["site"])]
+                days = [dict(d) for d in _service_days(conn, recipe["recipe_id"])]
                 recipes.append({
                     "recipe_id": recipe["recipe_id"],
                     "name": recipe["name"],
                     "provenance": recipe["provenance"],
                     "service_days": days,
                     "planned_meals": sum(d["planned_meals"] for d in days),
-                    "also_served_at": _other_sites_serving(
-                        conn, recipe["recipe_id"], row["site"]),
                 })
             if not recipes:
                 continue
             entry = entries[row["id"]] = {
                 "line": {k: row[k] for k in (
-                    "id", "site", "storage_location", "raw_description",
+                    "id", "storage_location", "raw_description",
                     "normalized_description", "quantity", "unit", "lot_code",
                     "brand", "manufacturer")},
                 "recalls": [],
@@ -138,44 +136,42 @@ def cascade(conn: sqlite3.Connection,
     return list(entries.values())
 
 
-def held_not_cascaded(conn: sqlite3.Connection) -> int:
+def held_not_cascaded(conn: sqlite3.Connection, run_id: int) -> int:
     """How many held lines were left out, so the omission is stated rather than
     inferred from an absence."""
     row = conn.execute(
-        """SELECT COUNT(DISTINCT i.id) AS n
-             FROM matches m JOIN inventory_records i ON i.id = m.inventory_record_id
-            WHERE i.superseded_by IS NULL AND m.status = 'HELD'"""
+        """SELECT COUNT(DISTINCT inventory_record_id) AS n
+             FROM matches WHERE run_id = ? AND status = 'HELD'""", (run_id,)
     ).fetchone()
     return row["n"] or 0
 
 
-def affected_service_days(entries: list[dict[str, Any]]) -> list[tuple[str, str, str, int]]:
-    """The distinct (date, site, recipe_id, planned_meals) set behind the total.
+def affected_service_days(entries: list[dict[str, Any]]) -> list[tuple[str, str, int]]:
+    """The distinct (date, recipe_id, planned_meals) set behind the total.
 
     Exposed rather than kept private so a hostile question about the headline
     number has an answer that is a list, not an assurance.
     """
-    seen: dict[tuple[str, str, str], int] = {}
+    seen: dict[tuple[str, str], int] = {}
     for entry in entries:
         for recipe in entry["recipes"]:
             for day in recipe["service_days"]:
-                seen[(day["date"], day["site"], recipe["recipe_id"])] = day["planned_meals"]
-    return sorted((d, s, r, n) for (d, s, r), n in seen.items())
+                seen[(day["date"], recipe["recipe_id"])] = day["planned_meals"]
+    return sorted((d, r, n) for (d, r), n in seen.items())
 
 
-def summary(conn: sqlite3.Connection,
+def summary(conn: sqlite3.Connection, run_id: int,
             statuses: tuple[str, ...] = ("PULL",)) -> dict[str, Any]:
-    entries = cascade(conn, statuses)
+    entries = cascade(conn, run_id, statuses)
     days = affected_service_days(entries)
     return {
         "entries": entries,
         "broken_items": len(entries),
-        "recipes": len({(d[1], d[2]) for d in days}),
+        "recipes": len({d[1] for d in days}),
         "dates": sorted({d[0] for d in days}),
-        "sites": sorted({e["line"]["site"] for e in entries}),
         "service_days": days,
         # Each service day counted once. See the module docstring, choice 4.
-        "planned_meals": sum(d[3] for d in days),
+        "planned_meals": sum(d[2] for d in days),
         "caveat": PLANNED_CAVEAT,
-        "held_not_cascaded": held_not_cascaded(conn),
+        "held_not_cascaded": held_not_cascaded(conn, run_id),
     }

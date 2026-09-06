@@ -12,7 +12,7 @@ stated on the claim by name:
                  without a count is not an amount.
 
 A claim that quietly estimated either would be a claim a distributor could
-reject wholesale, and the district would have no way to tell which number was
+reject wholesale, and the kitchen would have no way to tell which number was
 guessed. Excluded lines are printed on the claim, not omitted from it.
 """
 
@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import sqlite3
 from datetime import datetime
+
+from pullsheet import location
 from typing import Any
 
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln", "unit_costs")
@@ -29,11 +31,12 @@ SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln", "unit_costs")
 CLAIM_STATUSES = ("PULL",)
 
 
-def claim_lines(conn: sqlite3.Connection) -> list[dict[str, Any]]:
-    """One row per pulled inventory line, deduplicated across its recall matches."""
+def claim_lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
+    """One row per pulled inventory line in this run, deduplicated across its
+    recall matches."""
     grouped: dict[int, dict[str, Any]] = {}
     for row in conn.execute(
-        """SELECT i.id, i.site, i.storage_location, i.raw_description, i.quantity,
+        """SELECT i.id, i.storage_location, i.raw_description, i.quantity,
                   i.unit, i.pack_size, i.lot_code, i.brand, i.manufacturer,
                   i.manufacturer_item_code, i.vendor_name, i.vendor_item_code,
                   i.unit_cost, i.received_date,
@@ -41,14 +44,15 @@ def claim_lines(conn: sqlite3.Connection) -> list[dict[str, Any]]:
              FROM matches m
              JOIN inventory_records i ON i.id = m.inventory_record_id
              JOIN recall_records   r ON r.id = m.recall_record_id
-            WHERE i.superseded_by IS NULL AND m.status = 'PULL'
-            ORDER BY i.site, i.raw_description, m.id"""
+            WHERE m.run_id = ? AND m.status = 'PULL'
+            ORDER BY i.storage_location, i.raw_description, m.id""",
+        (run_id,),
     ):
         entry = grouped.get(row["id"])
         if entry is None:
             entry = grouped[row["id"]] = {
                 k: row[k] for k in (
-                    "id", "site", "storage_location", "raw_description", "quantity",
+                    "id", "storage_location", "raw_description", "quantity",
                     "unit", "pack_size", "lot_code", "brand", "manufacturer",
                     "manufacturer_item_code", "vendor_name", "vendor_item_code",
                     "unit_cost", "received_date")}
@@ -68,8 +72,8 @@ def claim_lines(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return list(grouped.values())
 
 
-def credit_claim(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
-    rows = claim_lines(conn)
+def credit_claim(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
+    rows = claim_lines(conn, run_id)
     counted = [r for r in rows if r["extended"] is not None]
     excluded = [r for r in rows if r["extended"] is None]
     total = round(sum(r["extended"] for r in counted), 2)
@@ -79,7 +83,7 @@ def credit_claim(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
             f"This total covers {len(counted)} of {len(rows)} pulled lines. "
             f"{len(excluded)} line(s) are shown with quantity only and are EXCLUDED "
             f"from the ${total:,.2f}: "
-            + "; ".join(f"{r['raw_description']} ({r['site']}) -- {r['excluded_because']}"
+            + "; ".join(f"{r['raw_description']} ({r['storage_location']}) -- {r['excluded_because']}"
                         for r in excluded)
             + ". No price has been estimated for them.")
     else:
@@ -98,7 +102,8 @@ def credit_claim(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
             vendor["total"] = round(vendor["total"] + row["extended"], 2)
 
     return {
-        "district": "Lincoln Unified School District",
+        "location": location.summary(),
+        "run_id": run_id,
         "generated_at": now.isoformat(timespec="seconds"),
         "lines": rows,
         "counted": len(counted),

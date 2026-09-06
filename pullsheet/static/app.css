@@ -79,7 +79,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
                    font-size: .88rem; margin: 0 0 1.5rem; }
 .sheet-header dt { color: var(--muted); }
 .sheet-header dd { margin: 0; }
-.site-tally { font-size: .8rem; font-weight: 400; color: var(--muted); }
+.storage-tally { font-size: .8rem; font-weight: 400; color: var(--muted); }
 .stale { color: var(--held); }
 
 .zero { border: 1px solid var(--line); background: #fff; padding: 1rem 1.2rem;
@@ -140,18 +140,69 @@ mark { background: #ffe680; padding: 0 .1em; }
 .checkbox { font-size: 1.1rem; text-align: center; }
 .artifact-links { margin: -.4rem 0 .6rem; font-size: .85rem; }
 
-/* Roll-up (US4). The status word is the load-bearing element on this page, so
-   it is legible before it is decorative. */
+/* The status word is the load-bearing element on the dashboard, so it is
+   legible before it is decorative. */
 .status-word { font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
                font-size: .8rem; }
-.status-holding .status-word { color: #8a1c1c; }
-.status-unconfirmed .status-word { color: #7a5a00; }
-.status-clear .status-word { color: #1c5c2a; }
-.deadlines .overrun .clock { color: #8a1c1c; font-weight: 700; }
-.alerts { border-left: 3px solid #8a1c1c; padding-left: .8rem; }
+.overrun, .clock-overrun td { color: #8a1c1c; font-weight: 700; }
 form.inline { display: inline-flex; gap: .3rem; }
 form.inline input { width: 7rem; }
 .note-amended { color: #7a2a00; font-weight: 600; }
 .refresh { display: flex; gap: 1.5rem; align-items: baseline; flex-wrap: wrap;
            margin: 1rem 0; }
 .refresh form { display: flex; gap: .5rem; align-items: baseline; }
+
+/* ---------------------------------------------------------------------------
+   The daily run. One word, then the evidence for it.
+   --------------------------------------------------------------------------- */
+.where { color: var(--muted); font-size: .85rem; margin-left: -.9rem; }
+.banner-past { background: #eef2ff; color: #26346b; }
+
+.verdict { border: 1px solid var(--line); background: #fff; border-radius: 8px;
+           padding: 1.1rem 1.3rem; margin: 1.4rem 0 1.2rem;
+           border-left: 5px solid var(--muted); }
+.verdict .word { margin: 0; font-size: 1.55rem; font-weight: 700;
+                 letter-spacing: -.01em; }
+.verdict .detail { margin: .35rem 0 0; color: var(--muted); font-size: .9rem; }
+.verdict .stamp { margin: .5rem 0 0; font-size: .78rem; color: var(--muted); }
+.verdict-action { border-left-color: var(--pull); }
+.verdict-action .word { color: var(--pull); }
+.verdict-clear { border-left-color: var(--ok); }
+.verdict-clear .word { color: var(--ok); }
+.verdict-stale, .verdict-overdue { border-left-color: var(--held); }
+.verdict-stale .word, .verdict-overdue .word { color: var(--held); }
+.verdict-rejected, .verdict-never { border-left-color: #7a2a00; }
+.verdict-rejected .word, .verdict-never .word { color: #7a2a00; }
+.verdict-inline { font-size: .95rem; margin: .6rem 0 1.2rem; }
+
+.run-stamp { font-variant-numeric: tabular-nums; }
+.run-facts { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1.2rem;
+             font-size: .9rem; margin: 1rem 0 1.6rem; }
+.run-facts dt { color: var(--muted); }
+.run-facts dd { margin: 0; }
+.run-current td { background: #f6faf7; }
+.run-rejected .rejected, .rejected { color: #8a1c1c; font-weight: 700; }
+.ok { color: var(--ok); font-weight: 700; }
+
+.new-flag { display: inline-block; margin-top: .15rem; font-size: .62rem;
+            font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+            color: #26346b; background: #eef2ff; border-radius: 3px;
+            padding: .05rem .3rem; }
+.line-new td:first-child { box-shadow: inset 3px 0 0 #26346b; }
+.new-list { margin: .4rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
+.new-list li { margin-bottom: .35rem; }
+.new-list .fine { display: block; }
+
+.clocks .note, .whats-new .note { color: var(--muted); }
+.frozen-corpus { color: var(--muted); }
+.corpus-line { font-size: .85rem; color: var(--muted); }
+.rejections { border-left: 3px solid #8a1c1c; padding-left: .9rem; }
+
+.two-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
+               margin: 1rem 0; }
+.two-actions form { border: 1px solid var(--line); background: #fff;
+                    border-radius: 6px; padding: .9rem 1rem; }
+.two-actions h3 { margin: 0 0 .3rem; font-size: .95rem; }
+.two-actions label { display: block; margin: .5rem 0; font-size: .85rem; }
+.two-actions input { width: 100%; padding: .35rem .45rem; }
+@media (max-width: 720px) { .two-actions { grid-template-columns: 1fr; } }

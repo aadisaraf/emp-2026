@@ -1,0 +1,62 @@
+{% import "base.html" as ui with context %}
+<title>Run history &mdash; {{ LOCATION.name }}</title>
+{% include "base.html" %}
+
+<main class="runs">
+  <h1>Run history</h1>
+  <p class="note">
+    Every delivery this location has made, newest first &mdash; including the
+    ones that were refused. Listing only the good runs would make a week of
+    failed drops look like a quiet week.
+  </p>
+
+  <p class="verdict-inline verdict-{{ status.state }}">
+    <strong>{{ status.word }}</strong> &mdash; {{ status.detail }}
+  </p>
+
+  {% if not runs %}
+  <p class="zero">No delivery has ever arrived at this location.</p>
+  {% else %}
+  <table class="lines">
+    <thead>
+      <tr>
+        <th>Run</th><th>Inventory date</th><th>Channel</th><th>Delivery</th>
+        <th>Rows</th><th>Pull</th><th>Held</th><th>New</th><th>Result</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in runs %}
+      <tr class="run run-{{ r.status }}{% if r.id == current_run_id %} run-current{% endif %}">
+        <td>
+          {% if r.status == 'ok' %}<a href="/runs/{{ r.id }}">#{{ r.id }}</a>
+          {% else %}#{{ r.id }}{% endif %}
+          {% if r.id == current_run_id %}<span class="fine">current</span>{% endif %}
+        </td>
+        <td>{{ r.business_date or '&mdash;' | safe }}</td>
+        <td>{{ r.channel | replace('_', ' ') }}</td>
+        <td class="fine">{{ r.delivery_ref or 'not named' }}</td>
+        <td class="num">{% if r.rows_read is not none %}{{ r.rows_read }}{% if r.rows_partial %}
+          <span class="fine">({{ r.rows_partial }} partial)</span>{% endif %}{% else %}&mdash;{% endif %}</td>
+        <td class="num">{{ r.pull_count if r.pull_count is not none else '&mdash;' | safe }}</td>
+        <td class="num">{{ r.held_count if r.held_count is not none else '&mdash;' | safe }}</td>
+        <td class="num">{{ r.new_count }}</td>
+        <td>
+          {% if r.status == 'ok' %}<span class="ok">accepted</span>
+          {% elif r.status == 'rejected' %}<span class="rejected">refused</span>
+            <span class="fine">{{ r.rejection_reason }}</span>
+          {% else %}<span class="fine">still running</span>{% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <footer class="sheet-footer">
+    <p class="held-note">
+      A run is written once and never edited. Opening a past run shows the lines
+      exactly as they stood that morning, matched against the recall data that
+      existed then &mdash; not re-run against today's.
+    </p>
+  </footer>
+</main>

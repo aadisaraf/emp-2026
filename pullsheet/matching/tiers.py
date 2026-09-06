@@ -181,7 +181,7 @@ def build_evidence(inv, rec, is_distinctive: Optional[Callable[[str], bool]] = N
     )
 
     # --- 1. GTIN ----------------------------------------------------------
-    inv_code = getattr(inv, "gtin", None) or getattr(inv, "upc", None)
+    inv_code = getattr(inv, "gtin", None)
     if inv_code:
         key = code_key(inv_code)
         for gtin in codes.get("gtins", ()):

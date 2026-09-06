@@ -102,89 +102,112 @@ def test_corpus_summary_reports_both_sources_with_provenance(loaded):
 
 
 # ===========================================================================
-# SC-013 (T068). Staleness gates one word in the roll-up, never a line.
+# SC-013 (T068). Staleness gates one word in the status, never a line.
 # ===========================================================================
 
-def _fully_loaded(tmp_path_factory):
-    """A database with inventory, matches, and one site that reported empty."""
-    from pullsheet.matching.run import run_matcher
-    from pullsheet.rollup import status
+CLEAN_EXPORT = ("Storage Location,Item Description,Qty On Hand,UOM,Lot #\n"
+                "Dry Store,SALT IODIZED 5 LB,4,CS,S-100\n"
+                "Dry Store,BAKING SODA 2 LB,2,CS,B-220\n")
 
-    path = tmp_path_factory.mktemp("stale") / "sc013.db"
+
+def _run_at(conn, path, when: datetime):
+    """Ingest an export as if it had arrived at ``when``."""
+    from pullsheet.adapters.sftp_drop import SftpDropAdapter
+    result = db.ingest_file(conn, path, SftpDropAdapter(),
+                            now=when.isoformat(timespec="seconds"))
+    assert result["status"] == "ok", result.get("reason")
+    return result
+
+
+@pytest.fixture
+def clean(tmp_path):
+    """A location whose export matched nothing -- the only state in which
+    "clear" and "stale" are distinguishable. With a PULL line on the sheet the
+    word is "items to pull" whatever the corpus's age, which is correct and
+    would make every assertion below vacuous."""
+    from pullsheet import runs
+
+    path = tmp_path / "clean.db"
     db.reset(path)
     conn = db.connect(path)
     corpus.load_snapshots(conn)
-    db.load_inventory_fixture(conn)
-    run_matcher(conn)
-
-    # A building that sent an export and came back empty. Without one, "zero
-    # sites report clear" would be true for the wrong reason.
-    source_id = db.ensure_source(conn, "Washington export", "watched_folder", "live")
-    run = conn.execute(
-        """INSERT INTO ingest_runs (source_id, filename, arrived_at, row_count,
-                                    rows_parsed, rows_partial, status, adapter)
-           VALUES (?,?,?,0,0,0,'ok','watched_folder')""",
-        (source_id, "washington.csv", "2026-09-05T06:00:00+00:00")).lastrowid
-    conn.execute(
-        """INSERT INTO inventory_records
-           (site, raw_description, normalized_description, source_export_id,
-            identity_key, created_at)
-           VALUES ('Washington Elementary', 'SALT IODIZED 5 LB', 'iodized salt',
-                   ?, 'w1', '2026-09-05T06:00:00+00:00')""", (run,))
-    conn.commit()
-    return conn, status
-
-
-@pytest.fixture(scope="module")
-def sc013(tmp_path_factory):
-    conn, status = _fully_loaded(tmp_path_factory)
-    yield conn, status
+    export = tmp_path / "clean.csv"
+    export.write_text(CLEAN_EXPORT)
+    _run_at(conn, export, _captured_at(conn) + timedelta(hours=1))
+    yield conn, runs
     conn.close()
 
 
-def test_sc013_no_site_reports_clear_when_the_corpus_is_stale(sc013):
-    conn, status = sc013
+def test_sc013_nothing_reports_clear_when_the_corpus_is_stale(clean):
+    conn, runs = clean
     captured = _captured_at(conn)
 
-    fresh = status.site_statuses(conn, captured + timedelta(hours=2))
-    assert any(s["status"] == "clear" for s in fresh), (
-        "no site is clear even when fresh, so the stale assertion would be vacuous")
+    fresh = runs.run_status(conn, captured + timedelta(hours=2))
+    assert fresh["state"] == "clear", (
+        "the run is not clear even when fresh, so the stale assertion is vacuous")
 
-    stale = status.site_statuses(conn, captured + timedelta(hours=30))
-    assert not any(s["status"] == "clear" for s in stale)
+    stale = runs.run_status(conn, captured + timedelta(hours=26))
+    assert stale["state"] == "stale"
+    assert stale["word"] != runs.CLEAR
 
 
-def test_sc013_a_stale_site_names_the_reason_the_date_and_the_age(sc013):
-    conn, status = sc013
+def test_sc013_a_stale_status_names_the_reason_and_the_age(clean):
+    conn, runs = clean
     captured = _captured_at(conn)
-    stale = {s["site"]: s for s in status.site_statuses(conn, captured + timedelta(hours=30))}
+    stale = runs.run_status(conn, captured + timedelta(hours=26))
 
-    was_clear = stale["Washington Elementary"]
-    assert was_clear["status"] == "unconfirmed"
-    assert "stale recall data" in was_clear["reason"]
-    # FR-068: the capture date and the age are both shown alongside.
-    assert was_clear["snapshot_captured_at"][:10] in was_clear["reason"]
-    assert "30h" in was_clear["reason"]
-    assert was_clear["snapshot_age_hours"] == pytest.approx(30, abs=0.1)
+    assert "stale" in stale["word"]
+    assert stale["stale_corpus"] is True
+    # FR-068: the reason says what was held back and that no line moved.
+    assert "suppressed" in stale["detail"]
+    assert round(corpus.snapshot_age_hours(conn, captured + timedelta(hours=26))) == 26
 
 
-def test_sc013_the_lines_themselves_are_identical_stale_or_fresh(sc013):
+def test_sc013_the_lines_themselves_are_identical_stale_or_fresh(tmp_path):
     """The assertion that matters most. A run which suppressed lines because the
     data is old would trade a visible caveat for an invisible gap -- and would
     pass every other test in this file."""
-    conn, status = sc013
+    from pullsheet import runs
+    from pullsheet.matching.run import ordered_matches
+
+    path = tmp_path / "lines.db"
+    db.reset(path)
+    conn = db.connect(path)
+    corpus.load_snapshots(conn)
     captured = _captured_at(conn)
+    db.load_inventory_fixture(
+        conn, now=(captured + timedelta(hours=1)).isoformat(timespec="seconds"))
+    run_id = db.latest_ok_run(conn)["id"]
 
-    def counts(now):
-        rows = status.site_statuses(conn, now)
-        return {r["site"]: (r["pull"], r["held"]) for r in rows}
+    def sheet(now):
+        # The status word is computed at `now`; the lines are read at the same
+        # instant. If staleness reached the lines, these would differ.
+        runs.run_status(conn, now)
+        return [(r["id"], r["status"], r["tier"]) for r in ordered_matches(conn, run_id)]
 
-    fresh = counts(captured + timedelta(hours=2))
-    stale = counts(captured + timedelta(hours=30))
+    fresh = sheet(captured + timedelta(hours=2))
+    stale = sheet(captured + timedelta(hours=26))
+    assert fresh, "there are no lines, so this proves nothing"
     assert fresh == stale, "staleness changed which lines exist"
-    assert sum(p for p, _ in fresh.values()) > 0, "there are no lines, so this proves nothing"
 
-    total = conn.execute("SELECT COUNT(*) c FROM matches").fetchone()["c"]
-    assert total > 0
-    assert corpus.is_stale(conn, captured + timedelta(hours=30)) is True
-    assert conn.execute("SELECT COUNT(*) c FROM matches").fetchone()["c"] == total
+    assert corpus.is_stale(conn, captured + timedelta(hours=26)) is True
+    # And a PULL line outranks staleness: food in the building is a fact about
+    # the building, not about how old the recall feed is.
+    assert runs.run_status(conn, captured + timedelta(hours=26))["state"] == "action"
+    conn.close()
+
+
+def test_a_location_that_never_reported_is_not_a_quiet_green_page(tmp_path):
+    """FR-050. "No export has ever arrived" and "an export arrived and matched
+    nothing" are different situations, and only one of them is reassuring."""
+    from pullsheet import runs
+
+    path = tmp_path / "silent.db"
+    db.reset(path)
+    conn = db.connect(path)
+    corpus.load_snapshots(conn)
+    status = runs.run_status(conn, _captured_at(conn) + timedelta(hours=2))
+    assert status["state"] == "never"
+    assert status["run"] is None
+    assert "no statement" in status["detail"] or "Nothing on this page" in status["detail"]
+    conn.close()

@@ -4,10 +4,14 @@
     48 hours   complete the inventory assessment
 
 Both run from ``recall_records.received_at`` -- the moment the record first
-became visible to THIS district -- not from the agency's own report date. A
-recall published three weeks ago that a district learns about this morning
-starts its clocks this morning, and computing from the report date would show a
-district it was already three weeks late for a deadline it never had.
+became visible to THIS location -- not from the agency's own report date. A
+recall published three weeks ago that a kitchen learns about this morning starts
+its clocks this morning, and computing from the report date would tell them they
+were already three weeks late for a deadline they never had.
+
+The clocks belong to the RECALL, not to a run. A new export tomorrow morning
+does not restart them; only a recall the location had never seen before opens a
+new one. That is why they read ``received_at`` and never ``runs.started_at``.
 
 ``now`` is injected. Nothing here reads the clock, which is why an overrun can
 be demonstrated on demand instead of waited for.
@@ -36,28 +40,28 @@ def _parse(value: str) -> datetime:
 
 def _phrase(delta: timedelta) -> tuple[str, bool]:
     """Human text for a remaining or elapsed interval, and whether it overran."""
-    hours = delta.total_seconds() / 3600.0
-    if hours >= 0:
-        whole, minutes = int(hours), int(round((hours - int(hours)) * 60))
-        return (f"{whole}h {minutes:02d}m remaining", False)
-    over = -hours
-    whole, minutes = int(over), int(round((over - int(over)) * 60))
-    return (f"{whole}h {minutes:02d}m OVERRUN", True)
+    # Round to whole minutes FIRST, then split. Splitting first and rounding the
+    # remainder produces "23h 60m", which reads like a broken clock on the one
+    # screen that has to look trustworthy.
+    total_minutes = int(round(delta.total_seconds() / 60.0))
+    hours, minutes = divmod(abs(total_minutes), 60)
+    if total_minutes >= 0:
+        return (f"{hours}h {minutes:02d}m remaining", False)
+    return (f"{hours}h {minutes:02d}m OVERRUN", True)
 
 
-def clocks(conn: sqlite3.Connection, now: datetime) -> list[dict[str, Any]]:
+def clocks(conn: sqlite3.Connection, run_id: int, now: datetime) -> list[dict[str, Any]]:
     """One clock per deadline, measured from the earliest recall that produced a
     line on the sheet.
 
-    Earliest, not latest: the tightest clock is the one a district is actually
+    Earliest, not latest: the tightest clock is the one a kitchen is actually
     against, and showing the most forgiving one would be a comfortable lie.
     """
     row = conn.execute(
         """SELECT MIN(r.received_at) AS first_seen, COUNT(DISTINCT r.id) AS records
              FROM matches m
              JOIN recall_records r ON r.id = m.recall_record_id
-             JOIN inventory_records i ON i.id = m.inventory_record_id
-            WHERE i.superseded_by IS NULL"""
+            WHERE m.run_id = ?""", (run_id,)
     ).fetchone()
     if not row or not row["first_seen"]:
         return []

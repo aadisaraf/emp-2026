@@ -1,10 +1,11 @@
 {% import "base.html" as ui with context %}
-<title>Sources &mdash; {{ header.district }}</title>
+<title>Sources &mdash; {{ LOCATION.name }}</title>
 {% include "base.html" %}
 
 <main>
   <h1>Where every number comes from</h1>
-  <p class="generated">Generated {{ header.generated_at }}</p>
+  <p class="generated">{{ LOCATION.name }} &mdash; generated
+     {% if header %}{{ header.generated_at }}{% else %}now{% endif %}</p>
 
   <p class="note">Three labels and only three.
     <span class="prov prov-live">live</span> was fetched from the agency at run time;

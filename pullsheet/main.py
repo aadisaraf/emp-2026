@@ -1,4 +1,4 @@
-"""One command starts everything: the web app and the folder poller, in one
+"""One command starts everything: the web app and the SFTP drop poller, in one
 process.
 
 The demo is "a file lands and a pull sheet appears". That only reads as
@@ -12,14 +12,14 @@ import threading
 
 import uvicorn
 
-from pullsheet.adapters.watched_folder import watch
+from pullsheet.adapters.sftp_drop import watch
 
 _stop = threading.Event()
 
 
 def start_watcher(interval: float = 2.0) -> threading.Thread:
     thread = threading.Thread(target=watch, args=(interval, _stop), daemon=True,
-                              name="watched-folder")
+                              name="sftp-drop")
     thread.start()
     return thread
 
@@ -34,7 +34,7 @@ def main() -> int:
 
     if not args.no_watch:
         start_watcher(args.poll_interval)
-        print(f"[watched-folder] polling data/watched/ every {args.poll_interval}s")
+        print(f"[sftp-drop] polling data/watched/ every {args.poll_interval}s")
 
     uvicorn.run("pullsheet.app:app", host=args.host, port=args.port, log_level="info")
     return 0

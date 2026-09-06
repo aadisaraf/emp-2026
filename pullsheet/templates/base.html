@@ -13,24 +13,37 @@
 {% macro tier_badge(tier, status) -%}
 <span class="badge badge-{{ tier | lower }}" data-status="{{ status }}">{{ tier }}</span>
 {%- endmacro %}
+
+{% macro run_stamp(run) -%}
+<span class="run-stamp">run #{{ run.id }} &middot; {{ run.business_date }} &middot; {{ run.channel | replace('_', ' ') }}</span>
+{%- endmacro %}
 <link rel="stylesheet" href="/static/app.css">
 <link rel="stylesheet" href="/static/print.css" media="print">
 <header class="topbar">
   <a class="brand" href="/">PullSheet</a>
+  <span class="where">{{ LOCATION.name }}</span>
   <nav>
-    <a href="/">Overview</a>
+    <a href="/">Today</a>
     <a href="/sheet">Pull sheet</a>
-    <a href="/menu">Menu impact</a>
+    <a href="/impact">Impact</a>
+    <a href="/runs">Run history</a>
     <a href="/sources">Sources</a>
     <a href="/ingest">Add inventory</a>
   </nav>
 </header>
-{% if header.stale %}
+{% if header and header.stale %}
 <div class="banner banner-stale" role="status">
   <strong>Recall data is older than 24 hours.</strong>
   Every line below still stands &mdash; staleness changes this notice, never the sheet.
   {% for c in header.corpora %}
     {{ c.source }} captured {{ c.captured_at[:10] }} ({{ c.age_hours }}h ago){% if not loop.last %};{% endif %}
   {% endfor %}
+</div>
+{% endif %}
+{% if header and not header.is_current %}
+<div class="banner banner-past" role="status">
+  <strong>This is run #{{ header.run.id }} from {{ header.run.business_date }}, not today's.</strong>
+  It is shown exactly as it stood, against the recall data it was matched against.
+  <a href="/">Go to the current run</a>.
 </div>
 {% endif %}

@@ -17,7 +17,6 @@ from fastapi.testclient import TestClient
 from pullsheet import db
 from pullsheet.app import app
 from pullsheet.artifacts import credit_claim, hold_record, state_report
-from pullsheet.matching.run import run_matcher
 from pullsheet.recalls import corpus
 
 NOW = datetime(2026, 9, 5, 14, 30, tzinfo=timezone.utc)
@@ -30,9 +29,13 @@ def loaded(tmp_path, bind_app):
     conn = db.connect(path)
     corpus.load_snapshots(conn)
     db.load_inventory_fixture(conn)
-    run_matcher(conn)
     yield conn
     conn.close()
+
+
+@pytest.fixture
+def run_id(loaded):
+    return db.latest_ok_run(loaded)["id"]
 
 
 @pytest.fixture
@@ -40,36 +43,30 @@ def client():
     return TestClient(app)
 
 
-def _sites(conn):
-    return [r["site"] for r in conn.execute(
-        "SELECT DISTINCT site FROM inventory_records WHERE superseded_by IS NULL")]
+def test_scenario_1_hold_record_lists_every_line_with_blank_signature_fields(loaded, run_id):
+    record = hold_record.hold_record(loaded, run_id, NOW)
 
+    expected = {r["id"] for r in loaded.execute(
+        """SELECT DISTINCT i.id FROM matches m
+             JOIN inventory_records i ON i.id = m.inventory_record_id
+            WHERE m.run_id = ?""", (run_id,))}
+    assert {l["id"] for l in record["lines"]} == expected, (
+        "the custody record must list every line the sheet does, held included")
 
-def test_scenario_1_hold_record_lists_every_line_with_blank_signature_fields(loaded):
-    for site in _sites(loaded):
-        record = hold_record.hold_record(loaded, site, NOW)
+    for line in record["lines"]:
+        assert "raw_description" in line and "storage_location" in line
+        assert "quantity" in line and "lot_code" in line
+        assert line["recalls"], "a line with no recall should not be on the record"
 
-        expected = {r["id"] for r in loaded.execute(
-            """SELECT DISTINCT i.id FROM matches m
-                 JOIN inventory_records i ON i.id = m.inventory_record_id
-                WHERE i.site = ? AND i.superseded_by IS NULL""", (site,))}
-        assert {l["id"] for l in record["lines"]} == expected, (
-            "the custody record must list every line the sheet does, held included")
-
-        for line in record["lines"]:
-            assert "raw_description" in line and "storage_location" in line
-            assert "quantity" in line and "lot_code" in line
-            assert line["recalls"], "a line with no recall should not be on the record"
-
-        # Blank for a human. Not defaulted, not today's date, not a username.
-        assert len(record["signature_fields"]) >= 4
-        assert all(isinstance(f, str) and f for f in record["signature_fields"])
-        assert "signature" not in record, "the record must not carry a signature value"
-        assert not any(k.endswith("_by") and record.get(k) for k in record)
+    # Blank for a human. Not defaulted, not today's date, not a username.
+    assert len(record["signature_fields"]) >= 4
+    assert all(isinstance(f, str) and f for f in record["signature_fields"])
+    assert "signature" not in record, "the record must not carry a signature value"
+    assert not any(k.endswith("_by") and record.get(k) for k in record)
 
 
 def test_scenario_1_the_printed_hold_record_has_no_prefilled_signature(loaded, client):
-    page = client.get("/artifacts/hold/lincoln-elementary")
+    page = client.get("/artifacts/hold")
     assert page.status_code == 200
     assert "To be completed by hand" in page.text
     assert "Authorizing signature" in page.text
@@ -78,8 +75,8 @@ def test_scenario_1_the_printed_hold_record_has_no_prefilled_signature(loaded, c
         assert field in page.text
 
 
-def test_scenario_2_state_report_marks_every_underivable_field(loaded, client):
-    report = state_report.state_report(loaded, NOW)
+def test_scenario_2_state_report_marks_every_underivable_field(loaded, run_id, client):
+    report = state_report.state_report(loaded, run_id, NOW)
 
     assert report["derived_count"] > 0, "nothing was derived; the form proves nothing"
     assert report["unfilled"], "nothing was marked; the form proves nothing"
@@ -100,16 +97,16 @@ def test_scenario_2_state_report_marks_every_underivable_field(loaded, client):
     assert "not an official state form" in page.text
 
 
-def test_scenario_2_no_field_is_silently_blank(loaded, client):
+def test_scenario_2_no_field_is_silently_blank(loaded, run_id, client):
     """The dangerous failure is a form that LOOKS complete. Every row on the
     rendered page carries either a value or the marker."""
-    report = state_report.state_report(loaded, NOW)
+    report = state_report.state_report(loaded, run_id, NOW)
     for value in report["export"].values():
         assert value, "a field rendered as an empty string"
 
 
-def test_scenario_3_credit_claim_itemizes_and_totals(loaded):
-    claim = credit_claim.credit_claim(loaded, NOW)
+def test_scenario_3_credit_claim_itemizes_and_totals(loaded, run_id):
+    claim = credit_claim.credit_claim(loaded, run_id, NOW)
     assert claim["lines"], "no pulled lines; the claim proves nothing"
 
     hand_total = 0.0
@@ -127,8 +124,8 @@ def test_scenario_3_credit_claim_itemizes_and_totals(loaded):
     assert len(ids) == len(set(ids))
 
 
-def test_scenario_4_costless_lines_are_quantity_only_and_named(loaded, client):
-    claim = credit_claim.credit_claim(loaded, NOW)
+def test_scenario_4_costless_lines_are_quantity_only_and_named(loaded, run_id, client):
+    claim = credit_claim.credit_claim(loaded, run_id, NOW)
     assert claim["excluded"], (
         "no line lacked a price, so FR-047 is untested by this fixture")
 
@@ -148,17 +145,17 @@ def test_scenario_4_costless_lines_are_quantity_only_and_named(loaded, client):
     assert claim["exclusion_statement"][:60] in page.text
 
 
-def test_scenario_4_no_price_is_ever_estimated(loaded):
+def test_scenario_4_no_price_is_ever_estimated(loaded, run_id):
     """The property behind scenario 4: an extended value exists only where both
     inputs did."""
-    for line in credit_claim.credit_claim(loaded, NOW)["lines"]:
+    for line in credit_claim.credit_claim(loaded, run_id, NOW)["lines"]:
         if line["extended"] is not None:
             assert line["quantity"] is not None and line["unit_cost"] is not None
 
 
 @pytest.mark.parametrize("url", [
     "/sheet",
-    "/artifacts/hold/lincoln-elementary",
+    "/artifacts/hold",
     "/artifacts/credit-claim",
     "/artifacts/state-report",
 ])
@@ -178,7 +175,7 @@ def test_scenario_5_every_artifact_labels_the_provenance_of_its_sources(client, 
 
 
 @pytest.mark.parametrize("url", [
-    "/artifacts/hold/lincoln-elementary",
+    "/artifacts/hold",
     "/artifacts/credit-claim",
     "/artifacts/state-report",
 ])

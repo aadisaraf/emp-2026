@@ -12,7 +12,7 @@ import pytest
 
 from pullsheet.adapters.base import DECLARABLE, AdapterRejection
 from pullsheet.adapters.email_drop import MAILBOX, EmailDropAdapter
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 from pullsheet.provenance import SOURCES
 
 
@@ -24,7 +24,9 @@ def adapter():
 def test_the_fixture_mailbox_yields_records(adapter):
     records = list(adapter.read())
     assert len(records) == 5
-    assert {r.site for r in records} == {"Washington Elementary"}
+    # The attached export carries a school-name column, as real ones do. It is
+    # recognised and ignored: what reaches the sheet is the freezer you walk to.
+    assert {r.storage_location for r in records} == {"Freezer 1", "Cooler 2", "Dry Store"}
     for record in records:
         assert record.raw_description
         assert record.source_row >= 1
@@ -47,10 +49,10 @@ def test_supplier_identity_survives_the_email_round_trip(adapter):
     assert strips.unit_cost == 41.85
 
 
-def test_it_reuses_the_watched_folder_reader(adapter):
+def test_it_reuses_the_sftp_drop_reader(adapter):
     """One row parser, not two. An emailed export and a dropped export must not
     be able to disagree about what a row means."""
-    assert adapter.declares() == WatchedFolderAdapter().declares()
+    assert adapter.declares() == SftpDropAdapter().declares()
     assert adapter.declares() <= DECLARABLE
 
 

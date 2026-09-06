@@ -1,0 +1,144 @@
+{% import "base.html" as ui with context %}
+{% import "_lines.html" as parts with context %}
+<title>{{ LOCATION.name }} &mdash; PullSheet</title>
+{% include "base.html" %}
+
+<main class="dashboard">
+
+  {# ------------------------------------------------------------------ #}
+  {# MAIN: the recall picture. One word, then the evidence behind it.     #}
+  {# ------------------------------------------------------------------ #}
+  <section class="verdict verdict-{{ status.state }}">
+    <p class="word" data-poll="word">{{ status.word }}</p>
+    <p class="detail" data-poll="detail">{{ status.detail }}</p>
+    {% if run %}
+    <p class="stamp">{{ ui.run_stamp(run) }} &middot; read {{ run.rows_read }} rows
+      {%- if run.rows_partial %}, {{ run.rows_partial }} partial{% endif %}
+      &middot; finalized {{ run.finalized_at }}</p>
+    {% endif %}
+  </section>
+
+  {% if not run %}
+  <section class="zero">
+    <h2>Nothing has been ingested yet.</h2>
+    <p>
+      This page is deliberately not blank and deliberately does not say "all
+      clear". No inventory has arrived, so the system has nothing to compare
+      against a recall &mdash; which is not the same as having compared and found
+      nothing. Drop an export into <code>data/watched/</code> or
+      <a href="/ingest">upload one</a>.
+    </p>
+  </section>
+  {% else %}
+
+  {# The two clocks. USDA reporting deadlines run from when the NOTICE arrived,
+     not from when this run happened, so tomorrow's export does not reset them. #}
+  {% if deadlines %}
+  <section class="clocks">
+    <h2>Reporting clocks</h2>
+    <p class="note">Counted from when each notice arrived here &mdash; a new
+      inventory export tomorrow morning does not restart them.</p>
+    <p class="fine">Measured from {{ deadlines[0].received_at[:16] }}, the earliest
+      of the {{ deadlines[0].records }} recall notice(s) behind today's lines.</p>
+    <table class="lines">
+      <thead><tr><th>Obligation</th><th>Window</th><th>Due</th><th>Left</th></tr></thead>
+      <tbody>
+      {% for d in deadlines %}
+        <tr class="{% if d.overrun %}clock-overrun{% endif %}">
+          <td>{{ d.label }}</td>
+          <td class="num">{{ d.hours }}h</td>
+          <td>{{ d.due_at[:16] }}</td>
+          <td class="{% if d.overrun %}overrun{% endif %}">{{ d.text }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  {# What changed since yesterday. The reason a daily run is worth reading at
+     all: an operator who pulled 42 cases yesterday needs the 3 that are new. #}
+  <section class="whats-new">
+    <h2>New since {% if previous_run_id %}run #{{ previous_run_id }}{% else %}the first run{% endif %}</h2>
+    {% if not previous_run_id %}
+      <p class="note">This is the first run at this location, so every line is
+        being seen for the first time and none is marked new. Marking all of them
+        new would make the flag meaningless on the one day it cannot mean
+        anything.</p>
+    {% elif not new_lines %}
+      <p class="note">Nothing new. Every line below also appeared on the previous
+        run &mdash; they have not gone away, they are just not new.</p>
+    {% else %}
+      <ul class="new-list">
+      {% for m in new_lines %}
+        <li>
+          {{ ui.tier_badge(m.tier, m.status) }} <strong>{{ m.status }}</strong>
+          <a href="/match/{{ m.id }}">{{ m.raw_description }}</a>
+          <span class="fine">{{ m.storage_location or 'storage not recorded' }}
+            &middot; {{ m.source }} {{ m.source_record_id }}
+            &middot; {{ m.recalling_firm or 'firm not stated' }}</span>
+        </li>
+      {% endfor %}
+      </ul>
+    {% endif %}
+  </section>
+
+  <section class="picture">
+    <div class="tally">
+      <div class="stat stat-pull"><span class="n">{{ header.counts.pull_count }}</span> to pull</div>
+      <div class="stat"><span class="n">{{ header.counts.held_count }}</span> held for review</div>
+      <div class="stat"><span class="n">{{ header.counts.new_count }}</span> new today</div>
+    </div>
+    <p class="artifact-links">
+      <a href="/sheet">Printable pull sheet</a>
+      &middot; <a href="/impact">Menu and money impact</a>
+      &middot; <a href="/artifacts/hold">Hold record</a>
+      &middot; <a href="/artifacts/credit-claim">Credit claim</a>
+      {% if SERVES_MEAL_PROGRAM %}&middot; <a href="/artifacts/state-report">State report</a>{% endif %}
+      &middot; <a href="/runs">Every run</a>
+    </p>
+    <p class="corpus-line">Matched against {{ parts.corpus_line(header) }}</p>
+  </section>
+
+  {% if header.counts.total == 0 %}
+  <section class="zero">
+    <h2>No inventory line matched a recall.</h2>
+    <p>
+      Checked {{ run.rows_read }} rows against
+      {% for c in header.corpora %}{{ c.record_count }} {{ c.source }} records
+      captured {{ c.captured_at[:10] }}{% if not loop.last %} and {% endif %}{% endfor %}.
+      A zero-line result is a result, not an absence of one &mdash; the
+      comparison ran, and this page is the record that it ran.
+    </p>
+  </section>
+  {% endif %}
+
+  {{ parts.storage_sections(sections) }}
+  {% endif %}
+
+  {# A rejected delivery is louder than a quiet one. FR-009. #}
+  {% if rejections %}
+  <section class="rejections">
+    <h2>Deliveries that were refused</h2>
+    <p class="note">A refused delivery is shown here rather than swallowed. The
+      last good run above is still what the sheet reflects &mdash; a bad export
+      never overwrites a good one.</p>
+    <ul>
+    {% for r in rejections %}
+      <li><strong>{{ r.delivery_ref or 'unnamed delivery' }}</strong>
+        ({{ r.channel | replace('_', ' ') }}, {{ r.started_at[:16] }})
+        &mdash; {{ r.rejection_reason }}</li>
+    {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <footer class="sheet-footer">
+    <p class="screening-rule"><strong>What this page leaves out.</strong> {{ SCREENING_RULE }}</p>
+    <p class="held-note">
+      Held lines are on this page on purpose, interleaved with pull lines in one
+      order. Nothing here was cleared automatically; nothing in this system can be.
+    </p>
+  </footer>
+</main>
+<script src="/static/poll.js" defer></script>

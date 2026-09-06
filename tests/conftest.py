@@ -26,10 +26,30 @@ def tmp_db(tmp_path):
     path = tmp_path / "test.db"
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
+    # Foreign keys are OFF by default in SQLite, per connection. Without this a
+    # test could write a match against a run that does not exist and pass, while
+    # the application -- which turns them on in db.connect -- would refuse.
+    conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA.read_text())
     conn.commit()
     yield conn
     conn.close()
+
+
+@pytest.fixture
+def seeded_run():
+    """Open, and optionally finalize, a run on a bare ``tmp_db``.
+
+    Every match now belongs to a run, so a test that writes match rows needs one
+    to hang them from. This is the one-line version.
+    """
+
+    def _open(conn, channel: str = "sftp_drop", **kwargs) -> int:
+        from pullsheet import db as db_module
+
+        return db_module.open_run(conn, channel, **kwargs)
+
+    return _open
 
 
 @pytest.fixture

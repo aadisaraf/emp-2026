@@ -1,0 +1,92 @@
+{#
+  The sheet's line table, defined once and used by every page that shows lines:
+  today's dashboard, the printable sheet, and any past run's page. One macro
+  means PULL and HELD are interleaved in the same single order everywhere -- a
+  page that quietly re-sorted or filtered them would be a different sheet
+  wearing the same name.
+#}
+{% import "base.html" as ui with context %}
+
+{% macro lines_table(section) -%}
+<table class="lines">
+  <thead>
+    <tr>
+      <th>Status</th><th>Item</th><th>Qty</th><th>Lot</th>
+      <th>Class</th><th>Evidence</th><th>Triggered by</th><th>Pulled?</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for m in section.lines %}
+    <tr class="line line-{{ m.status | lower }}{% if m.cleared_count %} line-cleared{% endif %}{% if m.is_new %} line-new{% endif %}">
+      <td class="status">
+        {{ ui.tier_badge(m.tier, m.status) }}
+        <span class="status-word">{{ m.status }}</span>
+        {% if m.is_new %}<span class="new-flag" title="not on the previous run">new</span>{% endif %}
+      </td>
+      <td class="item">
+        <a href="/match/{{ m.id }}">{{ m.raw_description }}</a>
+        {# The supplier line is what the manager reads off the side of the
+           case, and for most rows it is the identifier the match was made
+           on -- so it belongs on the sheet, not only on the detail page. #}
+        {% set supplier = m.brand or m.manufacturer %}
+        {% if supplier or m.vendor_item_code %}
+          <div class="supplier">
+            {% if supplier %}{{ supplier }}{% endif %}
+            {% if m.manufacturer_item_code %} &middot; item {{ m.manufacturer_item_code }}{% endif %}
+            {% if m.vendor_name %} &middot; {{ m.vendor_name }} {{ m.vendor_item_code or '' }}{% endif %}
+          </div>
+        {% endif %}
+        {% if m.lot_note %}<div class="note">{{ m.lot_note }}</div>{% endif %}
+        {# FR-016. A terminated or amended recall keeps its line. Both the
+           prior and the current state are shown, because "terminated" alone
+           does not tell an operator what it used to be. #}
+        {% if m.recall_status != 'active' %}
+          <div class="note note-amended">
+            Recall <strong>{{ m.recall_status }}</strong> by the agency
+            {%- if m.recall_prior_status %} (was {{ m.recall_prior_status }}){% endif %}
+            {%- if m.status_changed_at %} on {{ m.status_changed_at[:10] }}{% endif %}.
+            This line stays on the sheet &mdash; clearing it is a human action.
+          </div>
+        {% endif %}
+      </td>
+      <td class="num">{% if m.quantity is not none %}{{ m.quantity | round(0) | int }}{% if m.unit %} {{ m.unit }}{% endif %}{% else %}<span class="unknown">not recorded</span>{% endif %}</td>
+      <td class="lot">{{ m.lot_code or '&mdash;' | safe }}</td>
+      <td class="class class-{{ m.class_rank }}">{{ m.classification or 'unclassified' }}</td>
+      <td class="kind">{{ m.evidence_kind }}</td>
+      <td class="trigger">
+        <code>{{ m.trigger_inventory_text }}</code>
+        <span class="arrow">&harr;</span>
+        <code>{{ m.trigger_recall_text }}</code>
+      </td>
+      <td class="checkbox">{% if m.cleared_count %}cleared{% else %}&#9744;{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{%- endmacro %}
+
+{% macro storage_sections(sections) -%}
+{% for s in sections %}
+<section class="storage-section">
+  <h2>{{ s.storage_location }}
+    <span class="storage-tally">{{ s.pull }} pull &middot; {{ s.held }} held{% if s.cleared %} &middot; {{ s.cleared }} cleared{% endif %}</span>
+  </h2>
+  {{ lines_table(s) }}
+</section>
+{% endfor %}
+{%- endmacro %}
+
+{% macro corpus_line(header) -%}
+{% if header.is_current %}
+  {% for c in header.corpora %}
+    {{ c.source }} &mdash; {{ ui.provenance(c.source, c.captured_at) }}
+    {{ c.record_count }} records, {{ c.age_hours }}h old{% if c.stale %}
+    <strong class="stale">(stale)</strong>{% endif %}{% if not loop.last %}<br>{% endif %}
+  {% endfor %}
+{% else %}
+  {# A finalized run states the corpus it was actually matched against.
+     Printing tonight's snapshot over yesterday's lines would make a document
+     look sourced when it is not. #}
+  <span class="frozen-corpus">{{ header.corpus_note }}</span>
+{% endif %}
+{%- endmacro %}

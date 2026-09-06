@@ -32,17 +32,16 @@ class NormalizedRecord(NamedTuple):
     behaviour by normalizing differently.
     """
 
-    site: str
-    storage_location: str | None
+    storage_location: str | None  # the cooler, not the building -- one deployment
+                                  # is one location, so there is no site field
     raw_description: str          # verbatim from source, never rewritten
     quantity: float | None
     unit: str | None
     pack_size: str | None
     gtin: str | None              # digits only, or None
-    upc: str | None               # digits only, or None
     lot_code: str | None          # VERBATIM. Adapters must not normalize it (R3)
 
-    # Supplier identity (FR-069). Districts run on purchasing systems, so these
+    # Supplier identity (FR-069). Kitchens run on purchasing systems, so these
     # are present far more reliably than gtin or lot_code: an item master has to
     # know who supplies a line in order to reorder it.
     brand: str | None                    # the label on the case
@@ -60,10 +59,10 @@ class NormalizedRecord(NamedTuple):
 class AdapterRejection(Exception):
     """The whole source is unusable.
 
-    Raised instead of returning a partial read. A rejection is recorded in
-    ``ingest_runs`` with the failing row or column named, and it leaves any
+    Raised instead of returning a partial read. The run is recorded as
+    ``rejected`` with the failing row or column named, and it leaves any
     existing pull sheet intact (FR-006, FR-009). Rejecting loudly is safer than
-    ingesting half a file, because half a file looks exactly like a district
+    ingesting half a file, because half a file looks exactly like a kitchen
     with fewer items in it.
     """
 
@@ -80,6 +79,9 @@ class InventoryAdapter(ABC):
 
     name: str
     provenance: Provenance
+    #: How a delivery through this adapter arrives. Stored on every run, so the
+    #: history can say whether last Tuesday came in over SFTP or by mail.
+    channel: str
 
     @abstractmethod
     def declares(self) -> frozenset[str]:

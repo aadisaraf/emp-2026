@@ -1,5 +1,11 @@
 """FastAPI routes. Thin -- every route delegates immediately.
 
+The dashboard is three surfaces and nothing else:
+
+* ``/``        MAIN -- the recall picture for the most recent good run.
+* ``/impact``  IMPACT -- what those pulls cost: meals, money, paperwork.
+* ``/runs``    HISTORY -- every run, and any one of them as it stood.
+
 The only interesting thing in this file is ``clear_match``, which is the second
 of the three justified clearing paths in the codebase and the ONLY way a line
 can be marked cleared at all.
@@ -17,24 +23,19 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from pullsheet import db
+from pullsheet import db, deadlines, location, runs as runs_module
 from pullsheet.adapters.base import DECLARABLE
 from pullsheet.adapters.column_map import ALIASES
 from pullsheet.adapters.email_drop import EmailDropAdapter
-from pullsheet.adapters.paste import PasteAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
 from pullsheet.artifacts import credit_claim, hold_record, pull_sheet, state_report
-from pullsheet import monitor
-from pullsheet.matching.run import run_matcher
+from pullsheet.matching.screen import SCREENING_RULE
 from pullsheet.menu import cascade as menu_cascade
 from pullsheet.menu import substitute as menu_substitute
-from pullsheet.matching.screen import SCREENING_RULE
-from pullsheet.recalls import fetch as recalls_fetch
 from pullsheet.provenance import LABELS, SOURCES, label_for
 from pullsheet.recalls import corpus
-from pullsheet.rollup import deadlines as rollup_deadlines
-from pullsheet.rollup import status as rollup_status
+from pullsheet.recalls import fetch as recalls_fetch
 
 ROOT = Path(__file__).resolve().parent.parent
 HERE = Path(__file__).resolve().parent
@@ -48,6 +49,8 @@ templates.env.globals["label_for"] = label_for
 templates.env.globals["PROVENANCE_LABELS"] = LABELS
 templates.env.globals["SCREENING_RULE"] = SCREENING_RULE
 templates.env.globals["COMPONENTS_CAVEAT"] = menu_substitute.COMPONENTS_CAVEAT
+templates.env.globals["LOCATION"] = location.summary()
+templates.env.globals["SERVES_MEAL_PROGRAM"] = location.serves_meal_program()
 
 
 def now() -> datetime:
@@ -58,27 +61,35 @@ def _conn():
     return db.connect(db.DB_PATH)
 
 
-def _resolve_site(conn, slug: str) -> str:
-    """Map a URL slug back to the site name exactly as the export spelled it.
+def _current(conn):
+    """The run the dashboard shows, or None if nothing has ever been ingested.
 
-    An unambiguous prefix is accepted -- `/sheet/lincoln` reaches Lincoln
-    Elementary -- because the operator typing that URL is standing in a kitchen.
-    An AMBIGUOUS prefix is a 404 naming the candidates, never a guess: sending
-    somebody to the wrong building's pull sheet is the one failure this
-    convenience could cause.
+    Deliberately the latest run with status 'ok'. A rejected delivery or a run
+    still in flight must never become "the latest run" and blank the picture --
+    that is the FR-009 failure the whole run lifecycle exists to prevent.
     """
-    known = pull_sheet.sites(conn)
-    wanted = slug.lower().replace("-", " ").strip()
-    for site in known:
-        if site.lower() == wanted:
-            return site
-    prefixed = [s for s in known if s.lower().startswith(wanted)]
-    if len(prefixed) == 1:
-        return prefixed[0]
-    if prefixed:
-        raise HTTPException(404, f"{slug!r} matches {len(prefixed)} sites: "
-                                 f"{', '.join(prefixed)}. Name one exactly.")
-    raise HTTPException(404, f"no site named {slug!r}")
+    return db.latest_ok_run(conn)
+
+
+def _run_or_404(conn, run_id: int):
+    run = db.get_run(conn, run_id)
+    if run is None:
+        raise HTTPException(404, f"no run {run_id}")
+    return run
+
+
+def _decided_before(conn, run) -> str | None:
+    """The moment a run's sheet depicts.
+
+    For the current run that is now, so every clearing applies -- a false
+    positive cleared on Monday stays cleared. For a past run it is the instant
+    the NEXT good run replaced it, so its page does not show lines as cleared
+    before anyone had cleared them.
+    """
+    nxt = conn.execute(
+        "SELECT started_at FROM runs WHERE status = 'ok' AND id > ? ORDER BY id LIMIT 1",
+        (run["id"],)).fetchone()
+    return nxt["started_at"] if nxt else None
 
 
 def _sync_form(request: Request) -> dict:
@@ -109,79 +120,158 @@ def _sync_form(request: Request) -> dict:
 
 @app.get("/api/status")
 def api_status():
-    """What poll.js reads. Numbers only -- it can change no decision."""
+    """What poll.js reads. Numbers and one word -- it can change no decision."""
     conn = _conn()
     try:
         at = now()
-        head = pull_sheet.header(conn, at)
+        status = runs_module.run_status(conn, at)
+        run = status["run"]
         return {
-            "sheet_generated_at": head["generated_at"],
-            "pull_count": head["counts"]["pull_count"],
-            "held_count": head["counts"]["held_count"],
-            "sites": pull_sheet.sites(conn),
-            "site_status": rollup_status.site_statuses(conn, at),
-            "deadlines": rollup_deadlines.clocks(conn, at),
-            "alerts": len(monitor.open_alerts(conn)),
-            "corpus": head["corpora"],
-            "last_ingest": head["last_ingest"],
+            "state": status["state"],
+            "word": status["word"],
+            "detail": status["detail"],
+            "run_id": run["id"] if run else None,
+            "business_date": run["business_date"] if run else None,
+            "pull_count": status.get("pull_count", 0),
+            "held_count": (run["held_count"] if run else 0),
+            "new_count": (
+                conn.execute("SELECT COALESCE(SUM(is_new),0) FROM matches WHERE run_id = ?",
+                             (run["id"],)).fetchone()[0] if run else 0),
+            "deadlines": deadlines.clocks(conn, run["id"], at) if run else [],
+            "corpus": corpus.corpus_summary(conn, at),
+            "run_count": conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0],
         }
     finally:
         conn.close()
 
 
 # ---------------------------------------------------------------------------
-# Pages
+# MAIN -- the recall picture
 # ---------------------------------------------------------------------------
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    """US4. The district on one screen: every site, both clocks, any new alerts."""
+    """The location on one screen: what to pull, both clocks, what is new today."""
     conn = _conn()
     try:
         at = now()
-        return templates.TemplateResponse("rollup.html", {
+        status = runs_module.run_status(conn, at)
+        run = _current(conn)
+        context = {
             "request": request,
-            "header": pull_sheet.header(conn, at),
-            "rollup": rollup_status.summary(conn, at),
-            "deadlines": rollup_deadlines.clocks(conn, at),
-            "alerts": monitor.open_alerts(conn),
+            "status": status,
             "rejections": pull_sheet.rejections(conn),
             "sources": SOURCES,
-        })
+            "run": None,
+        }
+        if run is not None:
+            context.update({
+                "run": dict(run),
+                "header": pull_sheet.header(conn, run, at),
+                "sections": pull_sheet.by_storage(conn, run["id"]),
+                "deadlines": deadlines.clocks(conn, run["id"], at),
+                "new_lines": runs_module.new_since_previous(conn, run["id"]),
+                "previous_run_id": db.previous_ok_run(conn, run["id"]),
+            })
+        return templates.TemplateResponse("dashboard.html", context)
     finally:
         conn.close()
 
 
 @app.get("/sheet", response_class=HTMLResponse)
-@app.get("/sheet/{site}", response_class=HTMLResponse)
-def sheet(request: Request, site: str | None = None):
+@app.get("/sheet/{run_id}", response_class=HTMLResponse)
+def sheet(request: Request, run_id: int | None = None):
+    """The printable pull sheet, for the current run or any past one."""
     conn = _conn()
     try:
-        resolved = _resolve_site(conn, site) if site else None
+        run = _run_or_404(conn, run_id) if run_id else _current(conn)
+        if run is None:
+            raise HTTPException(404, "no inventory has been ingested yet")
+        before = _decided_before(conn, run)
         return templates.TemplateResponse("sheet.html", {
             "request": request,
-            "header": pull_sheet.header(conn, now(), resolved),
-            "sections": pull_sheet.by_site(conn, resolved),
+            "header": pull_sheet.header(conn, run, now()),
+            "sections": pull_sheet.by_storage(conn, run["id"], before),
         })
     finally:
         conn.close()
 
 
-@app.get("/menu", response_class=HTMLResponse)
-def menu(request: Request):
-    """US2. What each pulled case was going to become, and what replaces it."""
+# ---------------------------------------------------------------------------
+# RUN HISTORY
+# ---------------------------------------------------------------------------
+
+@app.get("/runs", response_class=HTMLResponse)
+def run_history(request: Request):
+    """Every run, newest first -- rejected deliveries included.
+
+    Listing only the good ones would make a week of failed drops look like a
+    quiet week, which is the same lie as a blank dashboard.
+    """
     conn = _conn()
     try:
-        summary = menu_cascade.summary(conn)
-        proposals = menu_substitute.proposals_for(conn, summary["entries"])
-        return templates.TemplateResponse("menu.html", {
+        return templates.TemplateResponse("runs.html", {
             "request": request,
-            "header": pull_sheet.header(conn, now()),
-            "menu": summary,
-            # Keyed for the template; the list form is kept for the proof table.
-            "proposals": {(p["site"], p["broken_recipe_id"]): p for p in proposals},
-            "proofs": [p for p in proposals if p["kind"] == "none"],
+            "status": runs_module.run_status(conn, now()),
+            "runs": runs_module.history(conn),
+            "current_run_id": (r["id"] if (r := _current(conn)) else None),
         })
+    finally:
+        conn.close()
+
+
+@app.get("/runs/{run_id}", response_class=HTMLResponse)
+def run_detail(request: Request, run_id: int):
+    """One run exactly as it stood: its own lines, its own counts, its own corpus."""
+    conn = _conn()
+    try:
+        run = _run_or_404(conn, run_id)
+        at = now()
+        return templates.TemplateResponse("run_detail.html", {
+            "request": request,
+            "run": dict(run),
+            "header": pull_sheet.header(conn, run, at),
+            "sections": pull_sheet.by_storage(conn, run_id, _decided_before(conn, run)),
+            "new_lines": runs_module.new_since_previous(conn, run_id),
+            "previous_run_id": db.previous_ok_run(conn, run_id),
+        })
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# IMPACT -- what the pulls cost
+# ---------------------------------------------------------------------------
+
+@app.get("/impact", response_class=HTMLResponse)
+def impact(request: Request):
+    """What each pulled case was going to become, what replaces it, and what it
+    is worth. The menu half is a child nutrition surface and is shown only for a
+    school deployment; the money half applies to any kitchen."""
+    conn = _conn()
+    try:
+        run = _current(conn)
+        if run is None:
+            raise HTTPException(404, "no inventory has been ingested yet")
+        at = now()
+        context = {
+            "request": request,
+            "run": dict(run),
+            "header": pull_sheet.header(conn, run, at),
+            "claim": credit_claim.credit_claim(conn, run["id"], at),
+            "menu": None,
+            "proposals": {},
+            "proofs": [],
+        }
+        if location.serves_meal_program():
+            summary = menu_cascade.summary(conn, run["id"])
+            proposals = menu_substitute.proposals_for(conn, run["id"], summary["entries"])
+            context.update({
+                "menu": summary,
+                "proposals": {p["broken_recipe_id"]: p for p in proposals},
+                "proofs": [p for p in proposals if p["kind"] == "none"],
+            })
+        return templates.TemplateResponse("impact.html", context)
     finally:
         conn.close()
 
@@ -191,44 +281,55 @@ def menu(request: Request):
 # shows -- none of them can change a line, and none writes anything.
 # ---------------------------------------------------------------------------
 
-@app.get("/artifacts/hold/{site}", response_class=HTMLResponse)
-def artifact_hold(request: Request, site: str):
-    """FR-043. Per-site custody record, signature fields blank for a human."""
+@app.get("/artifacts/hold", response_class=HTMLResponse)
+def artifact_hold(request: Request, run: int | None = None):
+    """FR-043. The custody record, signature fields blank for a human."""
     conn = _conn()
     try:
-        resolved = _resolve_site(conn, site)
+        row = _run_or_404(conn, run) if run else _current(conn)
+        if row is None:
+            raise HTTPException(404, "no inventory has been ingested yet")
         return templates.TemplateResponse("hold_record.html", {
             "request": request,
-            "header": pull_sheet.header(conn, now(), resolved),
-            "record": hold_record.hold_record(conn, resolved, now()),
+            "header": pull_sheet.header(conn, row, now()),
+            "record": hold_record.hold_record(conn, row["id"], now()),
         })
     finally:
         conn.close()
 
 
 @app.get("/artifacts/credit-claim", response_class=HTMLResponse)
-def artifact_credit_claim(request: Request):
+def artifact_credit_claim(request: Request, run: int | None = None):
     """FR-046, FR-047. Quantity x unit cost. Nothing estimated, ever."""
     conn = _conn()
     try:
+        row = _run_or_404(conn, run) if run else _current(conn)
+        if row is None:
+            raise HTTPException(404, "no inventory has been ingested yet")
         return templates.TemplateResponse("credit_claim.html", {
             "request": request,
-            "header": pull_sheet.header(conn, now()),
-            "claim": credit_claim.credit_claim(conn, now()),
+            "header": pull_sheet.header(conn, row, now()),
+            "claim": credit_claim.credit_claim(conn, row["id"], now()),
         })
     finally:
         conn.close()
 
 
 @app.get("/artifacts/state-report", response_class=HTMLResponse)
-def artifact_state_report(request: Request):
+def artifact_state_report(request: Request, run: int | None = None):
     """FR-044, FR-045. Derived fields filled; everything else MARKED, not blank."""
     conn = _conn()
     try:
+        if not location.serves_meal_program():
+            raise HTTPException(
+                404, "the state child-nutrition report applies to a school deployment")
+        row = _run_or_404(conn, run) if run else _current(conn)
+        if row is None:
+            raise HTTPException(404, "no inventory has been ingested yet")
         return templates.TemplateResponse("state_report.html", {
             "request": request,
-            "header": pull_sheet.header(conn, now()),
-            "report": state_report.state_report(conn, now()),
+            "header": pull_sheet.header(conn, row, now()),
+            "report": state_report.state_report(conn, row["id"], now()),
         })
     finally:
         conn.close()
@@ -242,19 +343,20 @@ def sources_page(request: Request):
     conn = _conn()
     try:
         adapters = []
-        for adapter in (WatchedFolderAdapter(), SpreadsheetUploadAdapter(),
-                        PasteAdapter(), EmailDropAdapter()):
+        for adapter in (SftpDropAdapter(), SpreadsheetUploadAdapter(), EmailDropAdapter()):
             declared = adapter.declares()
             adapters.append({
                 "name": adapter.name,
+                "channel": adapter.channel,
                 "provenance": adapter.provenance,
                 "declares": sorted(declared),
                 "cannot": sorted(DECLARABLE - declared),
                 "doc": (adapter.__class__.__doc__ or "").strip().split("\n")[0],
             })
+        run = _current(conn)
         return templates.TemplateResponse("sources.html", {
             "request": request,
-            "header": pull_sheet.header(conn, now()),
+            "header": pull_sheet.header(conn, run, now()) if run else None,
             "sources": SOURCES,
             "snapshots": corpus.corpus_summary(conn, now()),
             "adapters": adapters,
@@ -289,10 +391,10 @@ def match_detail(request: Request, match_id: int):
     conn = _conn()
     try:
         row = conn.execute(
-            """SELECT m.*, i.site, i.storage_location, i.raw_description, i.quantity,
+            """SELECT m.*, i.storage_location, i.raw_description, i.quantity,
                       i.unit, i.pack_size, i.gtin, i.lot_code, i.unit_cost,
                       i.brand, i.manufacturer, i.manufacturer_item_code,
-                      i.vendor_name, i.vendor_item_code,
+                      i.vendor_name, i.vendor_item_code, i.identity_key,
                       i.unpopulated_fields, i.merged_from,
                       r.source, r.source_record_id, r.product_description, r.code_info,
                       r.classification, r.class_rank, r.recalling_firm, r.reason_for_recall,
@@ -305,16 +407,19 @@ def match_detail(request: Request, match_id: int):
                 WHERE m.id = ?""", (match_id,)).fetchone()
         if row is None:
             raise HTTPException(404, f"no match {match_id}")
+        subject = db.subject_key(row["identity_key"], row["source"], row["source_record_id"])
+        # Every decision about this FOOD and this RECALL, including ones taken
+        # against an earlier run's match row for the same pair. A judgement does
+        # not expire because a new export arrived overnight.
         decisions = [dict(d) for d in conn.execute(
-            """SELECT * FROM decisions
-                WHERE target_type = 'match' AND target_id = ? ORDER BY id""",
-            (str(match_id),))]
+            "SELECT * FROM decisions WHERE subject_key = ? ORDER BY id", (subject,))]
+        run = db.get_run(conn, row["run_id"])
         return templates.TemplateResponse("match.html", {
             "request": request,
             "m": row,
             "decisions": decisions,
             "unpopulated": json.loads(row["unpopulated_fields"] or "[]"),
-            "header": pull_sheet.header(conn, now()),
+            "header": pull_sheet.header(conn, run, now()),
         })
     finally:
         conn.close()
@@ -326,21 +431,23 @@ def match_detail(request: Request, match_id: int):
 
 @app.get("/ingest", response_class=HTMLResponse)
 def ingest_page(request: Request, pending: str | None = None):
-    """Upload, or paste. Two doors to the same matcher."""
+    """Upload a spreadsheet by hand, for the morning the scheduled drop fails."""
     conn = _conn()
     try:
+        run = _current(conn)
         context = {
             "request": request,
-            "header": pull_sheet.header(conn, now()),
+            "header": pull_sheet.header(conn, run, now()) if run else None,
             "rejections": pull_sheet.rejections(conn),
             "pending": None,
         }
         if pending:
-            path = UPLOADS / pending
+            path = UPLOADS / Path(pending).name
             if path.exists():
                 adapter = SpreadsheetUploadAdapter()
-                headers, mapping, ambiguous = adapter.inspect(path)
-                context["pending"] = {"filename": pending, "headers": headers,
+                headers, _detected, _amb = adapter.inspect(path)
+                mapping, ambiguous = _resolve(conn, adapter, path)
+                context["pending"] = {"filename": path.name, "headers": headers,
                                       "mapping": mapping, "ambiguous": ambiguous,
                                       "fields": sorted(ALIASES)}
         return templates.TemplateResponse("ingest.html", context)
@@ -348,21 +455,41 @@ def ingest_page(request: Request, pending: str | None = None):
         conn.close()
 
 
-@app.post("/ingest/paste")
-def ingest_paste(text: str = Form(""), site: str = Form("Pasted inventory")):
-    """The floor. Never rejects anything."""
-    conn = _conn()
-    try:
-        adapter = PasteAdapter()
-        records = list(adapter.read(text, site.strip() or "Pasted inventory"))
-        if not records:
-            return RedirectResponse("/ingest?empty=1", status_code=303)
-        source_id = db.ensure_source(conn, "Pasted inventory", "paste", "live")
-        db.persist_records(conn, source_id, "pasted", "paste", records)
-        run_matcher(conn)
-    finally:
-        conn.close()
-    return RedirectResponse("/sheet", status_code=303)
+def _remembered_answers(conn) -> dict[str, str]:
+    """Answers this location has already given about ambiguous headers.
+
+    Only the ANSWERS are reused, never a whole mapping. Detection itself runs on
+    every file: replaying an old mapping over a differently shaped export would
+    silently drop the columns whose headers changed, and produce a sheet that
+    looks complete because nothing was rejected.
+
+    Answers are remembered across channels, not per channel. "Does `Code` mean
+    the lot or the barcode" is a fact about this kitchen's inventory system; it
+    does not change because today's export arrived by email instead of SFTP.
+    """
+    answers: dict[str, str] = {}
+    for row in conn.execute(
+        """SELECT column_map FROM runs
+            WHERE status = 'ok' AND column_map IS NOT NULL ORDER BY id"""):
+        answers.update(json.loads(row["column_map"]))
+    return answers
+
+
+def _resolve(conn, adapter, path):
+    """Detect this file's columns, then fill any ambiguity from memory.
+
+    Returns ``(mapping, ambiguous)``; a non-empty ``ambiguous`` means the
+    operator has to be asked, because nothing in this system guesses at a column
+    whose meaning would change what a line says.
+    """
+    _headers, mapping, ambiguous = adapter.inspect(path)
+    remembered = _remembered_answers(conn)
+    for header in list(ambiguous):
+        answer = remembered.get(header)
+        if answer in ambiguous[header]:
+            mapping[header] = answer
+            del ambiguous[header]
+    return mapping, ambiguous
 
 
 @app.post("/ingest/upload")
@@ -377,39 +504,29 @@ async def ingest_upload(file: UploadFile):
     adapter = SpreadsheetUploadAdapter()
     conn = _conn()
     try:
-        source_name = f"Upload: {name}"
-        remembered = conn.execute(
-            "SELECT column_map FROM inventory_sources WHERE name = ?", (source_name,)
-        ).fetchone()
-        if remembered and remembered["column_map"]:
-            # Asked once, answered once. This source never prompts again.
-            mapping = json.loads(remembered["column_map"])
-            result = db.ingest_file(conn, target, adapter, source_name, mapping)
-        else:
-            try:
-                _headers, mapping, ambiguous = adapter.inspect(target)
-            except Exception as err:            # noqa: BLE001
-                source_id = db.ensure_source(conn, source_name, adapter.name, adapter.provenance)
-                db.record_rejection(conn, source_id, name, adapter.name, str(err))
-                return RedirectResponse("/ingest", status_code=303)
-            if ambiguous:
-                return RedirectResponse(f"/ingest?pending={name}", status_code=303)
-            result = db.ingest_file(conn, target, adapter, source_name, mapping)
-
-        if result["status"] == "ok":
-            run_matcher(conn)
-            return RedirectResponse("/sheet", status_code=303)
-        return RedirectResponse("/ingest", status_code=303)
+        try:
+            mapping, ambiguous = _resolve(conn, adapter, target)
+        except Exception as err:            # noqa: BLE001
+            # A file we cannot even read the headers of is still a delivery that
+            # happened. It becomes a rejected run so the morning it arrives
+            # broken is visible, rather than a morning with no run at all.
+            run_id = db.open_run(conn, adapter.channel)
+            db.reject_run(conn, run_id, str(err))
+            return RedirectResponse("/ingest", status_code=303)
+        if ambiguous:
+            return RedirectResponse(f"/ingest?pending={name}", status_code=303)
+        result = db.ingest_file(conn, target, adapter, mapping)
+        return RedirectResponse("/" if result["status"] == "ok" else "/ingest",
+                                status_code=303)
     finally:
         conn.close()
 
 
 @app.post("/ingest/mapping")
 def ingest_mapping(request: Request, filename: str = Form(...)):
-    """Store the operator's answer for this source and ingest with it.
+    """Store the operator's answer and ingest with it.
 
-    The answer is remembered on inventory_sources.column_map, so the same export
-    layout never asks twice.
+    The answer rides on the run, so the next delivery reuses it without asking.
     """
     form = _sync_form(request)
     path = UPLOADS / Path(filename).name
@@ -417,88 +534,52 @@ def ingest_mapping(request: Request, filename: str = Form(...)):
         raise HTTPException(404, f"{filename} is no longer waiting to be mapped")
 
     adapter = SpreadsheetUploadAdapter()
-    _headers, mapping, ambiguous = adapter.inspect(path)
-    for header in ambiguous:
-        chosen = form.get(f"map__{header}")
-        if chosen and chosen != "ignore":
-            mapping[header] = chosen
-
     conn = _conn()
     try:
-        source_name = f"Upload: {path.name}"
-        result = db.ingest_file(conn, path, adapter, source_name, mapping)
-        if result["status"] == "ok":
-            run_matcher(conn)
-            return RedirectResponse("/sheet", status_code=303)
-        return RedirectResponse("/ingest", status_code=303)
+        mapping, ambiguous = _resolve(conn, adapter, path)
+        for header in ambiguous:
+            chosen = form.get(f"map__{header}")
+            if chosen and chosen != "ignore":
+                mapping[header] = chosen
+        result = db.ingest_file(conn, path, adapter, mapping)
+        return RedirectResponse("/" if result["status"] == "ok" else "/ingest",
+                                status_code=303)
     finally:
         conn.close()
 
 
-@app.post("/site/{site}/confirm")
-def confirm_site(site: str, actor: str = Form("")):
-    """FR-054. A named person says this building has physically been pulled.
+@app.post("/match/{match_id}/confirm-pulled")
+def confirm_pulled(match_id: int, actor: str = Form("")):
+    """FR-054. A named person says this line has physically been pulled.
 
-    Writes a `confirm_site_pulled` decision and nothing else. It touches no
-    match and no inventory row, so it changes exactly one site's word and
-    cannot make a line disappear from any sheet -- including this one's.
+    Writes a `confirm_pulled` decision and nothing else. It touches no match and
+    no inventory row, so it records that somebody walked to the cooler and
+    cannot make a line disappear from any sheet -- including this one's. That is
+    exactly why it is safe as a one-click action, and why the word on the button
+    is not "clear".
     """
     if not actor or not actor.strip():
-        raise HTTPException(400, "an actor name is required to confirm a site")
+        raise HTTPException(400, "an actor name is required to confirm a line")
     conn = _conn()
     try:
-        known = set(rollup_status.roster()) | set(pull_sheet.sites(conn))
-        resolved = next(
-            (k for k in known
-             if k.lower().replace(" ", "-") == site.lower() or k.lower() == site.lower()),
-            None)
-        if resolved is None:
-            raise HTTPException(404, f"no site named {site!r}")
-        conn.execute(
-            """INSERT INTO decisions (kind, target_type, target_id, actor, note, created_at)
-               VALUES ('confirm_site_pulled', 'site', ?, ?, NULL, ?)""",
-            (resolved, actor.strip(), now().isoformat(timespec="seconds")))
-        conn.commit()
-    finally:
-        conn.close()
-    return RedirectResponse("/", status_code=303)
-
-
-@app.post("/alerts/{match_id}/ack")
-def acknowledge_alert(match_id: int, actor: str = Form("")):
-    """FR-057. A named person says they have seen this alert.
-
-    Acknowledging says somebody LOOKED. It does not clear the line, does not
-    touch the match row, and does not change the pull sheet -- which is exactly
-    why it is safe to make a one-click action. Clearing is a different route
-    with a different word on the button.
-    """
-    if not actor or not actor.strip():
-        raise HTTPException(400, "an actor name is required to acknowledge an alert")
-    conn = _conn()
-    try:
-        if conn.execute("SELECT 1 FROM matches WHERE id = ?", (match_id,)).fetchone() is None:
+        row = conn.execute(
+            """SELECT i.identity_key, r.source, r.source_record_id
+                 FROM matches m
+                 JOIN inventory_records i ON i.id = m.inventory_record_id
+                 JOIN recall_records   r ON r.id = m.recall_record_id
+                WHERE m.id = ?""", (match_id,)).fetchone()
+        if row is None:
             raise HTTPException(404, f"no match {match_id}")
         conn.execute(
-            """INSERT INTO decisions (kind, target_type, target_id, actor, note, created_at)
-               VALUES ('acknowledge_alert', 'match', ?, ?, NULL, ?)""",
-            (str(match_id), actor.strip(), now().isoformat(timespec="seconds")))
+            """INSERT INTO decisions (kind, match_id, subject_key, actor, note, created_at)
+               VALUES ('confirm_pulled', ?, ?, ?, NULL, ?)""",
+            (match_id,
+             db.subject_key(row["identity_key"], row["source"], row["source_record_id"]),
+             actor.strip(), now().isoformat(timespec="seconds")))
         conn.commit()
     finally:
         conn.close()
-    return RedirectResponse("/", status_code=303)
-
-
-@app.post("/recalls/monitor")
-def run_monitor():
-    """Run one monitor pass now. The scheduled path and the button are the same
-    function, so the thing demonstrated is the thing that runs unattended."""
-    conn = _conn()
-    try:
-        monitor.run(conn, now())
-    finally:
-        conn.close()
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(f"/match/{match_id}", status_code=303)
 
 
 @app.post("/match/{match_id}/clear")
@@ -518,6 +599,9 @@ def clear_match(match_id: int, actor: str = Form(""), note: str = Form("")):
                   and a timestamp, and can never be an absence of data. Nothing
                   automatic can take this route: it needs a non-empty actor,
                   which no scheduled process supplies.
+    Scope:        the decision is recorded against the FOOD and the RECALL, not
+                  against tonight's match row, so it survives the next morning's
+                  run instead of quietly expiring at midnight.
     Covered by:   tests/integration/test_clearing.py
                   tests/unit/test_clearing_audit.py
     ==========================================================================
@@ -527,12 +611,20 @@ def clear_match(match_id: int, actor: str = Form(""), note: str = Form("")):
 
     conn = _conn()
     try:
-        if conn.execute("SELECT 1 FROM matches WHERE id = ?", (match_id,)).fetchone() is None:
+        row = conn.execute(
+            """SELECT i.identity_key, r.source, r.source_record_id
+                 FROM matches m
+                 JOIN inventory_records i ON i.id = m.inventory_record_id
+                 JOIN recall_records   r ON r.id = m.recall_record_id
+                WHERE m.id = ?""", (match_id,)).fetchone()
+        if row is None:
             raise HTTPException(404, f"no match {match_id}")
         conn.execute(
-            """INSERT INTO decisions (kind, target_type, target_id, actor, note, created_at)
-               VALUES ('clear_match', 'match', ?, ?, ?, ?)""",
-            (str(match_id), actor.strip(), note.strip() or None,
+            """INSERT INTO decisions (kind, match_id, subject_key, actor, note, created_at)
+               VALUES ('clear_match', ?, ?, ?, ?, ?)""",
+            (match_id,
+             db.subject_key(row["identity_key"], row["source"], row["source_record_id"]),
+             actor.strip(), note.strip() or None,
              now().isoformat(timespec="seconds")),
         )
         conn.commit()

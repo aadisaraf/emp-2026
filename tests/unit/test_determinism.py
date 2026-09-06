@@ -12,25 +12,24 @@ from pathlib import Path
 import pytest
 
 from pullsheet import db
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
-from pullsheet.matching.run import ordered_matches, run_matcher
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
+from pullsheet.matching.run import ordered_matches
 from pullsheet.recalls.corpus import load_snapshots
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 FIXTURE = ROOT / "data" / "fixtures" / "inventory_lincoln.csv"
 
-FIELDS = ("site", "raw_description", "source_record_id", "tier", "status",
-          "evidence_kind", "trigger_inventory_text", "trigger_recall_text",
-          "score", "lot_note")
+FIELDS = ("storage_location", "raw_description", "source_record_id", "tier",
+          "status", "evidence_kind", "trigger_inventory_text",
+          "trigger_recall_text", "score", "lot_note")
 
 
 def _build(path: Path):
     db.reset(path)
     conn = db.connect(path)
     load_snapshots(conn, received_at="2026-09-05T00:00:00+00:00")
-    db.ingest_file(conn, FIXTURE, WatchedFolderAdapter(), "Lincoln USD watched folder")
-    run_matcher(conn)
-    rows = [tuple(r[f] for f in FIELDS) for r in ordered_matches(conn)]
+    result = db.ingest_file(conn, FIXTURE, SftpDropAdapter())
+    rows = [tuple(r[f] for f in FIELDS) for r in ordered_matches(conn, result["run_id"])]
     conn.close()
     return rows
 

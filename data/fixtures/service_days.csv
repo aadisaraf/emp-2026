@@ -1,16 +1,6 @@
-date,site,recipe_id,planned_meals
-2026-09-08,Lincoln Elementary,R01,410
-2026-09-08,Roosevelt Middle School,R01,530
-2026-09-08,Central High School,R07,720
-2026-09-09,Lincoln Elementary,R03,410
-2026-09-09,Roosevelt Middle School,R04,530
-2026-09-09,Central High School,R02,720
-2026-09-10,Lincoln Elementary,R05,410
-2026-09-10,Roosevelt Middle School,R08,530
-2026-09-10,Central High School,R01,720
-2026-09-11,Lincoln Elementary,R09,410
-2026-09-11,Roosevelt Middle School,R05,530
-2026-09-11,Central High School,R04,720
-2026-09-12,Lincoln Elementary,R10,410
-2026-09-12,Roosevelt Middle School,R06,530
-2026-09-12,Central High School,R03,720
+date,recipe_id,planned_meals
+2026-09-08,R07,410
+2026-09-09,R02,410
+2026-09-10,R01,410
+2026-09-11,R05,410
+2026-09-12,R03,410

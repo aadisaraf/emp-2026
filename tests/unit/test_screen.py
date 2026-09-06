@@ -53,10 +53,10 @@ def _inventory() -> list[SimpleNamespace]:
             gtin = "".join(c for c in r["Case UPC"] if c.isdigit()) or None
             rows.append(SimpleNamespace(
                 source_row=source_row,
-                site=r["Site"],
+                storage_location=r["Storage Location"],
                 raw_description=r["Item Description"],
                 normalized_description=normalize(r["Item Description"]),
-                gtin=gtin, upc=gtin, lot_code=r["Lot #"] or None,
+                gtin=gtin, lot_code=r["Lot #"] or None,
                 brand=r["Brand"] or None,
                 manufacturer=r["Manufacturer"] or None,
                 manufacturer_item_code=r["Mfr Item #"] or None,
@@ -113,7 +113,7 @@ def test_item_key_agrees_with_tiers():
 
 def test_a_row_that_normalizes_to_nothing_is_still_reachable_by_code():
     row = SimpleNamespace(normalized_description="", gtin="10073803048293",
-                          upc=None, lot_code=None)
+                          lot_code=None)
     assert generate_candidates(row, INDEXES), "a barcode-only row was screened out"
 
 
@@ -127,10 +127,9 @@ def test_every_seeded_pair_survives_screening(seed):
     downstream can recover a pair that was never generated."""
     inv = INVENTORY[seed["source_row"] - 1]
     assert inv.raw_description == seed["item_description"]
-    assert inv.site == seed["site"]
     candidates = generate_candidates(inv, INDEXES)
     assert seed["recall_source_record_id"] in candidates, (
-        f"{inv.raw_description!r} at {inv.site} no longer reaches "
+        f"{inv.raw_description!r} in {inv.storage_location} no longer reaches "
         f"{seed['recall_source_record_id']} -- the screening floor has risen"
     )
 
@@ -139,7 +138,7 @@ def test_an_unrelated_pair_is_not_generated():
     """A row sharing no significant token, no lot, and no barcode fragment with
     a recall is never evaluated. That is the floor, stated as a test."""
     row = SimpleNamespace(normalized_description=normalize("zzqx widget assembly"),
-                          gtin=None, upc=None, lot_code=None)
+                          gtin=None, lot_code=None)
     assert generate_candidates(row, INDEXES) == set()
 
 
@@ -173,7 +172,7 @@ def test_a_single_common_word_is_not_enough_on_its_own():
     assert not INDEXES.is_distinctive(token)
 
     only_common = SimpleNamespace(normalized_description=token,
-                                  gtin=None, upc=None, lot_code=None)
+                                  gtin=None, lot_code=None)
     assert generate_candidates(only_common, INDEXES) == set()
 
 
@@ -185,11 +184,11 @@ def test_two_common_words_together_are_enough():
                   if not INDEXES.is_distinctive(t)]
         if len(common) >= 2:
             row = SimpleNamespace(normalized_description=" ".join(common[:2]),
-                                  gtin=None, upc=None, lot_code=None)
+                                  gtin=None, lot_code=None)
             assert rec.id in generate_candidates(row, INDEXES)
             for word in common[:2]:
                 alone = SimpleNamespace(normalized_description=word,
-                                        gtin=None, upc=None, lot_code=None)
+                                        gtin=None, lot_code=None)
                 assert rec.id not in generate_candidates(alone, INDEXES)
             return
     pytest.skip("no record carries two common tokens")
@@ -198,7 +197,7 @@ def test_two_common_words_together_are_enough():
 def test_one_distinctive_word_is_enough():
     """'mozzarella' appears in 6 of 1012 records. One is plenty."""
     row = SimpleNamespace(normalized_description="mozzarella",
-                          gtin=None, upc=None, lot_code=None)
+                          gtin=None, lot_code=None)
     assert INDEXES.is_distinctive("mozzarella")
     assert generate_candidates(row, INDEXES)
 
@@ -236,7 +235,7 @@ def _any_high_liner_id():
 def test_a_row_with_no_barcode_and_no_lot_is_reachable_by_its_supplier():
     """The ordinary case, not the exception: most district rows carry neither a
     barcode nor a lot, and the supplier is the only identifier they have."""
-    row = SimpleNamespace(normalized_description="", gtin=None, upc=None, lot_code=None,
+    row = SimpleNamespace(normalized_description="", gtin=None, lot_code=None,
                           brand="High Liner", manufacturer=None, manufacturer_item_code=None)
     assert _any_high_liner_id() in generate_candidates(row, INDEXES)
 
@@ -244,11 +243,11 @@ def test_a_row_with_no_barcode_and_no_lot_is_reachable_by_its_supplier():
 def test_a_catalog_number_only_reaches_its_own_manufacturer():
     """FR-070. Item 53374 is a pollock wedge at High Liner and is nothing at all
     at any other company, so it is indexed under the firm rather than alone."""
-    ours = SimpleNamespace(normalized_description="", gtin=None, upc=None, lot_code=None,
+    ours = SimpleNamespace(normalized_description="", gtin=None, lot_code=None,
                            brand="High Liner", manufacturer=None, manufacturer_item_code="53374")
     assert _firm_record_id() in generate_candidates(ours, INDEXES)
 
-    theirs = SimpleNamespace(normalized_description="", gtin=None, upc=None, lot_code=None,
+    theirs = SimpleNamespace(normalized_description="", gtin=None, lot_code=None,
                              brand="Simplot", manufacturer=None, manufacturer_item_code="53374")
     assert _firm_record_id() not in generate_candidates(theirs, INDEXES)
 
@@ -256,6 +255,6 @@ def test_a_catalog_number_only_reaches_its_own_manufacturer():
 def test_a_row_with_no_supplier_at_all_is_unaffected():
     """The paste adapter supplies a description and nothing else. Adding supplier
     channels must not have made that row harder to match."""
-    bare = SimpleNamespace(normalized_description="mozzarella", gtin=None, upc=None,
+    bare = SimpleNamespace(normalized_description="mozzarella", gtin=None,
                            lot_code=None)
     assert generate_candidates(bare, INDEXES)

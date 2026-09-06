@@ -5,10 +5,10 @@
 
   1. At least one recipe is reachable from `expected_matches.json` -- i.e. the
      menu cascade has something real to cascade from.
-  2. At least one broken recipe has an *unsatisfiable* component set at its own
-     site, so FR-041's "no substitute exists" is demonstrable rather than
-     theoretical. Substitution is site-scoped on purpose: you cannot serve from
-     another building's cooler.
+  2. At least one broken recipe has an *unsatisfiable* component set, so
+     FR-041's "no substitute exists" is demonstrable rather than theoretical.
+     Substitution is scoped to what this kitchen actually has on hand: you
+     cannot serve from a cooler you do not have.
 """
 
 from __future__ import annotations
@@ -41,41 +41,34 @@ def check_menu() -> int:
         components[r["recipe_id"]].add(r["component"])
 
     seeds = json.loads((FIX / "expected_matches.json").read_text())["matches"]
-    recalled = {(s["site"], s["item_description"]) for s in seeds}
-
-    stock = defaultdict(set)
-    for row in inventory:
-        stock[row["Site"]].add(row["Item Description"])
+    recalled = {s["item_description"] for s in seeds}
+    on_hand = {row["Item Description"] for row in inventory}
 
     # 1. recipes reachable from a seeded recall
     reachable = []
     for rid, items in ingredients.items():
-        hits = sorted({f"{site} / {item}" for (site, item) in recalled if item in items})
+        hits = sorted(recalled & items)
         if hits:
             reachable.append((rid, recipes[rid], hits))
 
-    # 2. broken recipes with no site-local substitute
+    # 2. broken recipes with no substitute this kitchen can actually cook
+    clean = {rid for rid, items in ingredients.items()
+             if items <= on_hand and not (items & recalled)}
     unsatisfiable = []
-    for site, on_hand in stock.items():
-        clean_here = {
-            rid for rid, items in ingredients.items()
-            if items <= on_hand and not any((site, i) in recalled for i in items)
-        }
-        for rid, items in ingredients.items():
-            if not (items <= on_hand):
-                continue                      # not served at this site anyway
-            if not any((site, i) in recalled for i in items):
-                continue                      # not broken here
-            covered = any(components[rid] <= components[c] for c in clean_here)
-            if not covered:
-                unsatisfiable.append((site, rid, recipes[rid], sorted(components[rid])))
+    for rid, items in ingredients.items():
+        if not (items <= on_hand):
+            continue                          # not cookable here anyway
+        if not (items & recalled):
+            continue                          # not broken
+        if not any(components[rid] <= components[c] for c in clean):
+            unsatisfiable.append((rid, recipes[rid], sorted(components[rid])))
 
     print(f"recipes reachable from expected_matches.json: {len(reachable)}")
     for rid, name, hits in sorted(reachable):
         print(f"  {rid} {name}  <- {', '.join(hits)}")
-    print(f"\nbroken recipes with NO viable site-local substitute: {len(unsatisfiable)}")
-    for site, rid, name, comps in sorted(unsatisfiable):
-        print(f"  {site}: {rid} {name}  requires {{{', '.join(comps)}}}")
+    print(f"\nbroken recipes with NO viable substitute: {len(unsatisfiable)}")
+    for rid, name, comps in sorted(unsatisfiable):
+        print(f"  {rid} {name}  requires {{{', '.join(comps)}}}")
 
     ok = len(reachable) >= 1 and len(unsatisfiable) >= 1
     print("\nOK" if ok else "\nFAIL: need >=1 reachable recipe and >=1 unsatisfiable recipe")

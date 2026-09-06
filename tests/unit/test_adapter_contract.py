@@ -16,10 +16,14 @@ from pullsheet.adapters.base import (
 )
 
 CONTRACT_FIELDS = (
-    "site", "storage_location", "raw_description", "quantity", "unit", "pack_size",
-    "gtin", "upc", "lot_code",
+    # The cooler, not the building. One deployment is one location, so there is
+    # no site field: a school-name column in an export is recognised and then
+    # deliberately dropped, because letting it reach the sheet would send
+    # someone to a building instead of a freezer.
+    "storage_location", "raw_description", "quantity", "unit", "pack_size",
+    "gtin", "lot_code",
     # Supplier identity (FR-069). Ordered next to the other identifiers because
-    # that is what they are: for most district rows they are the ONLY identifiers,
+    # that is what they are: for most kitchen rows they are the ONLY identifiers,
     # since barcode and lot coverage in item masters is partial.
     "brand", "manufacturer", "manufacturer_item_code", "vendor_name", "vendor_item_code",
     "unit_cost", "received_date", "source_row", "unpopulated",
@@ -30,8 +34,16 @@ def test_field_names_match_the_contract_exactly():
     assert NormalizedRecord._fields == CONTRACT_FIELDS
 
 
-def test_eighteen_fields():
-    assert len(NormalizedRecord._fields) == 18
+def test_sixteen_fields():
+    assert len(NormalizedRecord._fields) == 16
+
+
+def test_there_is_no_site_field():
+    """The pivot, enforced. A `site` field would be the first step back toward a
+    roster of buildings, and every downstream consumer would start carrying one
+    again."""
+    assert "site" not in NormalizedRecord._fields
+    assert "site" not in DECLARABLE
 
 
 def test_normalized_description_is_not_an_adapter_output():

@@ -41,9 +41,10 @@ def _inventory():
         for r in csv.DictReader(f):
             gtin = "".join(c for c in r["Case UPC"] if c.isdigit()) or None
             rows.append(SimpleNamespace(
-                site=r["Site"], raw_description=r["Item Description"],
+                storage_location=r["Storage Location"],
+                raw_description=r["Item Description"],
                 normalized_description=normalize(r["Item Description"]),
-                gtin=gtin, upc=gtin, lot_code=r["Lot #"] or None,
+                gtin=gtin, lot_code=r["Lot #"] or None,
                 brand=r["Brand"] or None,
                 manufacturer=r["Manufacturer"] or None,
                 manufacturer_item_code=r["Mfr Item #"] or None,
@@ -162,7 +163,7 @@ def test_firm_agreement_alone_produces_no_firm_evidence():
     checked = 0
     for neg in negatives:
         inv = next(i for i in INVENTORY
-                   if i.site == neg["site"] and i.raw_description == neg["item_description"])
+                   if i.raw_description == neg["item_description"])
         for rec in RECALLS.values():
             ev = build_evidence(inv, rec)
             if ev is None:
@@ -182,7 +183,7 @@ def test_terminated_status_is_carried_not_dropped():
 
 def test_build_evidence_never_raises_on_degenerate_input():
     junk_inv = SimpleNamespace(raw_description="", normalized_description="",
-                               gtin=None, upc=None, lot_code=None)
+                               gtin=None, lot_code=None)
     junk_rec = SimpleNamespace(id="x", product_description="", code_info="",
                                parsed_codes={}, status="active")
     assert build_evidence(junk_inv, junk_rec) is None

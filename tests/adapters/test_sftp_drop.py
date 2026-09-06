@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from pullsheet.adapters.base import AdapterRejection, NormalizedRecord
-from pullsheet.adapters.watched_folder import WatchedFolderAdapter
+from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 FIXTURE = ROOT / "data" / "fixtures" / "inventory_lincoln.csv"
@@ -18,7 +18,7 @@ ADAPTER_FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 @pytest.fixture
 def adapter():
-    return WatchedFolderAdapter()
+    return SftpDropAdapter()
 
 
 def _source_rows():
@@ -87,11 +87,25 @@ def test_an_unusable_source_is_rejected_loudly(adapter, name, expected_in_messag
 
 
 def test_a_missing_required_column_names_the_column(adapter, tmp_path):
-    path = tmp_path / "no_site.csv"
-    path.write_text("Item Description,Qty On Hand\nCHICKEN STRIPS BRD FC FROZEN,14\n")
+    """Exactly one column is required: the one naming the food. Without it there
+    is nothing to match, and the run is rejected naming what was absent."""
+    path = tmp_path / "no_description.csv"
+    path.write_text("Storage Location,Qty On Hand\nFreezer A,14\n")
     with pytest.raises(AdapterRejection) as err:
         list(adapter.read(path))
-    assert "site" in str(err.value)
+    assert "raw_description" in str(err.value)
+    assert "Storage Location" in str(err.value), "the headers actually seen are not shown"
+
+
+def test_a_building_column_is_ignored_rather_than_read_as_storage(adapter, tmp_path):
+    """One deployment is one location, so a school-name column carries nothing.
+    Letting it drift into storage_location would print a building on the sheet
+    and send someone to the wrong place looking for a freezer."""
+    path = tmp_path / "with_site.csv"
+    path.write_text("Site,Storage Location,Item Description,Qty On Hand\n"
+                    "Lincoln Elementary,Freezer A,CHICKEN STRIPS BRD FC FROZEN,14\n")
+    record = list(adapter.read(path))[0]
+    assert record.storage_location == "Freezer A"
 
 
 @pytest.mark.parametrize("name", ["headers_primeroedge.csv", "headers_linq_titan.csv",
@@ -100,7 +114,7 @@ def test_every_vendor_layout_yields_the_same_internal_records(adapter, name):
     """SC-012: adding a source changes no behaviour downstream."""
     reference = list(adapter.read(ADAPTER_FIXTURES / "headers_primeroedge.csv"))
     got = list(adapter.read(ADAPTER_FIXTURES / name))
-    assert [r.site for r in got] == [r.site for r in reference]
+    assert [r.storage_location for r in got] == [r.storage_location for r in reference]
     assert [r.raw_description for r in got] == [r.raw_description for r in reference]
     assert [r.lot_code for r in got] == [r.lot_code for r in reference]
     assert [r.gtin for r in got] == [r.gtin for r in reference]

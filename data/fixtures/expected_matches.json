@@ -8,7 +8,6 @@
   "matches": [
     {
       "source_row": 1,
-      "site": "Lincoln Elementary",
       "item_description": "CHICKEN STRIPS BRD FC FROZEN 2/5 LB",
       "recall_source_record_id": "FSIS-RC-018-2026",
       "expected_evidence_kind": "lot",
@@ -17,7 +16,6 @@
     },
     {
       "source_row": 2,
-      "site": "Lincoln Elementary",
       "item_description": "CHICKEN NUGGETS WG BRD FC 30 LB",
       "recall_source_record_id": "FSIS-RC-021-2026",
       "expected_evidence_kind": "gtin",
@@ -26,7 +24,6 @@
     },
     {
       "source_row": 3,
-      "site": "Lincoln Elementary",
       "item_description": "SPINACH CHOPPED ORGANIC IQF 10 OZ",
       "recall_source_record_id": "H-0109-2026",
       "expected_evidence_kind": "upc",
@@ -35,7 +32,6 @@
     },
     {
       "source_row": 4,
-      "site": "Lincoln Elementary",
       "item_description": "PEAS & CARROTS BLEND IQF 2 LB",
       "recall_source_record_id": "H-0286-2026",
       "expected_evidence_kind": "lot",
@@ -44,7 +40,6 @@
     },
     {
       "source_row": 5,
-      "site": "Lincoln Elementary",
       "item_description": "MOZZARELLA CHEESE SHREDDED LMPS 5 LB",
       "recall_source_record_id": "F-1757-2012",
       "expected_evidence_kind": "name",
@@ -53,7 +48,6 @@
     },
     {
       "source_row": 6,
-      "site": "Lincoln Elementary",
       "item_description": "BEEF CRUMBLES COOKED TACO SEASONED 5 LB",
       "recall_source_record_id": "FSIS-RC-009-2026",
       "expected_evidence_kind": "firm_and_name",
@@ -62,7 +56,6 @@
     },
     {
       "source_row": 7,
-      "site": "Lincoln Elementary",
       "item_description": "PEAS & CARROTS DICED CN 16 OZ",
       "recall_source_record_id": "F-0438-2021",
       "expected_evidence_kind": "secondary_code",
@@ -71,7 +64,6 @@
     },
     {
       "source_row": 8,
-      "site": "Lincoln Elementary",
       "item_description": "APPLES FRESH 125 CT",
       "recall_source_record_id": "F-0616-2018",
       "expected_evidence_kind": "name",
@@ -80,7 +72,6 @@
     },
     {
       "source_row": 16,
-      "site": "Lincoln Elementary",
       "item_description": "CORN DOGS CHICKEN & PORK 4 OZ 72 CT",
       "recall_source_record_id": "FSIS-RC-003-2026",
       "expected_evidence_kind": "lot",
@@ -89,25 +80,22 @@
     },
     {
       "source_row": 17,
-      "site": "Lincoln Elementary",
       "item_description": "CARROTS BABY PEELED FRESH 5 LB",
       "recall_source_record_id": "F-0359-2025",
       "expected_evidence_kind": "firm_and_name",
       "expected_tier": "PROBABLE",
-      "why": "Brand Grimmway against recalling firm 'Grimmway Enterprises, Inc. dba Grimmway Farms', plus the shared word 'carrots'. A Class I recall with no barcode on the district side."
+      "why": "Brand Grimmway against recalling firm 'Grimmway Enterprises, Inc. dba Grimmway Farms', plus the shared word 'carrots'. A Class I recall with no barcode on the kitchen side."
     },
     {
       "source_row": 18,
-      "site": "Roosevelt Middle School",
       "item_description": "CHICKEN STRIPS BRD FC FROZEN 2/5 LB",
       "recall_source_record_id": "FSIS-RC-014-2026",
       "expected_evidence_kind": "lot",
       "expected_tier": "PROBABLE",
-      "why": "Same product as Lincoln's, different lot: 4831A reaches the fajita-strip recall instead."
+      "why": "The same product in a second lot: 4831A reaches the fajita-strip recall instead of the strip recall the other lot hits. Two lots of one item are two lines."
     },
     {
       "source_row": 19,
-      "site": "Roosevelt Middle School",
       "item_description": "CHICKEN PATTY BRD WG 3.0 OZ 30 LB",
       "recall_source_record_id": "FSIS-RC-027-2026",
       "expected_evidence_kind": "gtin",
@@ -116,7 +104,6 @@
     },
     {
       "source_row": 20,
-      "site": "Roosevelt Middle School",
       "item_description": "TURKEY BREAST SLICED OVEN ROASTED 6 LB",
       "recall_source_record_id": "FSIS-RC-012-2026",
       "expected_evidence_kind": "lot",
@@ -125,7 +112,6 @@
     },
     {
       "source_row": 21,
-      "site": "Roosevelt Middle School",
       "item_description": "FRUIT MIX CUT FRESH 5 LB",
       "recall_source_record_id": "H-0068-2026",
       "expected_evidence_kind": "lot",
@@ -134,7 +120,6 @@
     },
     {
       "source_row": 22,
-      "site": "Roosevelt Middle School",
       "item_description": "SNACK BAR CHOCOLATE CHERRY 12 CT",
       "recall_source_record_id": "H-0543-2026",
       "expected_evidence_kind": "lot",
@@ -143,7 +128,6 @@
     },
     {
       "source_row": 23,
-      "site": "Roosevelt Middle School",
       "item_description": "CHICKEN FAJITA STRIPS SEASONED FC 5 LB",
       "recall_source_record_id": "FSIS-RC-014-2026",
       "expected_evidence_kind": "lot",
@@ -152,16 +136,14 @@
     },
     {
       "source_row": 26,
-      "site": "Roosevelt Middle School",
       "item_description": "POTATO WEDGE CRINKLE CUT SAVORY 6 CUT 5 LB",
       "recall_source_record_id": "F-0132-2025",
       "expected_evidence_kind": "mfr_item",
       "expected_tier": "CONFIRMED",
-      "why": "Simplot item 473015, printed by openFDA as 'Item #473015'. No barcode and no lot on the district row -- the manufacturer's own catalog number is the identity (FR-070)."
+      "why": "Simplot item 473015, printed by openFDA as 'Item #473015'. No barcode and no lot on the kitchen row -- the manufacturer's own catalog number is the identity (FR-070)."
     },
     {
       "source_row": 31,
-      "site": "Roosevelt Middle School",
       "item_description": "BROCCOLI FLORETS IQF 2 LB",
       "recall_source_record_id": "F-0168-2018",
       "expected_evidence_kind": "firm_and_name",
@@ -170,7 +152,6 @@
     },
     {
       "source_row": 33,
-      "site": "Roosevelt Middle School",
       "item_description": "CHEESE AMERICAN SLICED YELLOW 5 LB",
       "recall_source_record_id": "F-0022-2015",
       "expected_evidence_kind": "upc",
@@ -179,7 +160,6 @@
     },
     {
       "source_row": 35,
-      "site": "Central High School",
       "item_description": "GROUND BEEF 80/20 COARSE 10 LB CHUB",
       "recall_source_record_id": "FSIS-RC-019-2026",
       "expected_evidence_kind": "lot",
@@ -188,7 +168,6 @@
     },
     {
       "source_row": 36,
-      "site": "Central High School",
       "item_description": "BEEF TACO FILLING SEASONED 5 LB",
       "recall_source_record_id": "FSIS-RC-007-2026",
       "expected_evidence_kind": "lot",
@@ -197,16 +176,14 @@
     },
     {
       "source_row": 37,
-      "site": "Central High School",
       "item_description": "CHICKEN BROTH NO SALT ADDED 32 OZ",
       "recall_source_record_id": "F-0732-2024",
       "expected_evidence_kind": "upc",
       "expected_tier": "CONFIRMED",
-      "why": "openFDA prints 41220273355 with the leading zero dropped; the district carries 041220273355. Both key the same after left-padding."
+      "why": "openFDA prints 41220273355 with the leading zero dropped; the kitchen carries 041220273355. Both key the same after left-padding."
     },
     {
       "source_row": 38,
-      "site": "Central High School",
       "item_description": "POTATO WEDGE CRINKLE CUT SAVORY 6 CUT 5 LB",
       "recall_source_record_id": "F-0132-2025",
       "expected_evidence_kind": "mfr_item",
@@ -215,7 +192,6 @@
     },
     {
       "source_row": 46,
-      "site": "Central High School",
       "item_description": "POLLOCK WEDGE BRD WG OVEN READY 3.4 OZ",
       "recall_source_record_id": "F-2733-2017",
       "expected_evidence_kind": "mfr_item",
@@ -224,7 +200,6 @@
     },
     {
       "source_row": 39,
-      "site": "Central High School",
       "item_description": "SAUSAGE PATTY PORK FC 1.5 OZ 160 CT",
       "recall_source_record_id": "FSIS-RC-024-2026",
       "expected_evidence_kind": "lot",
@@ -233,7 +208,6 @@
     },
     {
       "source_row": 40,
-      "site": "Central High School",
       "item_description": "CHICKEN DICED COOKED 1/2 IN 5 LB",
       "recall_source_record_id": "FSIS-RC-031-2026",
       "expected_evidence_kind": "lot",
@@ -242,7 +216,6 @@
     },
     {
       "source_row": 41,
-      "site": "Central High School",
       "item_description": "VEGETABLE PIZZA MIX 2.5 LB",
       "recall_source_record_id": "F-0316-2020",
       "expected_evidence_kind": "upc",
@@ -251,7 +224,6 @@
     },
     {
       "source_row": 42,
-      "site": "Central High School",
       "item_description": "PANCAKE MIX BUTTERMILK COMPLETE 5 LB",
       "recall_source_record_id": "F-0889-2016",
       "expected_evidence_kind": "firm_and_name",
@@ -260,7 +232,6 @@
     },
     {
       "source_row": 51,
-      "site": "Central High School",
       "item_description": "OATS ROLLED OLD FASHIONED 25 LB",
       "recall_source_record_id": "F-0718-2019",
       "expected_evidence_kind": "firm_and_name",
@@ -269,7 +240,6 @@
     },
     {
       "source_row": 48,
-      "site": "Central High School",
       "item_description": "TURKEY DELI SLICED SMOKED 1/2 LB",
       "recall_source_record_id": "FSIS-RC-029-2026",
       "expected_evidence_kind": "lot",
@@ -279,13 +249,11 @@
   ],
   "must_not_pull": [
     {
-      "site": "Central High School",
       "item_description": "FLOUR ALL PURPOSE ENRICHED 50 LB",
       "recalling_firm_agrees": "C. H. Guenther & Son, Inc.dba Morrison Milling",
-      "why": "The district buys flour from the recalled firm, but shares no distinctive product word with any of that firm's recalled lines. Supplier agreement on its own must never reach PULL (FR-071)."
+      "why": "The kitchen buys flour from the recalled firm, but shares no distinctive product word with any of that firm's recalled lines. Supplier agreement on its own must never reach PULL (FR-071)."
     },
     {
-      "site": "Roosevelt Middle School",
       "item_description": "CEREAL BOWL ASSORTED 96 CT",
       "recalling_firm_agrees": "Kellogg Company",
       "why": "Kellogg is recalling cookie dough, graham crumbs and animal crackers. A cereal bowl from Kellogg is not any of them, and no rung above POSSIBLE may claim otherwise."

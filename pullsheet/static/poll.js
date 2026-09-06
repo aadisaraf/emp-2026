@@ -20,25 +20,22 @@
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (s) {
         if (!s) { return; }
+        set("[data-poll='word']", s.word);
+        set("[data-poll='detail']", s.detail);
         set("[data-poll='pull']", String(s.pull_count));
         set("[data-poll='held']", String(s.held_count));
-        set("[data-poll='sites']", String(s.sites.length));
-
-        (s.site_status || []).forEach(function (row) {
-          var sel = "[data-site-status='" + CSS.escape(row.site) + "']";
-          set(sel + " .status-word", row.status);
-          set(sel + " .site-reason", row.reason);
-        });
+        set("[data-poll='new']", String(s.new_count));
         (s.deadlines || []).forEach(function (d) {
           set("[data-deadline='" + d.key + "'] .clock", d.text);
         });
 
-        /* A newly ingested export changes the shape of the page, not just its
-           numbers. Reload once rather than trying to rebuild the table here. */
-        var seen = document.body.getAttribute("data-ingest");
-        var current = String(s.last_ingest ? s.last_ingest.id : "");
+        /* A new run changes the shape of the page, not just its numbers --
+           different lines, a different date, a different corpus. Reload once
+           rather than trying to rebuild the tables here. */
+        var seen = document.body.getAttribute("data-run");
+        var current = String(s.run_id === null ? "" : s.run_id);
         if (seen !== null && seen !== current) { window.location.reload(); }
-        document.body.setAttribute("data-ingest", current);
+        document.body.setAttribute("data-run", current);
       })
       .catch(function () { /* a failed poll changes nothing on the page */ });
   }

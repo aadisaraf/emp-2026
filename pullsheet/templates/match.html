@@ -11,7 +11,7 @@
 {%- endmacro %}
 
 <main class="detail">
-  <p class="crumb"><a href="/sheet/{{ m.site | lower | replace(' ', '-') }}">&larr; {{ m.site }} pull sheet</a></p>
+  <p class="crumb"><a href="/sheet/{{ m.run_id }}">&larr; pull sheet, run #{{ m.run_id }}</a></p>
   <h1>{{ ui.tier_badge(m.tier, m.status) }} {{ m.status }} &mdash; {{ m.evidence_kind }} evidence</h1>
   {% if m.lot_note %}<p class="note note-block">{{ m.lot_note }}</p>{% endif %}
 
@@ -20,7 +20,6 @@
       <h2>Inventory, as your system wrote it</h2>
       <p class="verbatim">{{ highlight(m.raw_description, m.trigger_inventory_text) }}</p>
       <dl>
-        <dt>Site</dt><dd>{{ m.site }}</dd>
         <dt>Storage</dt><dd>{{ m.storage_location or 'not recorded' }}</dd>
         <dt>Quantity</dt><dd>{% if m.quantity is not none %}{{ m.quantity }} {{ m.unit or '' }}{% else %}not recorded{% endif %}</dd>
         <dt>Pack size</dt><dd>{{ m.pack_size or 'not recorded' }}</dd>
@@ -69,21 +68,47 @@
   </div>
 
   <section class="clearing">
-    <h2>Clearing this line</h2>
+    <h2>What has been decided about this</h2>
+    {# Decisions are recorded against the FOOD and the RECALL, not against
+       tonight's match row, so a judgement taken last Tuesday is still here
+       after four more nightly runs have written four more match rows. #}
     {% if decisions %}
       <ul class="decisions">
       {% for d in decisions %}
-        <li>Cleared by <strong>{{ d.actor }}</strong> at {{ d.created_at }}{% if d.note %} &mdash; {{ d.note }}{% endif %}</li>
+        <li>
+          {% if d.kind == 'clear_match' %}Cleared{% else %}Confirmed pulled{% endif %}
+          by <strong>{{ d.actor }}</strong> at {{ d.created_at }}
+          {%- if d.note %} &mdash; {{ d.note }}{% endif %}
+          {%- if d.match_id != m.id %} <span class="fine">(recorded on run
+            #{{ d.match_id }}'s line for the same item and recall)</span>{% endif %}
+        </li>
       {% endfor %}
       </ul>
-      <p>The line stays on the pull sheet, marked as cleared. Nothing is deleted.</p>
+      <p>The line stays on the pull sheet, marked. Nothing is deleted.</p>
+    {% else %}
+      <p class="fine">Nothing yet. This line is on the sheet.</p>
     {% endif %}
-    <form method="post" action="/match/{{ m.id }}/clear">
-      <label>Your name or initials <input name="actor" required placeholder="e.g. AS"></label>
-      <label>Why <input name="note" placeholder="e.g. checked the freezer, none on hand"></label>
-      <button type="submit">Clear this line</button>
-    </form>
+
+    <div class="two-actions">
+      <form method="post" action="/match/{{ m.id }}/confirm-pulled">
+        <h3>It has been pulled</h3>
+        <p class="fine">Records that somebody walked to the cooler. It does not
+          remove the line from anything &mdash; which is exactly why it is one click.</p>
+        <label>Your name or initials <input name="actor" required placeholder="e.g. AS"></label>
+        <button type="submit">Confirm pulled</button>
+      </form>
+
+      <form method="post" action="/match/{{ m.id }}/clear">
+        <h3>It is not this product</h3>
+        <p class="fine">Marks the line cleared. This is the only action in the
+          system that can do that, and it requires a name.</p>
+        <label>Your name or initials <input name="actor" required placeholder="e.g. AS"></label>
+        <label>Why <input name="note" placeholder="e.g. our lot is 4471, the recall is 4470"></label>
+        <button type="submit">Clear this line</button>
+      </form>
+    </div>
     <p class="fine">A line can only be cleared by a person who names themselves.
-       No automatic process in this system can take this action.</p>
+       No automatic process in this system can take this action, and the clearing
+       survives every future nightly run.</p>
   </section>
 </main>

@@ -23,7 +23,6 @@ Three labels, and only three:
 | `fsis` | `hand-authored` | `pullsheet/recalls/snapshots/fsis-2026-09-05.json` | 2026-09-05 | Hand-edit the file. There is no fetch path — see below |
 | `inventory_lincoln` | `hand-authored` | `data/fixtures/inventory_lincoln.csv` | — | Hand-edit |
 | `expected_matches` | `hand-authored` | `data/fixtures/expected_matches.json` | — | Hand-edit |
-| `sites` | `hand-authored` | `data/fixtures/sites.csv` | — | Hand-edit |
 | `inbox` | `hand-authored` | `data/fixtures/inbox.mbox` | — | Hand-edit |
 | `unit_costs` | `hand-authored` | `data/fixtures/unit_costs.csv` | — | Hand-edit |
 | `recipes` | `hand-authored` | `data/fixtures/recipes.csv` | — | Hand-edit |
@@ -48,9 +47,14 @@ because the agency blocks automated access, and the label says so everywhere it 
 
 ## What the inventory fixture is, and what it is not
 
-`inventory_lincoln.csv` is a **hand-authored** district export: 53 rows, three sites, written by
-the build team. It is not an extract from any real district's system, and no real district's data
-appears anywhere in this repository.
+`inventory_lincoln.csv` is a **hand-authored** inventory export for ONE location: 56 rows across
+eight storage locations, written by the build team. It is not an extract from any real kitchen's
+system, and no real customer data appears anywhere in this repository.
+
+Two of those 56 rows share an identity with two others (the same brown rice and the same canned
+black beans, both in Dry Store, under the same lot), so loading it produces **54 inventory
+records** with the quantities summed and the contributing source rows named in `merged_from`.
+That is FR-065 working, not a discrepancy.
 
 Two things about it are deliberate and worth stating, because both shape what the demo proves:
 

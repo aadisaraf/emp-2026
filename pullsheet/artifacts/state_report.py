@@ -1,9 +1,13 @@
-"""FR-044, FR-045. The district recall report.
+"""FR-044, FR-045. The location's recall report.
 
 FR-044 asked which state's form to target. That question is still open, and the
-spec's interim default is what this implements: a district recall report modeled
-on USDA FNS guidance, labeled hand-authored, alongside a structured export a
-director can transfer into whatever form their own state actually uses.
+spec's interim default is what this implements: a recall report modeled on USDA
+FNS guidance, labeled hand-authored, alongside a structured export a director
+can transfer into whatever form their own state actually uses.
+
+This is a CHILD NUTRITION document. It applies to a school deployment and not to
+a restaurant one, and ``location.serves_meal_program()`` is what decides whether
+it is offered at all -- rather than renaming its fields until it looks generic.
 
 FR-045 is the load-bearing rule here, and it is the reason this module is a list
 of fields rather than a template full of holes: **every field the system cannot
@@ -25,6 +29,8 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
+
+from pullsheet import location
 from typing import Any, Literal
 
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln")
@@ -35,7 +41,7 @@ HUMAN_MARKER = "REQUIRES HUMAN ENTRY"
 #: Principle V. This form is modeled on published USDA FNS guidance by the build
 #: team. It is not a state agency's form and does not claim to be one.
 FORM_CAVEAT = (
-    "Modeled on USDA FNS district recall reporting guidance by the build team. "
+    "Modeled on USDA FNS recall reporting guidance by the build team. "
     "This is not an official state form. Transfer these values into your state "
     "agency's own form -- the structured export below is provided for that.")
 
@@ -62,50 +68,46 @@ def _scalar(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> Any:
     return row[0] if row else None
 
 
-def derived_fields(conn: sqlite3.Connection, now: datetime) -> list[Field]:
-    """T062a. Everything the database can actually answer."""
-    sites = [r["site"] for r in conn.execute(
-        "SELECT DISTINCT site FROM inventory_records WHERE superseded_by IS NULL ORDER BY site")]
-    pull = _scalar(conn, """SELECT COUNT(DISTINCT i.id) FROM matches m
-                              JOIN inventory_records i ON i.id = m.inventory_record_id
-                             WHERE m.status='PULL' AND i.superseded_by IS NULL""") or 0
-    held = _scalar(conn, """SELECT COUNT(DISTINCT i.id) FROM matches m
-                              JOIN inventory_records i ON i.id = m.inventory_record_id
-                             WHERE m.status='HELD' AND i.superseded_by IS NULL""") or 0
+def derived_fields(conn: sqlite3.Connection, run_id: int, now: datetime) -> list[Field]:
+    """T062a. Everything the database can actually answer, for one run."""
+    pull = _scalar(conn, """SELECT COUNT(DISTINCT inventory_record_id) FROM matches
+                             WHERE status='PULL' AND run_id = ?""", (run_id,)) or 0
+    held = _scalar(conn, """SELECT COUNT(DISTINCT inventory_record_id) FROM matches
+                             WHERE status='HELD' AND run_id = ?""", (run_id,)) or 0
     firms = [r["recalling_firm"] for r in conn.execute(
         """SELECT DISTINCT r.recalling_firm FROM matches m
              JOIN recall_records r ON r.id = m.recall_record_id
-             JOIN inventory_records i ON i.id = m.inventory_record_id
-            WHERE m.status='PULL' AND i.superseded_by IS NULL
-              AND r.recalling_firm IS NOT NULL ORDER BY r.recalling_firm""")]
+            WHERE m.status='PULL' AND m.run_id = ?
+              AND r.recalling_firm IS NOT NULL ORDER BY r.recalling_firm""", (run_id,))]
     numbers = [f"{r['source']} {r['source_record_id']}" for r in conn.execute(
         """SELECT DISTINCT r.source, r.source_record_id FROM matches m
              JOIN recall_records r ON r.id = m.recall_record_id
-             JOIN inventory_records i ON i.id = m.inventory_record_id
-            WHERE m.status='PULL' AND i.superseded_by IS NULL
-            ORDER BY r.source, r.source_record_id""")]
+            WHERE m.status='PULL' AND m.run_id = ?
+            ORDER BY r.source, r.source_record_id""", (run_id,))]
     earliest = _scalar(conn, """SELECT MIN(r.received_at) FROM matches m
                                   JOIN recall_records r ON r.id = m.recall_record_id
-                                 WHERE m.status='PULL'""")
+                                 WHERE m.status='PULL' AND m.run_id = ?""", (run_id,))
     quantity = _scalar(conn, """SELECT SUM(q) FROM (
                                   SELECT DISTINCT i.id, i.quantity AS q FROM matches m
                                     JOIN inventory_records i ON i.id = m.inventory_record_id
-                                   WHERE m.status='PULL' AND i.superseded_by IS NULL
-                                     AND i.quantity IS NOT NULL)""") or 0
+                                   WHERE m.status='PULL' AND m.run_id = ?
+                                     AND i.quantity IS NOT NULL)""", (run_id,)) or 0
 
     D = "derived"
     return [
-        Field("District", "District name", D, "Lincoln Unified School District",
+        Field("Location", "Location", D, location.NAME, "configured in the application"),
+        Field("Location", "Operator", D, location.OPERATOR,
               "configured in the application"),
-        Field("District", "Report generated", D, now.isoformat(timespec="seconds"),
+        Field("Location", "Address", D, location.ADDRESS,
+              "configured in the application"),
+        Field("Location", "Report generated", D, now.isoformat(timespec="seconds"),
               "system clock at generation"),
-        Field("District", "Sites reporting", D, str(len(sites)), "inventory_records"),
-        Field("District", "Sites", D, ", ".join(sites) or "none", "inventory_records"),
+        Field("Location", "Inventory run", D, str(run_id), "runs"),
         Field("Recall", "Recall notices involved", D, ", ".join(numbers) or "none",
               "recall_records"),
         Field("Recall", "Recalling firm(s)", D, "; ".join(firms) or "none stated",
               "recall_records.recalling_firm"),
-        Field("Recall", "District first received notice", D, earliest or "not recorded",
+        Field("Recall", "Location first received notice", D, earliest or "not recorded",
               "recall_records.received_at"),
         Field("Product", "Lines removed from service (PULL)", D, str(pull), "matches"),
         Field("Product", "Lines held pending review (HELD)", D, str(held), "matches"),
@@ -125,12 +127,12 @@ def human_fields() -> list[Field]:
     """
     H, B = "human", "blank"
     return [
-        Field("District", "Child nutrition agreement number", H,
+        Field("Location", "Child nutrition agreement number", H,
               why="issued by the state agency; not present in any ingested source"),
-        Field("District", "Nutrition director name", H,
+        Field("Location", "Nutrition director name", H,
               why="no user accounts exist in this build"),
-        Field("District", "Director telephone", H, why="not present in any ingested source"),
-        Field("District", "Director email", H, why="not present in any ingested source"),
+        Field("Location", "Director telephone", H, why="not present in any ingested source"),
+        Field("Location", "Director email", H, why="not present in any ingested source"),
         Field("Recall", "State agency contact notified", H,
               why="notification is an action taken outside this system"),
         Field("Recall", "Date state agency notified", H,
@@ -152,14 +154,15 @@ def human_fields() -> list[Field]:
     ]
 
 
-def state_report(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
-    fields = derived_fields(conn, now) + human_fields()
+def state_report(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
+    fields = derived_fields(conn, run_id, now) + human_fields()
     sections: dict[str, list[Field]] = {}
     for field in fields:
         sections.setdefault(field.section, []).append(field)
     unfilled = [f for f in fields if f.kind != "derived"]
     return {
-        "district": "Lincoln Unified School District",
+        "location": location.summary(),
+        "run_id": run_id,
         "generated_at": now.isoformat(timespec="seconds"),
         "sections": sections,
         "fields": fields,

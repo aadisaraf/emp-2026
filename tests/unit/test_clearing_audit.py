@@ -96,11 +96,14 @@ def test_nothing_in_the_package_removes_rows():
 
 
 #: Every route that may write a `decisions` row, and the one kind each writes.
-#: `decisions` is the human-action table: three human actions, three writers.
+#: `decisions` is the human-action table: two human actions, two writers.
+#:
+#: There were three when the sheet was a district. Confirming a whole site and
+#: acknowledging an alert were both roll-up gestures, and neither survives one
+#: location -- what is left is the pair a person takes against a single line.
 DECISION_WRITERS = {
     "app.py::clear_match": "clear_match",
-    "app.py::confirm_site": "confirm_site_pulled",
-    "app.py::acknowledge_alert": "acknowledge_alert",
+    "app.py::confirm_pulled": "confirm_pulled",
 }
 
 
@@ -119,7 +122,7 @@ def test_only_named_routes_write_a_decision():
     writers = _decision_writers()
     assert set(writers) == set(DECISION_WRITERS), (
         f"expected {sorted(DECISION_WRITERS)}, found {sorted(writers)}. "
-        f"A fourth writer is a defect until it is justified the same way.")
+        f"A third writer is a defect until it is justified the same way.")
 
 
 def test_every_decision_writer_requires_a_named_actor():
@@ -134,9 +137,10 @@ def test_every_decision_writer_requires_a_named_actor():
 
 
 def test_only_one_route_can_clear_a_match():
-    """Two of the three human actions are deliberately harmless: confirming a
-    site and acknowledging an alert say a person LOOKED, and neither touches a
-    line. Only one route in the codebase can write the kind that means cleared."""
+    """One of the two human actions is deliberately harmless: confirming a line
+    was pulled records that a person DID the thing the sheet asked for, and it
+    changes nothing about the line. Only one route in the codebase can write the
+    kind that means cleared."""
     clearing = [name for name, source in _decision_writers().items()
                 if "'clear_match'" in source]
     assert clearing == ["app.py::clear_match"], f"clear_match is written by {clearing}"
@@ -154,8 +158,9 @@ def test_the_matcher_cannot_write_a_decision():
 
 
 def test_no_decision_route_touches_a_match_or_an_inventory_row():
-    """Acknowledging an alert and confirming a site must not be able to change
-    what they are about. They write one row and read nothing else."""
+    """A decision must not be able to change what it is about. Each writes one
+    row into `decisions` and edits nothing -- which is what makes the sheet
+    reconstructable exactly as it stood when the decision was taken."""
     for name, source in _decision_writers().items():
         for table in ("matches", "inventory_records", "recall_records"):
             assert not re.search(rf"UPDATE\s+{table}", source, re.I), (
@@ -185,10 +190,11 @@ def test_the_schema_admits_no_third_status():
     conn.executescript(schema)
     with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
         conn.execute(
-            """INSERT INTO matches (inventory_record_id, recall_record_id, tier,
-                                    status, evidence_kind, trigger_inventory_text,
-                                    trigger_recall_text, created_at)
-               VALUES (1, 1, 'POSSIBLE', 'CLEARED', 'name', 'a', 'b', 'now')""")
+            """INSERT INTO matches (run_id, inventory_record_id, recall_record_id,
+                                    tier, status, evidence_kind,
+                                    trigger_inventory_text, trigger_recall_text,
+                                    created_at)
+               VALUES (1, 1, 1, 'POSSIBLE', 'CLEARED', 'name', 'a', 'b', 'now')""")
     conn.close()
 
 

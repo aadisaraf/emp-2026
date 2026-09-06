@@ -1,12 +1,22 @@
 """The primary ingestion path and the demo centrepiece.
 
-A district exports inventory to a network folder on a schedule. Nobody logs into
-anything; the file simply appears. This adapter polls that folder, reads CSV and
-XLSX through ``column_map``, and moves each processed file to ``data/archive/``.
+The location's inventory software writes an export to an SFTP drop on a
+schedule, once a day. Nobody logs into anything; the file simply appears. This
+adapter watches the drop directory, reads CSV and XLSX through ``column_map``,
+and moves each processed file to ``data/archive/``.
+
+It is a directory watcher, not an SFTP client: the SFTP server writes into the
+directory and this reads it. That is the same shape a real deployment has, and
+it keeps the credential handling outside the application entirely.
 
 **Archive on success only.** A rejected file stays exactly where it landed, so
 the person who dropped it can see that it is still there. A rejection that
 quietly tidies the evidence away is worse than no rejection at all.
+
+**Only settled files are read.** An SFTP write is not atomic, so a file still
+being uploaded can be read as a complete short export -- indistinguishable from
+a kitchen that genuinely holds less food. ``pending()`` skips anything modified
+in the last few seconds.
 """
 
 from __future__ import annotations
@@ -50,16 +60,17 @@ def _number(value: str | None) -> float | None:
         return None
 
 
-class WatchedFolderAdapter(InventoryAdapter):
-    name = "watched_folder"
+class SftpDropAdapter(InventoryAdapter):
+    name = "sftp_drop"
     provenance = "live"
+    channel = "sftp_drop"
 
     def declares(self) -> frozenset[str]:
-        """Everything a district export normally carries. Honest by construction:
+        """Everything an inventory export normally carries. Honest by construction:
         anything a given file omits comes back in ``unpopulated`` per row."""
         return frozenset({
-            "site", "storage_location", "raw_description", "quantity", "unit",
-            "pack_size", "gtin", "upc", "lot_code", "brand", "manufacturer",
+            "storage_location", "raw_description", "quantity", "unit",
+            "pack_size", "gtin", "lot_code", "brand", "manufacturer",
             "manufacturer_item_code", "vendor_name", "vendor_item_code",
             "unit_cost", "received_date",
         })
@@ -136,9 +147,6 @@ class WatchedFolderAdapter(InventoryAdapter):
                 return None
             return value
 
-        site = (f.get("site") or "").strip()
-        if not site:
-            unpopulated.add("site")
         # raw_description is stored even when blank: FR-007 forbids dropping a
         # row we could not read, and an empty description with the field flagged
         # is a row an operator can still go and look at.
@@ -166,14 +174,12 @@ class WatchedFolderAdapter(InventoryAdapter):
                                  "vendor_name", "vendor_item_code")}
 
         return NormalizedRecord(
-            site=site,
             storage_location=keep("storage_location", (f.get("storage_location") or "").strip() or None),
             raw_description=description,
             quantity=quantity,
             unit=keep("unit", (f.get("unit") or "").strip() or None),
             pack_size=keep("pack_size", (f.get("pack_size") or "").strip() or None),
             gtin=gtin,
-            upc=gtin,
             # VERBATIM. Case, punctuation and whitespace exactly as written (R3).
             lot_code=keep("lot_code", f.get("lot_code") or None),
             **supplier,
@@ -185,14 +191,24 @@ class WatchedFolderAdapter(InventoryAdapter):
 
     # -- polling -----------------------------------------------------------
 
-    @staticmethod
-    def pending(folder: Path = WATCHED) -> list[Path]:
-        """Files waiting to be ingested, oldest first."""
+    #: Seconds a file must sit unchanged before it is considered fully written.
+    #: An SFTP upload lands byte by byte, and a CSV cut off on a row boundary
+    #: parses perfectly as a shorter inventory -- a partial read is the one
+    #: failure here that produces a plausible wrong answer instead of an error.
+    SETTLE_SECONDS = 2.0
+
+    @classmethod
+    def pending(cls, folder: Path = WATCHED, now: float | None = None) -> list[Path]:
+        """Files that have finished arriving, oldest first."""
         if not folder.exists():
             return []
+        import time
+
+        now = time.time() if now is None else now
         return sorted(
             (p for p in folder.iterdir()
-             if p.is_file() and not p.name.startswith(".")),
+             if p.is_file() and not p.name.startswith(".")
+             and now - p.stat().st_mtime >= cls.SETTLE_SECONDS),
             key=lambda p: p.stat().st_mtime,
         )
 
@@ -212,37 +228,36 @@ class WatchedFolderAdapter(InventoryAdapter):
 # ---------------------------------------------------------------------------
 
 def poll_once(db_path=None, folder: Path = WATCHED, archive_dir: Path = ARCHIVE) -> list[dict]:
-    """Ingest every file waiting in the watched folder, then re-run the matcher.
+    """Ingest every settled file in the drop directory as its own run.
+
+    Each file is one run, carried all the way through matching and finalize by
+    ``db.ingest_file`` -- so a crash cannot leave rows committed with no matches
+    and a sheet that reads as good news.
 
     Archive on SUCCESS only. A rejected file stays where it landed so the person
     who dropped it can see that it is still there -- a rejection that tidies away
     its own evidence is worse than no rejection at all.
     """
     from pullsheet import db as db_module
-    from pullsheet.matching.run import run_matcher
 
     results: list[dict] = []
-    pending = WatchedFolderAdapter.pending(folder)
+    pending = SftpDropAdapter.pending(folder)
     if not pending:
         return results
 
     conn = db_module.connect(db_path or db_module.DB_PATH)
-    adapter = WatchedFolderAdapter()
+    adapter = SftpDropAdapter()
     try:
         for path in pending:
             if path.suffix.lower() not in READABLE_SUFFIXES:
                 results.append({"status": "rejected", "filename": path.name,
                                 "reason": f"unsupported file type {path.suffix!r}"})
                 continue
-            outcome = db_module.ingest_file(conn, path, adapter,
-                                            f"{path.parent.name} watched folder")
-            if outcome["status"] == "ok":
-                WatchedFolderAdapter.archive(path, archive_dir)
+            outcome = db_module.ingest_file(conn, path, adapter)
+            if outcome["status"] in ("ok", "duplicate"):
+                SftpDropAdapter.archive(path, archive_dir)
                 outcome["archived"] = True
             results.append(outcome)
-
-        if any(r["status"] == "ok" for r in results):
-            run_matcher(conn)
     finally:
         conn.close()
     return results
@@ -252,7 +267,7 @@ def watch(interval_seconds: float = 2.0, stop=None, db_path=None) -> None:
     """Poll forever. Intended to run on a daemon thread beside uvicorn.
 
     Exceptions are swallowed deliberately: a poller that dies stops watching the
-    folder, and a folder nobody is watching looks exactly like a district with
+    drop, and a drop nobody is watching looks exactly like a kitchen with
     nothing recalled.
     """
     import time
@@ -261,7 +276,7 @@ def watch(interval_seconds: float = 2.0, stop=None, db_path=None) -> None:
     while stop is None or not stop.is_set():
         try:
             for result in poll_once(db_path=db_path):
-                print(f"[watched-folder] {result['status']}: {result['filename']}"
+                print(f"[sftp-drop] {result['status']}: {result['filename']}"
                       + (f" -- {result.get('reason', '')}" if result["status"] == "rejected" else ""))
         except Exception:                      # noqa: BLE001
             traceback.print_exc()
