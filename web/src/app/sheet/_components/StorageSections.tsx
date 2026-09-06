@@ -1,52 +1,117 @@
-import { DataTable } from "@/components";
+import { Chip, ChipRow, TabCard, ui } from "@/components";
 import type { SheetLine, SheetSection } from "@/lib/api";
-import { sectionTally } from "@/lib/strings";
-import { sheetColumns } from "./sheetColumns";
+import { EVIDENCE_LABEL, NOT_RECORDED } from "@/lib/strings";
+import { formatQuantity } from "@/lib/format";
+import { cx } from "@/lib/cx";
 import type { ClearedFacts } from "./clearedFacts";
-import styles from "./sheet.module.css";
 
 export interface StorageSectionsProps {
   sections: SheetSection[];
   cleared: ClearedFacts;
 }
 
+const ROMAN: Record<1 | 2 | 3, string> = { 1: "I", 2: "II", 3: "III" };
+
+/** The anchor a jump pill and a section head agree on. */
+export function locationId(storage: string): string {
+  return `loc-${storage.replace(/\s+/g, "-")}`;
+}
+
 /*
-  One table per storage location, in the order the API sent them, which is the
-  cooler with the recalled chicken before the dry store with a maybe.
+  Where the case is, then what it is, then why. Storage location is the only
+  grouping on this sheet, because it is the walking order through the kitchen.
 */
 
-export function StorageSections({ sections, cleared }: StorageSectionsProps) {
-  const columns = sheetColumns(cleared);
+function LineRow({ line, cleared }: { line: SheetLine; cleared: ClearedFacts }) {
+  const fact = cleared.get(line.id);
+  const firm = line.recalling_firm ?? line.source;
 
+  return (
+    <tr id={`match-${line.id}`}>
+      <td>
+        <button type="button" className={ui.open} data-match-id={line.id}>
+          <span className={ui.lead}>{line.raw_description}</span>
+          <span className={ui.sub}>
+            Class {ROMAN[line.class_rank]} · {firm} · {line.source_record_id}
+          </span>
+        </button>
+      </td>
+      <td className={ui.num}>{formatQuantity(line.quantity, line.unit) ?? "—"}</td>
+      <td className={ui.optSm}>
+        <span className={cx(ui.mono, ui.lead)}>{line.lot_code ?? NOT_RECORDED}</span>
+      </td>
+      <td className={cx(ui.opt, ui.wrap)}>
+        <span className={ui.sub}>{EVIDENCE_LABEL[line.evidence_kind] ?? line.evidence_kind}</span>
+      </td>
+      <td>
+        <ChipRow>
+          <Chip tone={line.status === "PULL" ? "pull" : "held"}>{line.status}</Chip>
+          <Chip tone="quiet">{line.tier}</Chip>
+          {line.is_new ? <Chip tone="quiet">new</Chip> : null}
+          {line.recall_status === "amended" ? <Chip tone="quiet">amended</Chip> : null}
+        </ChipRow>
+      </td>
+      <td className={ui.optSm}>
+        {line.cleared ? (
+          <>
+            <Chip tone="done">recorded</Chip>
+            {fact?.actor ? <span className={ui.sub}>{fact.actor}</span> : null}
+          </>
+        ) : null}
+      </td>
+    </tr>
+  );
+}
+
+export function StorageSections({ sections, cleared }: StorageSectionsProps) {
   return (
     <>
       {sections.map((section) => (
-        <section className={styles.section} key={section.storage_location}>
-          <h2 className={styles.sectionHead}>
-            <span className={styles.sectionName}>{section.storage_location}</span>
-            <span className={styles.sectionTally}>
-              {sectionTally(section.pull, section.held, section.cleared)}
-            </span>
-          </h2>
-          <DataTable<SheetLine>
-            className={styles.sheetTable}
-            columns={columns}
-            rows={section.lines}
-            rowKey={(line) => line.id}
-            /*
-              Today's "new since the previous run" list links to /sheet#match-N.
-              Without this the fragment lands nowhere and the browser stays at
-              the top of an 856 line sheet.
-            */
-            rowAttributes={(line) => ({ id: `match-${line.id}` })}
-            caption={`${section.storage_location}: ${sectionTally(
-              section.pull,
-              section.held,
-              section.cleared,
-            )}`}
-            sticky
-          />
-        </section>
+        <TabCard
+          key={section.storage_location}
+          id={locationId(section.storage_location)}
+          title={section.storage_location}
+          count={`${section.pull} pull · ${section.held} held`}
+          flush
+        >
+          <table className={ui.rec} data-sheet="true">
+            <caption>
+              {section.storage_location}: {section.pull} PULL, {section.held} HELD,{" "}
+              {section.cleared} recorded.
+            </caption>
+            <colgroup>
+              <col />
+              <col style={{ width: "90px" }} />
+              <col className={ui.optSm} style={{ width: "110px" }} />
+              <col className={ui.opt} style={{ width: "120px" }} />
+              <col style={{ width: "175px" }} />
+              <col className={ui.optSm} style={{ width: "110px" }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">Item</th>
+                <th scope="col" className={ui.num}>
+                  Qty
+                </th>
+                <th scope="col" className={ui.optSm}>
+                  Lot
+                </th>
+                <th scope="col" className={ui.opt}>
+                  Evidence
+                </th>
+                <th scope="col">Status</th>
+                <th scope="col" className={ui.optSm}>
+                  Recorded
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.lines.map((line) => (
+                <LineRow key={line.id} line={line} cleared={cleared} />
+              ))}
+            </tbody>
+          </table>
+        </TabCard>
       ))}
     </>
   );

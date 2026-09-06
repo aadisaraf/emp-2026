@@ -61,3 +61,7 @@ export { IconRail } from "./IconRail";
 
 export { TopBar } from "./TopBar";
 export type { TopBarProps } from "./TopBar";
+
+/* The page vocabulary: hero, facts, folder-tab cards, the quiet table.
+   `ui` is its stylesheet, for the table cells a page composes itself. */
+export * from "./ui";

@@ -1,8 +1,8 @@
 import type { RunHistoryEntry } from "@/lib/api";
-import { Panel } from "@/components";
+import { Note, TabCard } from "@/components";
 import { formatDate } from "@/lib/format";
 import { cx } from "@/lib/cx";
-import { STRIP_LEGEND, STRIP_NOTE, STRIP_TITLE, channelLabel, countWord } from "./runsMeta";
+import { STRIP_TITLE, channelLabel, countWord } from "./runsMeta";
 import styles from "./RunDayStrip.module.css";
 
 /* The shape of the operation, one cell per calendar day. */
@@ -17,7 +17,6 @@ export interface RunDayStripProps {
   runs: readonly RunHistoryEntry[];
   /** The API's generated_at. "Today" comes from the server, never the browser. */
   generatedAt: string;
-  className?: string;
 }
 
 type DayKind = "ok" | "rejected" | "running" | "gap";
@@ -139,16 +138,15 @@ function summarise(days: Day[], truncated: boolean): string {
   return `${head}${middle}${tail}`;
 }
 
-export function RunDayStrip({ runs, generatedAt, className }: RunDayStripProps) {
+export function RunDayStrip({ runs, generatedAt }: RunDayStripProps) {
   const { days, truncated } = buildDays(runs, formatDate(generatedAt));
 
   // One cell is not a strip. The table below is already the record for that.
   if (days.length < 2) return null;
 
   return (
-    <Panel title={STRIP_TITLE} note={STRIP_NOTE} flush printBlock className={className}>
+    <TabCard title={STRIP_TITLE}>
       <div className={styles.strip}>
-        <p className={styles.summary}>{summarise(days, truncated)}</p>
         <div className={styles.scroll}>
           <ol className={styles.days}>
             {days.map((day) => (
@@ -168,8 +166,8 @@ export function RunDayStrip({ runs, generatedAt, className }: RunDayStripProps) 
             ))}
           </ol>
         </div>
-        <p className={styles.legend}>{STRIP_LEGEND}</p>
+        <Note>{summarise(days, truncated)}</Note>
       </div>
-    </Panel>
+    </TabCard>
   );
 }

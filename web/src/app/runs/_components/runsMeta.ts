@@ -63,24 +63,7 @@ export function corpusNoteFor(run: { corpus_note: string | null; status: RunStat
    Page copy.
 --------------------------------------------------------------------------- */
 
-export const RUNS_CONTEXT =
-  "Every delivery this location has made, newest first, including the ones that were refused.";
-
-export const RUNS_REJECTION_NOTE =
-  "Listing only the runs that succeeded would make a week of failed drops look like a quiet week.";
-
-export const RUNS_FOOTER =
-  "A run is written once and never edited. Opening a past run shows what it produced that morning, matched against the recall records that existed then, not re-run against today's.";
-
-export const STRIP_LEGEND =
-  "One cell per day. A number is that day's PULL count. REJ is a delivery that was refused. A hatched cell is a day with no run at all.";
-
 export const STRIP_TITLE = "Runs by day";
-
-export const STRIP_NOTE =
-  "A run every day is the ordinary pattern at this location. A date with no run is the thing worth noticing.";
-
-export const TABLE_TITLE = "Every delivery";
 
 export const RUN_NOT_FOUND_HEADING = "That run is not in the run log.";
 

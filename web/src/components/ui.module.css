@@ -1,0 +1,591 @@
+/* ---------------------------------------------------------------------------
+   The shared vocabulary, lifted out of Today so the other pages speak it too.
+
+   A page is: one figure, a row of facts under it, and cards with folder tabs.
+   Structure is space and shape. There are no rules and no boxes-in-boxes.
+--------------------------------------------------------------------------- */
+
+/* ---- the one figure ------------------------------------------------------ */
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-3) 0 var(--space-4);
+}
+
+.figureBlock {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.figure {
+  font-size: 84px;
+  line-height: 84px;
+  letter-spacing: -0.04em;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* Money is long. Let it set its own size rather than push the actions off. */
+.figureMoney {
+  font-size: 64px;
+  line-height: 68px;
+}
+
+.figureAlert {
+  color: var(--alert-ink);
+}
+
+.word {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+/* ---- pills --------------------------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--fs-body);
+  text-decoration: none;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pillPrimary {
+  background: var(--green-800);
+  color: var(--text-inverse);
+  font-weight: var(--weight-strong);
+}
+
+.pillAlert {
+  background: var(--alert-tint);
+  color: var(--alert-ink);
+}
+
+.pillAttend {
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+}
+
+.pill:focus-visible,
+.tabsPill:focus-visible,
+.recRow:focus-visible,
+.jump:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---- the facts under the figure ------------------------------------------ */
+
+.facts {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding-bottom: var(--space-6);
+}
+
+.fact {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.factValue {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.factLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.factAlert .factValue {
+  color: var(--alert-ink);
+}
+
+.factAttend .factValue {
+  color: var(--attend-ink);
+}
+
+/* ---- layout -------------------------------------------------------------- */
+
+/* The wide column and a rail of cards beside it. */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.main {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.rail {
+  display: grid;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* ---- folder-tab card ----------------------------------------------------- */
+
+.tabCard {
+  display: grid;
+  min-width: 0;
+}
+
+.tabHead {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: 14px 14px 0 0;
+  font-size: var(--fs-body);
+  font-weight: var(--weight-strong);
+}
+
+.tabCount {
+  font-weight: var(--weight-normal);
+  opacity: 0.66;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabBody {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border-radius: 0 var(--radius-card) var(--radius-card) var(--radius-card);
+  min-width: 0;
+}
+
+/*
+  A body that holds a table pays no side padding: the table draws its own.
+
+  It must NOT be a scroll container. `overflow-x: auto` computes overflow-y to
+  auto as well, which makes this box the scrollport for the sticky header
+  inside it -- and a `top` measured from the masthead then pushes that header
+  down over the first rows instead of pinning it. Narrow screens are handled
+  by dropping columns below, not by a scrollbar.
+*/
+.tabBodyFlush {
+  padding: var(--space-2) 0 var(--space-2);
+}
+
+.tonePlain .tab,
+.tonePlain .tabBody {
+  background: var(--surface-card);
+  color: var(--text-primary);
+}
+
+.toneAccent .tab,
+.toneAccent .tabBody {
+  background: var(--card-accent);
+  color: var(--card-accent-ink);
+}
+
+.toneSunken .tab,
+.toneSunken .tabBody {
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+}
+
+/* ---- term and value ------------------------------------------------------ */
+
+.kv {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kvTerm {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  opacity: 0.66;
+}
+
+.kvValue {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  overflow-wrap: anywhere;
+}
+
+/* A term on the left, a figure hard right: a vendor and its total. */
+.kvSplit {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.kvSplit .kvTerm {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  opacity: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kvSplit .kvValue {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* ---- jump pills ---------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+}
+
+.tabsPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: var(--fs-body);
+}
+
+.tabsPillActive {
+  background: var(--text-primary);
+  color: var(--text-inverse);
+}
+
+.tabsCount {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.66;
+}
+
+/* ---- the quiet table ----------------------------------------------------- */
+
+/*
+  Eight hundred rows want a table, not eight hundred cards. So: a table with
+  no rules but one hairline between rows, tabular figures, and the head set in
+  the micro size so the data is the loudest thing in it.
+*/
+
+.rec {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+.rec caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.rec th {
+  position: sticky;
+  top: var(--masthead-h);
+  z-index: 2;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-card);
+  text-align: left;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rec td {
+  padding: var(--space-3);
+  border-top: 1px solid var(--border-hairline);
+  vertical-align: top;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--text-primary);
+}
+
+.rec tbody tr:hover > td {
+  background: var(--surface-sunken);
+}
+
+.rec tbody tr[data-selected="true"] > td {
+  background: var(--surface-selected);
+}
+
+/* Arriving by #match-N with a sticky head above: stop below it, not under. */
+.rec tbody tr {
+  scroll-margin-top: calc(var(--masthead-h) + 48px);
+}
+
+.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-body);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* The item cell: what it is, then who recalled it, quietly, underneath. */
+.lead {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sub {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subAttend {
+  color: var(--attend-ink);
+}
+
+/* A cell whose label is a phrase, not a value: it wraps inside its column
+   rather than ellipsing, because half an evidence kind is not evidence. */
+.wrap .lead,
+.wrap .sub {
+  white-space: normal;
+}
+
+/* The whole item cell is the control that opens the detail pane. */
+.open {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.open:hover .lead {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- chips --------------------------------------------------------------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px var(--space-3);
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+}
+
+.chipPull {
+  background: var(--alert-fill);
+  color: var(--text-inverse);
+}
+
+.chipHeld {
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+}
+
+.chipDone {
+  background: var(--green-100);
+  color: var(--green-900);
+}
+
+.chipQuiet {
+  background: transparent;
+  color: var(--text-muted);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+}
+
+/* ---- odds and ends ------------------------------------------------------- */
+
+.groupTitle {
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  font-weight: var(--weight-normal);
+  color: var(--text-primary);
+}
+
+.note {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--text-muted);
+}
+
+.empty {
+  color: var(--text-muted);
+  padding: var(--space-3) 0;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+  Columns that step aside on a narrow screen, in the order they can be spared.
+  The `col` goes with the cells: under `table-layout: fixed` a column whose
+  cells are gone but whose col remains still holds its width.
+*/
+
+@media (max-width: 1000px) {
+  .rec .opt {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .rec .optSm {
+    display: none;
+  }
+
+  /* What is left sizes itself to the words in it rather than to a px width
+     that was chosen for a desk. */
+  .rec {
+    table-layout: auto;
+  }
+
+  .rec col {
+    width: auto;
+  }
+
+  .rec .lead,
+  .rec .sub {
+    white-space: normal;
+  }
+}
+
+/* ---- narrow -------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+  }
+
+  .figure {
+    font-size: 64px;
+    line-height: 64px;
+  }
+
+  .figureMoney {
+    font-size: 44px;
+    line-height: 48px;
+  }
+
+  .rail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .actions,
+  .tabs,
+  .open {
+    color: inherit;
+  }
+
+  .actions,
+  .tabs {
+    display: none;
+  }
+
+  .rec th {
+    position: static;
+  }
+}
