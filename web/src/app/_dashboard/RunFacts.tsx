@@ -1,6 +1,7 @@
 import type { Run } from "@/lib/api";
 import { DefinitionList, NotRecorded, Panel, StatusBadge, type DefinitionItem } from "@/components";
 import { formatCount, formatDateTime, shortDeliveryRef } from "@/lib/format";
+import { cx } from "@/lib/cx";
 import { channelLabel } from "@/lib/strings";
 import { RUN_TERMS, runTitle } from "./strings";
 import styles from "./dashboard.module.css";
@@ -36,7 +37,7 @@ export function RunFacts({ run }: RunFactsProps) {
   ];
 
   return (
-    <Panel title={runTitle(run.id)} printBlock>
+    <Panel title={runTitle(run.id)} className={cx(styles.card, styles.cardSlate)} printBlock>
       {/*
         The four counts are stated by the stat rail at the top of every route,
         at a size you can read across a kitchen. Repeating them here put the

@@ -28,6 +28,25 @@
   min-height: 22px;
 }
 
+/* Count and word share a baseline so the sentence hangs off the figure rather
+   than sitting under it. */
+.word {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.figure {
+  font-size: var(--fs-hero);
+  line-height: var(--lh-hero);
+  letter-spacing: var(--ls-hero);
+  font-weight: var(--weight-normal);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-primary);
+}
+
 .eyebrowLabel {
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
@@ -204,7 +223,14 @@
 .column {
   display: grid;
   gap: var(--space-7);
+  align-content: start;
   min-width: 0;
+}
+
+/* The two identity cards belong to each other, so they sit closer than the
+   sections around them. */
+.column > .card + .card {
+  margin-top: calc(var(--space-5) - var(--space-7));
 }
 
 @media (max-width: 1080px) {
@@ -407,4 +433,45 @@
   .stack > * > * {
     min-width: 0;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   The two identity cards. Solid colour among the dark is the one move on this
+   screen a template would not have made, and it is doing a job: the card says
+   WHOSE kitchen and WHICH run, which never changes while you are reading, so
+   it can sit still and be looked past. Lavender and slate are outside the
+   status vocabulary on purpose -- a coloured card is an identity, not a state.
+--------------------------------------------------------------------------- */
+
+.card {
+  border-radius: var(--radius-card);
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.cardLavender {
+  background: var(--card-lavender);
+  color: var(--card-lavender-ink);
+}
+
+.cardSlate {
+  background: var(--card-slate);
+  color: var(--card-slate-ink);
+}
+
+.card :is(h2, h3) {
+  color: inherit;
+}
+
+/* Terms and values inherit the card's ink rather than the page's, so the card
+   is one object instead of a dark panel wearing a colour. */
+.card :global(.term),
+.cardLavender [class*="term"],
+.cardSlate [class*="term"] {
+  color: inherit;
+  opacity: 0.72;
+}
+
+.cardLavender [class*="value"],
+.cardSlate [class*="value"] {
+  color: inherit;
 }

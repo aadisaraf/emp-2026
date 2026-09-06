@@ -1,53 +1,66 @@
 /*
   PullSheet design tokens. A page uses these values or none.
 
-  Light theme only: the output is a sheet printed on white paper. Red means act
-  now, ochre unresolved, neutral recorded. Green is the institution, not "fine".
+  Dark on screen, white on paper. The screen is a console someone watches; the
+  sheet is a document someone carries into a cooler, and @media print keeps its
+  own light surface. Red means act now, ochre unresolved, green recorded.
+
+  The two card accents -- lavender and slate blue -- are deliberately OUTSIDE
+  that status vocabulary. A card is an identity, not a state, and a yellow card
+  next to a yellow HELD chip would make the chip mean nothing.
 */
 
 :root {
-  /* ---- surfaces ---------------------------------------------------- */
-  --surface-page:      #FFFFFF;  /* the sheet itself */
-  --surface-sunken:    #F4F6F5;  /* app ground behind panels; row hover */
-  --surface-header:    #EDF1EF;  /* table thead, stat rail */
-  --surface-selected:  #E2EBE6;  /* the currently selected line */
-  --surface-masthead:  #0D2E24;  /* fixed top bar */
+  color-scheme: dark;
 
-  /* ---- borders ----------------------------------------------------- */
-  --border-hairline:   #DCE2DF;  /* row rules inside a table */
-  --border:            #C6CFC9;  /* column rules, panel edges, chip outlines */
-  --border-strong:     #849289;  /* section boundary, input outline */
-  --focus-ring:        #144C3B;  /* 2px solid, 1px offset */
+  /* ---- surfaces ---------------------------------------------------- */
+  --surface-page:      #101215;  /* the canvas */
+  --surface-sunken:    #16191D;  /* panels, cards, table ground */
+  --surface-header:    #1C2026;  /* raised rows, table head, chips */
+  --surface-selected:  #232830;  /* the currently selected line */
+  --surface-masthead:  #0A0C0E;  /* fixed top bar, darker than the canvas */
+
+  /* ---- borders: barely there. Structure is space, not ink. --------- */
+  --border-hairline:   #1F2329;
+  --border:            #272C33;
+  --border-strong:     #343A43;
+  --focus-ring:        #7FE3B0;
 
   /* ---- text -------------------------------------------------------- */
-  --text-primary:      #16211D;  /* values, item names, headings */
-  --text-secondary:    #495852;  /* supporting lines: supplier, vendor, notes */
-  --text-muted:        #616F69;  /* column heads, provenance, timestamps */
-  --text-inverse:      #FFFFFF;  /* on masthead and on filled alert chips */
-  --text-inverse-muted: #B9C6C0;  /* quiet inverse text on the masthead; solid, never opacity */
-  --masthead-rule:     #3A564B;  /* masthead separator on surface-masthead; solid, never opacity */
+  --text-primary:      #F2F4F6;
+  --text-secondary:    #A6ADB6;
+  --text-muted:        #6E7681;
+  --text-inverse:      #101215;  /* on filled bright chips */
+  --text-inverse-muted: #A6ADB6;
+  --masthead-rule:     #23282F;
 
-  /* ---- green: institutional chrome only ---------------------------- */
-  --green-900:         #0D2E24;
-  --green-800:         #144C3B;  /* primary button, active nav, focus */
-  --green-700:         #1A6349;  /* links */
-  --green-100:         #DCE9E3;  /* active-nav fill, selected-row tint */
-  --green-050:         #F0F5F2;
+  /* ---- card accents: identity, never status ------------------------ */
+  --card-lavender:     #CBC0F0;
+  --card-lavender-ink: #1B1630;
+  --card-slate:        #AEC8E8;
+  --card-slate-ink:    #101D2B;
+
+  /* ---- green: institutional chrome, and "recorded" ------------------ */
+  --green-900:         #0C2C21;
+  --green-800:         #7FE3B0;  /* primary fill, active nav, focus */
+  --green-700:         #8FE9BC;  /* links */
+  --green-100:         #1B2E27;  /* active-nav fill, selected-row tint */
+  --green-050:         #161D1A;
 
   /* ---- semantic: act now (PULL / OVERRUN / REJECTED) ---------------- */
-  --alert-ink:         #8E181E;  /* the word, on white or on tint */
-  --alert-fill:        #A61D24;  /* filled chip / overrun band, white label */
-  --alert-tint:        #FAEAEA;
-  --alert-outline:     #B96A6F;
+  --alert-ink:         #FF9A93;  /* the word */
+  --alert-fill:        #F87A72;  /* filled chip, dark label */
+  --alert-tint:        #2A1618;
+  --alert-outline:     #7A3B3B;
 
   /* ---- semantic: unresolved / attend (HELD / STALE) ---------------- */
-  --attend-ink:        #7A5A0B;
-  --attend-outline:    #9C7B1F;  /* the HELD chip border; no fill */
-  --attend-tint:       #FBF3DC;  /* STALE word only, never a whole row */
+  --attend-ink:        #F2CE5C;
+  --attend-outline:    #6A5620;
+  --attend-tint:       #2A2413;
 
   /* ---- semantic: recorded / cleared -------------------------------- */
-  --cleared-ink:       #616F69;
-  --cleared-outline:   #C6CFC9;
+  --cleared-ink:       #8A929C;
+  --cleared-outline:   #2F353D;
 
   /* ---- type: the OS, never the network ----------------------------- */
   --font-ui:
@@ -68,6 +81,11 @@
 
   --fs-section:        15px;
   --lh-section:        20px;
+
+  /* The one number a person reads from across a kitchen. */
+  --fs-hero:           72px;
+  --lh-hero:           76px;
+  --ls-hero:           -0.035em;
 
   --fs-page:           20px;
   --lh-page:           26px;
@@ -94,8 +112,10 @@
   --cell-pad-x:        10px;
   --detail-pane-w:     420px;
 
-  /* ---- radius by role. Nothing above 3px anywhere. ----------------- */
-  --radius-flat:       0;      /* tables, cells, rows, panes, the stat rail */
-  --radius-chip:       2px;    /* chips, badges, buttons */
-  --radius-drop:       3px;    /* the upload dropzone, once */
+  /* ---- radius by role ---------------------------------------------- */
+  --radius-flat:       0;      /* table cells and rows stay square */
+  --radius-chip:       999px;  /* chips, badges, pill buttons */
+  --radius-card:       18px;   /* panels and cards */
+  --radius-inner:      12px;   /* a row inside a card: outer minus the gap */
+  --radius-drop:       12px;   /* the upload dropzone */
 }

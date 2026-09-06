@@ -1,7 +1,8 @@
 "use client";
 
 import type { StatusResponse } from "@/lib/api";
-import { ClockStrip, EmptyState, Panel } from "@/components";
+import { ClockStrip, DefinitionList, EmptyState, Panel } from "@/components";
+import { cx } from "@/lib/cx";
 import { CLOCKS, EMPTY_NO_RUNS, TIER_LEGEND } from "@/lib/strings";
 import { StateStatement } from "./StateStatement";
 import { RunFacts } from "./RunFacts";
@@ -45,9 +46,33 @@ export function TodayBoard({ initial }: TodayBoardProps) {
                   lines={status.new_lines}
                   previousRunId={status.previous_run_id}
                 />
+
+                <CorpusPanel snapshots={status.corpus} />
               </div>
 
-              <RunFacts run={run} />
+              <div className={styles.column}>
+                {/*
+                  Whose kitchen this is. It was only ever in the masthead, at
+                  the size of a breadcrumb, on a screen whose entire subject is
+                  one location.
+                */}
+                <Panel
+                  title={status.location.name}
+                  className={cx(styles.card, styles.cardLavender)}
+                  printBlock
+                >
+                  <DefinitionList
+                    columns={1}
+                    items={[
+                      { term: "Operator", value: status.location.operator },
+                      { term: "Address", value: status.location.address },
+                      { term: "Contact", value: status.location.contact },
+                    ]}
+                  />
+                </Panel>
+
+                <RunFacts run={run} />
+              </div>
             </div>
           </>
         ) : (
@@ -68,7 +93,6 @@ export function TodayBoard({ initial }: TodayBoardProps) {
           </>
         )}
 
-        <CorpusPanel snapshots={status.corpus} />
 
         {status.rejections.length > 0 ? (
           <RefusedDeliveries runs={status.rejections} />

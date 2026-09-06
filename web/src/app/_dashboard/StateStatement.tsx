@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { StatusResponse } from "@/lib/api";
 import { STATE_ACTIONS, NEVER_NOTE, overdueAction } from "@/lib/strings";
-import { formatDateTime } from "@/lib/format";
+import { formatCount, formatDateTime } from "@/lib/format";
 import { StatusBadge } from "@/components";
 import { cx } from "@/lib/cx";
 import {
@@ -55,10 +55,18 @@ export function StateStatement({ status, reachable }: StateStatementProps) {
         </div>
       </div>
 
+      {/*
+        The count is the headline and the word is its label, not the other way
+        round. "42" is what a person reads from the far side of a kitchen; the
+        sentence is what they read when they get closer.
+      */}
       <h1
         className={cx(styles.word, status.stale_corpus && styles.stale)}
         data-state={status.state}
       >
+        {hasRun ? (
+          <span className={styles.figure}>{formatCount(status.counts.pull_count)}</span>
+        ) : null}
         <span className={styles.mark}>{status.word}</span>
       </h1>
 

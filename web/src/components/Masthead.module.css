@@ -10,7 +10,7 @@
   gap: var(--space-3);
   padding: 0 var(--page-pad);
   background: var(--surface-masthead);
-  color: var(--text-inverse);
+  color: var(--text-primary);
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }

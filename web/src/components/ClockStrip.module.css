@@ -1,28 +1,31 @@
+/* A deadline is a segment of a run's life, so the clocks read as a bar of
+   stages rather than two more figures in the rail. Each pill carries its own
+   obligation and what is left of it. */
 .rail {
   display: flex;
   align-items: stretch;
-  gap: 0;
+  gap: var(--space-2);
 }
 
 .rail > .clock:last-child {
-  padding-right: 0;
+  padding-right: var(--space-4);
 }
 
 .clock {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
-  padding: 0 var(--space-4);
-  border-left: 1px solid var(--border);
+  gap: 1px;
+  padding: var(--space-2) var(--space-4);
+  border-left: 0;
+  border-radius: var(--radius-chip);
+  background: var(--surface-header);
 }
 
 .label {
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
-  letter-spacing: var(--ls-micro);
-  text-transform: uppercase;
+  font-weight: var(--weight-normal);
   color: var(--text-muted);
   white-space: nowrap;
 }
