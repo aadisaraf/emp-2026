@@ -8,10 +8,14 @@ export interface TierBadgeProps {
   className?: string;
 }
 
-/** The tier word, uncoloured. */
+/** The tier word, coloured by tier: confirmed reads as act now. */
 export function TierBadge({ tier, className }: TierBadgeProps) {
   return (
-    <span className={cx(styles.tier, className)} title={TIER_EXPLANATION[tier]}>
+    <span
+      className={cx(styles.tier, className)}
+      data-tier={tier}
+      title={TIER_EXPLANATION[tier]}
+    >
       {tier}
     </span>
   );

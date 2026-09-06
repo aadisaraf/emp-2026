@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ErrorState,
@@ -11,7 +12,6 @@ import {
   TierBadge,
 } from "@/components";
 import {
-  API_BASE,
   attempt,
   getMatch,
   type ApiFailure,
@@ -309,7 +309,9 @@ export function MatchPane({ matchId, onClose }: MatchPaneProps) {
       </div>
 
       <p className={styles.paneLink}>
-        <a href={`${API_BASE}/match/${match.id}`}>Open the full record for line #{match.id}</a>
+        {/* The app's own record, which is where a line is cleared. The pane is
+            a look; the page is where a decision gets written. */}
+        <Link href={`/match/${match.id}`}>Open the full record for line #{match.id}</Link>
       </p>
     </aside>
   );

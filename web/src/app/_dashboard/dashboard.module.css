@@ -425,14 +425,24 @@
   white-space: nowrap;
 }
 
-.lineChip[data-status="PULL"] {
+/* The chip carries the tier word, so it takes the tier's colour. Confirmed is
+   the terracotta that means act now; probable the ochre that means unresolved;
+   possible stays quiet, because it is here to be read, not acted on. Which
+   list it sits in already says whether it is a pull or a hold. */
+
+.lineChip[data-tier="CONFIRMED"] {
   background: var(--alert-fill);
   color: var(--text-inverse);
 }
 
-.lineChip[data-status="HELD"] {
+.lineChip[data-tier="PROBABLE"] {
   background: var(--attend-tint);
   color: var(--attend-ink);
+}
+
+.lineChip[data-tier="POSSIBLE"] {
+  background: var(--surface-control);
+  color: var(--text-secondary);
 }
 
 .lineMore {

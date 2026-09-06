@@ -8,3 +8,19 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+/* Confirmed is the same terracotta as PULL, because it means the same thing:
+   act now. Probable is the ochre that means unresolved. Possible stays grey:
+   it is on the sheet to be looked at, not to be acted on. */
+
+.tier[data-tier="CONFIRMED"] {
+  color: var(--alert-ink);
+}
+
+.tier[data-tier="PROBABLE"] {
+  color: var(--attend-ink);
+}
+
+.tier[data-tier="POSSIBLE"] {
+  color: var(--text-muted);
+}

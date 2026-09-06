@@ -56,6 +56,20 @@
   outline-offset: 2px;
 }
 
+/* Only there when something is actually filtering the page. */
+.clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--text-primary);
+  color: var(--text-inverse);
+  text-decoration: none;
+}
+
 .round {
   background: var(--text-primary);
   color: var(--text-inverse);

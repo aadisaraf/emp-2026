@@ -8,6 +8,7 @@ import type {
   SheetResponse,
 } from "@/lib/types";
 import { formatCount, formatDate, formatMoney, shortDeliveryRef } from "@/lib/format";
+import { byTier } from "@/lib/tier";
 import { channelLabel } from "@/lib/strings";
 import { Icon } from "@/components/Icon";
 import { cx } from "@/lib/cx";
@@ -135,7 +136,7 @@ function LineCard({ line, done }: { line: SheetLine; done: boolean }) {
           {done ? <Icon name="check" size={14} /> : null}
         </Link>
         <span className={styles.lineTitle}>{line.raw_description}</span>
-        <span className={styles.lineChip} data-status={line.status}>
+        <span className={styles.lineChip} data-tier={line.tier}>
           {line.tier}
         </span>
         <Link href={open} className={styles.lineMore} aria-label="Open this line">
@@ -177,8 +178,8 @@ export function LinesColumn({
         l.raw_description.toLowerCase().includes(q) ||
         l.product_description.toLowerCase().includes(q),
     );
-  const todo = pool.filter((l) => !l.cleared);
-  const done = pool.filter((l) => l.cleared);
+  const todo = byTier(pool.filter((l) => !l.cleared));
+  const done = byTier(pool.filter((l) => l.cleared));
   const heldCount = sheet.header.counts.held_count;
   const pullCount = sheet.header.counts.pull_count;
 

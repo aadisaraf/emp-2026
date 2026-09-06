@@ -9,6 +9,7 @@ import {
   type Column,
 } from "@/components";
 import { UNCLASSIFIED } from "@/lib/strings";
+import { byTier } from "@/lib/tier";
 import styles from "./NewLinesTable.module.css";
 
 /* The lines this run produced that the run before it did not. */
@@ -94,7 +95,7 @@ export function NewLinesTable({ lines }: NewLinesTableProps) {
   return (
     <DataTable<NewLine>
       columns={COLUMNS}
-      rows={lines}
+      rows={byTier(lines)}
       rowKey={(line) => line.id}
       caption="Lines on this run that were not on the run before it."
       className={styles.table}

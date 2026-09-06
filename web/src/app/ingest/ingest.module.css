@@ -1,28 +1,117 @@
-.lede {
-  margin: 0 0 var(--space-3);
-  max-width: 62ch;
-  color: var(--text-secondary);
-}
+/* The drop zone, the one question a heading can raise, and what happened. */
 
-.note {
-  margin: var(--space-3) 0 0;
-  max-width: 62ch;
-  font-size: var(--fs-micro);
-  color: var(--text-muted);
-}
-
-.action {
-  display: inline-block;
-  padding: 3px var(--space-3);
-  border: 1px solid var(--border-strong);
+.drop {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius-drop);
   background: var(--surface-page);
-  color: var(--text-primary);
-  font-weight: var(--weight-strong);
-  text-decoration: none;
 }
 
-.action:hover {
-  background: var(--surface-sunken);
+.dropOver {
+  border-color: var(--green-800);
+  background: var(--green-050);
+}
+
+.dropBusy {
+  border-style: solid;
+  opacity: 0.7;
+}
+
+.dropLead {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  color: var(--text-primary);
+}
+
+/* Hidden, but reachable: the button above opens it. */
+.file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 999px;
+  background: var(--green-800);
+  color: var(--text-inverse);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: var(--weight-strong);
+  cursor: pointer;
+}
+
+.button:disabled {
+  background: var(--surface-control);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The one question. Asked once per heading, and the answer is remembered. */
+
+.question {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  padding: var(--space-4);
+  border-radius: var(--radius-inner);
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+}
+
+.questionLead {
+  max-width: 62ch;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 260px;
+}
+
+.fieldName {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.select {
+  height: 36px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--attend-outline);
+  border-radius: var(--radius-inner);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-body);
+}
+
+.outcome {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  max-width: 78ch;
+  color: var(--text-primary);
+}
+
+.failed {
+  max-width: 78ch;
+  color: var(--alert-ink);
 }
 
 .path {

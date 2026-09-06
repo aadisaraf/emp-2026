@@ -6,9 +6,10 @@ import json
 import logging
 import sqlite3
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, HTTPException, Query, Request, Response, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
@@ -16,6 +17,7 @@ from pydantic import BaseModel
 
 from pullsheet import db, deadlines, location, runs as runs_module
 from pullsheet.adapters.base import DECLARABLE
+from pullsheet.adapters.column_map import ALIASES
 from pullsheet.adapters.email_drop import EmailDropAdapter
 from pullsheet.adapters.sftp_drop import SftpDropAdapter
 from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
@@ -687,5 +689,80 @@ def api_refresh() -> dict[str, Any]:
             "snapshot": result["snapshot"],
             "corpus": [_snapshot(c) for c in corpus.corpus_summary(conn, at)],
         }
+    finally:
+        conn.close()
+
+
+# Inventory in, by hand. The scheduled drop is the normal path; this is the
+# morning it does not arrive, and it has to work without leaving the app.
+
+class MappingAnswer(BaseModel):
+    """The operator's answer to the one question a heading raised."""
+
+    filename: str
+    answers: dict[str, str] = {}
+
+
+def _ingested(at: datetime, result: dict[str, Any]) -> dict[str, Any]:
+    """An ``ingest_file`` result, stamped. Its own status word is kept: a
+    duplicate is neither an error nor a new run, and saying so is the point.
+    """
+    return {"generated_at": _iso(at), **result}
+
+
+@router.post("/ingest/upload")
+async def api_ingest_upload(file: UploadFile) -> dict[str, Any]:
+    """Take one spreadsheet. Read it, or say exactly which heading is unclear."""
+    app = _app()
+    app.UPLOADS.mkdir(parents=True, exist_ok=True)
+    name = Path(file.filename or "upload.csv").name
+    target = app.UPLOADS / name
+    target.write_bytes(await file.read())
+
+    adapter = SpreadsheetUploadAdapter()
+    conn = app._conn()
+    try:
+        at = app.now()
+        try:
+            mapping, ambiguous = app._resolve(conn, adapter, target)
+        except Exception as err:                                     # noqa: BLE001
+            # A file whose headings cannot even be read is still a delivery
+            # that happened. It becomes a refused run rather than nothing.
+            run_id = db.open_run(conn, adapter.channel)
+            db.reject_run(conn, run_id, str(err))
+            return {"generated_at": _iso(at), "status": "rejected",
+                    "run_id": run_id, "filename": name, "reason": str(err)}
+
+        if ambiguous:
+            headers, _detected, _raised = adapter.inspect(target)
+            return {"generated_at": _iso(at), "status": "ambiguous",
+                    "filename": name, "headers": headers, "mapping": mapping,
+                    "ambiguous": {h: sorted(v) for h, v in ambiguous.items()},
+                    "fields": sorted(ALIASES)}
+
+        return _ingested(at, db.ingest_file(conn, target, adapter, mapping))
+    finally:
+        conn.close()
+
+
+@router.post("/ingest/mapping")
+def api_ingest_mapping(payload: MappingAnswer) -> dict[str, Any]:
+    """Store the operator's answer about a heading, and read the file with it."""
+    app = _app()
+    path = app.UPLOADS / Path(payload.filename).name
+    if not path.exists():
+        raise ApiError(404, "not_found",
+                       f"{payload.filename} is no longer waiting to be mapped")
+
+    adapter = SpreadsheetUploadAdapter()
+    conn = app._conn()
+    try:
+        at = app.now()
+        mapping, ambiguous = app._resolve(conn, adapter, path)
+        for header in ambiguous:
+            chosen = payload.answers.get(header)
+            if chosen and chosen != "ignore":
+                mapping[header] = chosen
+        return _ingested(at, db.ingest_file(conn, path, adapter, mapping))
     finally:
         conn.close()

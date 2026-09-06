@@ -1,6 +1,8 @@
-import { DefinitionList, PageHeader, Panel } from "@/components";
-import { API_BASE } from "@/lib/api";
-import { PAGE_TITLES } from "@/lib/strings";
+import { Facts, Kv, PageHero, Pill, TabCard } from "@/components";
+import { attempt, getStatus } from "@/lib/api";
+import { channelLabel } from "@/lib/strings";
+import { formatCount, formatDate } from "@/lib/format";
+import { UploadPanel } from "./UploadPanel";
 import styles from "./ingest.module.css";
 
 /*
@@ -43,41 +45,51 @@ const CHANNELS = [
   },
 ];
 
-export default function AddInventoryPage() {
+export default async function AddInventoryPage() {
+  const result = await attempt(getStatus());
+  const status = result.ok ? result.data : null;
+  const run = status?.run ?? null;
+
   return (
     <>
-      <PageHeader
-        title={PAGE_TITLES.addInventory}
-        context="The scheduled drop is the normal path. This page is for the morning it fails."
+      {/* The figure is the run a new file would replace, because that is the
+          thing a person is deciding about when they stand on this page. */}
+      <PageHero
+        figure={run ? `#${run.id}` : "0"}
+        word={run ? "in force now" : "deliveries so far"}
+        actions={run ? <Pill href="/sheet">Open sheet</Pill> : undefined}
       />
 
-      <Panel title="Upload one export">
-        <p className={styles.lede}>
-          The file is read once, matched against the recall corpus, and finalized as a
-          run of its own. It does not replace the scheduled drop.
-        </p>
-        <a className={styles.action} href={`${API_BASE}/ingest`}>
-          Open the upload form
-        </a>
-        <p className={styles.note}>
-          Accepts CSV and XLSX. A file that cannot be read is refused by name, with the
-          row or column that failed, and the sheet on screen is left alone.
-        </p>
-      </Panel>
+      {run ? (
+        <Facts
+          items={[
+            { label: "channel", value: channelLabel(run.channel) },
+            {
+              label: "received",
+              value: formatDate(run.business_date) ?? run.business_date,
+            },
+            { label: "rows read", value: formatCount(run.rows_read) ?? "0" },
+            { label: "deliveries", value: formatCount(status?.run_count ?? 0) ?? "0" },
+          ]}
+        />
+      ) : null}
 
-      <Panel title="Where inventory comes from">
-        <DefinitionList
-          items={CHANNELS.map((channel) => ({
-            term: channel.term,
-            value: (
+      <UploadPanel />
+
+      <TabCard title="Where inventory comes from" tone="sunken">
+        {CHANNELS.map((channel) => (
+          <Kv
+            key={channel.term}
+            term={channel.term}
+            value={
               <>
                 {channel.detail}
                 {channel.path ? <code className={styles.path}>{channel.path}</code> : null}
               </>
-            ),
-          }))}
-        />
-      </Panel>
+            }
+          />
+        ))}
+      </TabCard>
     </>
   );
 }

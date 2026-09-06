@@ -12,12 +12,12 @@ const PATHS: Record<string, string> = {
   back: "M15 5l-7 7 7 7",
   print: "M6 9V3h12v6M6 18H4V9h16v9h-2M6 14h12v7H6z",
   refresh: "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5",
+  close: "M6 6l12 12M18 6 6 18",
   check: "M5 12.5 10 17.5 19 7",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 4v5l3 2",
   more: "M6 12h.01M12 12h.01M18 12h.01",
   open: "M7 17 17 7M9 7h8v8",
   flag: "M5 21V4h11l-1.5 3.5L16 11H5",
-  doc: "M7 3h7l5 5v13H7zM14 3v5h5M9 13h6M9 17h6",
 };
 
 export interface IconProps extends SVGProps<SVGSVGElement> {

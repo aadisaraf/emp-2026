@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Decision, DecisionKind, MatchDetailResponse } from "@/lib/api";
 import { clearMatch, confirmPulled, toFailure } from "@/lib/api";
@@ -36,22 +36,23 @@ export interface LineDecisionsProps {
 export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
   const router = useRouter();
 
-  // What the last write returned, until the server render catches up with it.
+  // What the last write returned, shown until the server render catches up
+  // with it. Derived, not synchronised: once the server's copy carries as many
+  // decisions as the written one, the written one simply stops being used.
   const [written, setWritten] = useState<MatchDetailResponse | null>(null);
-  useEffect(() => {
-    setWritten((current) =>
-      current && detail.decisions.length >= current.decisions.length ? null : current,
-    );
-  }, [detail]);
-  const view = written ?? detail;
+  const view =
+    written && detail.decisions.length < written.decisions.length ? written : detail;
 
   const [pending, setPending] = useState<DecisionKind | null>(null);
 
-  /* Neither action is offered until this component is running. */
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    setReady(true);
-  }, []);
+  /* Neither action is offered until this component is running: both are
+     written by fetch, so an button that appears before hydration is a button
+     that does nothing. False on the server, true once mounted. */
+  const ready = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const [clearActor, setClearActor] = useState("");
   const [clearNote, setClearNote] = useState("");
