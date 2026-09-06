@@ -1,3 +1,23 @@
+> ## Overrides applied 2026-09-06 — read this before following the palette below
+>
+> This file is generator output. Two of its recommendations were **rejected** for
+> this product, and the code does not follow them:
+>
+> **1. Palette — REJECTED.** The generator proposes `#DC2626` primary on a
+> `#FFF1F2` background. PullSheet reserves red for one meaning: PULL this food,
+> act now. It appears on 42 of 856 lines and that scarcity is the signal. A
+> red-tinted page would make the alert colour decorative. The institutional
+> green in `web/src/styles/tokens.css` stands, red stays reserved for PULL and
+> ochre for HELD. That palette measures 0 WCAG AA failures.
+>
+> **2. Pattern — NOT APPLICABLE.** "Real-Time / Operations Landing" with a hero,
+> trust signals and a Start-trial CTA is a marketing landing page. This is an
+> internal console for one kitchen. There is no hero and no CTA funnel.
+>
+> **Adopted:** the Data-Dense Dashboard style, and Fira Sans / Fira Code, which
+> are vendored as latin-subset woff2 under `web/src/fonts/` rather than loaded
+> from Google, because the demo must run with the network off.
+
 # Design System Master File
 
 > **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
