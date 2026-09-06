@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import localFont from "next/font/local";
 import "./globals.css";
 import {
   Masthead,
@@ -15,30 +14,6 @@ import { statusSignature } from "@/lib/status";
 import { formatCount } from "@/lib/format";
 import { COUNT_LABELS, NEW_COUNT_TITLE } from "./_dashboard/strings";
 import styles from "./layout.module.css";
-
-/* Self-hosted so the demo keeps working with the cable out. The latin subsets
-   only, 142KB for all five faces. Fira Sans is a humanist sans with actual
-   character; Fira Code carries the lot codes and GTINs, which are code. */
-const firaSans = localFont({
-  src: [
-    { path: "../fonts/FiraSans-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/FiraSans-500.woff2", weight: "500", style: "normal" },
-    { path: "../fonts/FiraSans-600.woff2", weight: "600", style: "normal" },
-  ],
-  variable: "--font-fira-sans",
-  display: "swap",
-  fallback: ["ui-sans-serif", "system-ui", "sans-serif"],
-});
-
-const firaCode = localFont({
-  src: [
-    { path: "../fonts/FiraCode-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/FiraCode-500.woff2", weight: "500", style: "normal" },
-  ],
-  variable: "--font-fira-code",
-  display: "swap",
-  fallback: ["ui-monospace", "SFMono-Regular", "monospace"],
-});
 
 /* The shell, on every route. */
 
@@ -72,7 +47,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       : [];
 
   return (
-    <html lang="en" className={`${firaSans.variable} ${firaCode.variable}`}>
+    <html lang="en">
       <body>
         <Masthead status={status} />
         <SideNav servesMealProgram={status?.location.serves_meal_program ?? true} />

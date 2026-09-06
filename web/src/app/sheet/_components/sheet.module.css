@@ -237,6 +237,8 @@
 .sheetTable col:nth-child(5) { width: 104px; }
 .sheetTable col:nth-child(6) { width: 68px; }
 .sheetTable col:nth-child(7) { width: 92px; }
+/* 88, not less: the uppercase tracked header needs it, and a checkbox column
+   whose header is cut to "PULLED..." does not tell an operator what to tick. */
 .sheetTable col:nth-child(9) { width: 88px; }
 
 /* Fira Code sets wider than the sans at the same nominal size, which is normal

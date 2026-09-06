@@ -1,21 +1,17 @@
-/* No box. Every panel used to carry an outer border, a tinted header bar and a
-   divider under it -- three pieces of decoration each, repeated down the page,
-   which is what made the screen read as one undifferentiated mass of frames.
-   A panel is now a heading and its content, separated from the next panel by
-   space. Grouping comes from proximity, which needs no ink. */
 .panel {
-  background: none;
-  border: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-page);
+  border-radius: var(--radius-flat);
 }
 
 .head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: 0 0 var(--space-2);
-  border-bottom: 1px solid var(--border-hairline);
-  background: none;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-header);
 }
 
 .headText {
@@ -25,7 +21,6 @@
 .title {
   font-size: var(--fs-section);
   line-height: var(--lh-section);
-  letter-spacing: var(--ls-section);
   font-weight: var(--weight-strong);
   color: var(--text-primary);
 }
@@ -43,10 +38,8 @@
   flex: none;
 }
 
-/* Content starts at the page grid, not inset inside a frame, so a table runs
-   the full measure instead of being a box within a box. */
 .body {
-  padding: var(--space-3) 0 0;
+  padding: var(--space-3);
 }
 
 .flush {
