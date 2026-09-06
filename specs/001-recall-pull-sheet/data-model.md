@@ -51,7 +51,7 @@ FR-002's fourteen fields, plus identity bookkeeping from FR-064.
 
 **The five supplier columns are the ordinary matching path, not a fallback (FR-069).** A district
 item master is built around purchasing, so it always records who supplies a line — it has to, in
-order to reorder it. Barcode and lot coverage is partial: 46 of the 53 rows in the committed
+order to reorder it. Barcode and lot coverage is partial: 49 of the 56 rows in the committed
 fixture carry no GTIN, and lot codes are captured only where someone scans at receiving.
 `recalling_firm` meanwhile is populated on 100% of the openFDA corpus. Supplier is therefore the
 channel most rows actually reach a recall through.

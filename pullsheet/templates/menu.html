@@ -1,0 +1,129 @@
+{% import "base.html" as ui with context %}
+<title>Menu impact &mdash; {{ header.district }}</title>
+{% include "base.html" %}
+
+<main>
+  <h1>Menu impact</h1>
+  <p class="generated">Generated {{ header.generated_at }}</p>
+
+  <section class="tally">
+    <div class="stat stat-pull"><span class="n">{{ menu.broken_items }}</span> broken items</div>
+    <div class="stat"><span class="n">{{ menu.recipes }}</span> meals affected</div>
+    <div class="stat"><span class="n">{{ "{:,}".format(menu.planned_meals) }}</span>
+      meals <em>{{ menu.caveat }}</em></div>
+    <div class="stat"><span class="n">{{ menu.dates | length }}</span> service days</div>
+  </section>
+
+  <p class="note">
+    Meal counts are <strong>{{ menu.caveat }}</strong> &mdash; they come from
+    {{ ui.provenance('service_days') }} planning figures, and each service day is
+    counted once however many recalled items land on it.
+    {% if menu.held_not_cascaded %}
+    {{ menu.held_not_cascaded }} further item(s) are held for review and are
+    <strong>not</strong> cascaded here, because held means undecided; they are all on the
+    <a href="/sheet">pull sheet</a>.
+    {% endif %}
+  </p>
+
+  {% if not menu.entries %}
+  <p class="zero">No pulled item appears in any planned recipe. Nothing on the menu changes.</p>
+  {% endif %}
+
+  {% for e in menu.entries %}
+  <section class="site-section">
+    <h2>{{ e.line.raw_description }}</h2>
+    <p class="fine">
+      {{ e.line.site }}{% if e.line.storage_location %} &middot; {{ e.line.storage_location }}{% endif %}
+      {% if e.line.quantity is not none %} &middot; {{ e.line.quantity }} {{ e.line.unit or '' }}{% endif %}
+      {% if e.line.lot_code %} &middot; lot {{ e.line.lot_code }}{% endif %}
+      &middot; {{ e.planned_meals }} meals affected here ({{ e.caveat }})
+    </p>
+    <ul class="fine">
+      {% for r in e.recalls %}
+      <li>{{ ui.tier_badge(r.tier, r.status) }}
+        {{ r.recalling_firm or 'firm not stated' }} &middot;
+        {{ r.classification or 'unclassified' }} &middot;
+        <a href="/match/{{ r.match_id }}">{{ r.source }} {{ r.source_record_id }}</a>
+        {% if r.recall_status != 'active' %}<strong>{{ r.recall_status }}</strong>{% endif %}
+        {% if r.cleared_count %}<span class="fine">cleared by a person</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+
+    <table class="lines">
+      <thead><tr>
+        <th>Meal</th><th>Date</th><th>Site</th>
+        <th>Meals ({{ menu.caveat }})</th><th>Replacement</th>
+      </tr></thead>
+      <tbody>
+      {% for r in e.recipes %}
+        {% for d in r.service_days %}
+        <tr>
+          <td>{{ r.name }} {{ ui.provenance('recipes') }}</td>
+          <td>{{ d.date }}</td>
+          <td>{{ d.site }}</td>
+          <td class="num">{{ d.planned_meals }}</td>
+          <td>
+            {% set p = proposals.get((e.line.site, r.recipe_id)) %}
+            {% if p and p.kind == 'substitute' %}
+              <strong>{{ p.name }}</strong>
+              <span class="fine">covers {{ p.covers | join(', ') }}</span>
+              {% if p.held_ingredients %}
+              <span class="fine">held ingredient(s): {{ p.held_ingredients | join(', ') }}</span>
+              {% endif %}
+            {% elif p %}
+              <span class="unknown">no substitute exists</span>
+              <span class="fine">{{ p.reason }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not r.service_days %}
+        <tr>
+          <td>{{ r.name }} {{ ui.provenance('recipes') }}</td>
+          <td colspan="2" class="fine">not served at {{ e.line.site }} this week</td>
+          <td class="num">0</td>
+          <td class="fine">
+            {% if r.also_served_at %}
+              served at {{ r.also_served_at | join(', ') }} &mdash; those sites' own
+              inventory did not report this item, so their menus are not counted here
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+
+  {% if proofs %}
+  <section class="site-section">
+    <h2>Meals with no substitute</h2>
+    <p class="note">Each line below is a <strong>proof</strong>, not a failed search:
+      it names the meal-pattern component that no clean recipe at that site can supply.
+      {{ COMPONENTS_CAVEAT }}.</p>
+    <table class="lines">
+      <thead><tr><th>Site</th><th>Meal</th><th>Requires</th><th>Unmet</th><th>Checked</th></tr></thead>
+      <tbody>
+      {% for p in proofs %}
+        <tr>
+          <td>{{ p.site }}</td>
+          <td>{{ p.broken_recipe }}</td>
+          <td class="fine">{{ p.required | join(', ') }}</td>
+          <td><strong>{{ p.unmet | join(', ') }}</strong></td>
+          <td class="num">{{ p.candidates_checked }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <footer class="sheet-footer">
+    Menu data is {{ ui.provenance('recipes') }}: recipes, components and planned counts
+    were written by the build team, not imported from a district system.
+    Recall data: {% for c in header.corpora %}{{ c.source }} captured
+    {{ c.captured_at[:10] }} ({{ c.age_hours }}h ago){% if not loop.last %}; {% endif %}{% endfor %}.
+  </footer>
+</main>

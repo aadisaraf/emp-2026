@@ -23,6 +23,8 @@ from pullsheet.adapters.paste import PasteAdapter
 from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
 from pullsheet.artifacts import pull_sheet
 from pullsheet.matching.run import run_matcher
+from pullsheet.menu import cascade as menu_cascade
+from pullsheet.menu import substitute as menu_substitute
 from pullsheet.matching.screen import SCREENING_RULE
 from pullsheet.provenance import LABELS, SOURCES, label_for
 
@@ -37,6 +39,7 @@ templates = Jinja2Templates(directory=str(HERE / "templates"))
 templates.env.globals["label_for"] = label_for
 templates.env.globals["PROVENANCE_LABELS"] = LABELS
 templates.env.globals["SCREENING_RULE"] = SCREENING_RULE
+templates.env.globals["COMPONENTS_CAVEAT"] = menu_substitute.COMPONENTS_CAVEAT
 
 
 def now() -> datetime:
@@ -127,6 +130,25 @@ def sheet(request: Request, site: str | None = None):
             "request": request,
             "header": pull_sheet.header(conn, now(), resolved),
             "sections": pull_sheet.by_site(conn, resolved),
+        })
+    finally:
+        conn.close()
+
+
+@app.get("/menu", response_class=HTMLResponse)
+def menu(request: Request):
+    """US2. What each pulled case was going to become, and what replaces it."""
+    conn = _conn()
+    try:
+        summary = menu_cascade.summary(conn)
+        proposals = menu_substitute.proposals_for(conn, summary["entries"])
+        return templates.TemplateResponse("menu.html", {
+            "request": request,
+            "header": pull_sheet.header(conn, now()),
+            "menu": summary,
+            # Keyed for the template; the list form is kept for the proof table.
+            "proposals": {(p["site"], p["broken_recipe_id"]): p for p in proposals},
+            "proofs": [p for p in proposals if p["kind"] == "none"],
         })
     finally:
         conn.close()
