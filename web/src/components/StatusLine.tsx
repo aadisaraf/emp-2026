@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import type { ApiFailure } from "@/lib/api";
 import type { StatusResponse } from "@/lib/types";
 import { STATE_ACTIONS, overdueAction } from "@/lib/strings";
@@ -12,8 +15,15 @@ export interface StatusLineProps {
   failure?: ApiFailure | null;
 }
 
-/** The state of the location, in one line, above everything else. */
+/**
+  The state of the location, in one line, above everything else.
+
+  On Today the page itself states the same sentence at h1 size, so the strip
+  carries only the corpus there. Printing the identical three sentences twice,
+  300px apart, was a large part of why that screen read as cluttered.
+*/
 export function StatusLine({ status, failure }: StatusLineProps) {
+  const onToday = usePathname() === "/";
   if (!status) {
     return (
       <div className={styles.line} data-role="statusline">
@@ -29,16 +39,18 @@ export function StatusLine({ status, failure }: StatusLineProps) {
 
   return (
     <div className={styles.line} data-role="statusline">
-      <p className={styles.sentence}>
-        <strong
-          className={cx(styles.word, status.stale_corpus && styles.stale)}
-          data-state={status.state}
-        >
-          {status.word}
-        </strong>{" "}
-        <span className={styles.detail}>{status.detail}</span>{" "}
-        <span className={styles.action}>{action}</span>
-      </p>
+      {onToday ? null : (
+        <p className={styles.sentence}>
+          <strong
+            className={cx(styles.word, status.stale_corpus && styles.stale)}
+            data-state={status.state}
+          >
+            {status.word}
+          </strong>{" "}
+          <span className={styles.detail}>{status.detail}</span>{" "}
+          <span className={styles.action}>{action}</span>
+        </p>
+      )}
       <p className={styles.corpus}>
         <span className={styles.corpusLabel}>corpus</span>{" "}
         {status.corpus.length === 0 ? (

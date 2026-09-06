@@ -33,11 +33,7 @@ export function TodayBoard({ initial }: TodayBoardProps) {
               <Panel title={CLOCKS.heading} printBlock>
                 <ClockStrip deadlines={status.deadlines} variant="table" notes />
               </Panel>
-              <RunFacts
-                run={run}
-                counts={status.counts}
-                previousRunId={status.previous_run_id}
-              />
+              <RunFacts run={run} />
             </div>
 
             <NewSincePrevious

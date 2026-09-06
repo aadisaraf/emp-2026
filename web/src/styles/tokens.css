@@ -49,39 +49,52 @@
   --cleared-ink:       #616F69;
   --cleared-outline:   #C6CFC9;
 
-  /* ---- type: the OS, never the network ----------------------------- */
-  --font-ui:
-    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  /* ---- type: Fira, vendored, never the network ---------------------- */
+  --font-ui:   var(--font-fira-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-fira-code), ui-monospace, SFMono-Regular, monospace;
 
-  --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-
-  /* Five sizes, three weights, and that is all. No 14px, no 16px body. */
-  --fs-micro:          11px;
-  --lh-micro:          14px;
+  /* Six sizes. The jump from body to page is 2.2x, not 1.5x, because a page
+     title that is barely larger than a table cell is not a title -- it reads
+     as a bold paragraph and the page comes out flat. Body stays 13px: this is
+     an operations table and density is the point. Line height carries the
+     legibility instead, which costs no column width. */
+  --fs-micro:          12px;
+  --lh-micro:          16px;
   --ls-micro:          0.06em;
 
   --fs-body:           13px;
-  --lh-body:           18px;
+  --lh-body:           20px;
 
-  --fs-section:        15px;
-  --lh-section:        20px;
+  --fs-section:        16px;
+  --lh-section:        22px;
+  --ls-section:        -0.005em;
 
-  --fs-page:           20px;
-  --lh-page:           26px;
+  --fs-page:           28px;
+  --lh-page:           34px;
+  --ls-page:           -0.018em;
 
+  /* Counts are the one thing on this page a person reads from across a
+     kitchen, so they get a size of their own. */
+  --fs-figure:         30px;
+  --lh-figure:         34px;
+  --ls-figure:         -0.02em;
+
+  /* Three weights, not two. The middle one does the work that a size change
+     would otherwise have to do, which is how the scale stays short. */
   --weight-normal:     400;
+  --weight-mid:        500;
   --weight-strong:     600;
 
-  /* ---- space: 4 / 6 / 10 / 16 / 24 / 32, applied unevenly ---------- */
+  /* ---- space: 4 / 6 / 10 / 16 / 24 / 32 / 48, applied unevenly ------
+     Tight inside a group, wide between groups. Uniform padding everywhere is
+     what made the page read as one undifferentiated mass. */
   --space-1:           4px;
   --space-2:           6px;
   --space-3:           10px;
   --space-4:           16px;
   --space-5:           24px;
   --space-6:           32px;
+  --space-7:           48px;
 
   /* ---- structure --------------------------------------------------- */
   --page-pad:          20px;   /* side padding, fluid to the viewport */

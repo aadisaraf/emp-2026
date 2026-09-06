@@ -1,20 +1,16 @@
-import type { Counts, Run } from "@/lib/api";
+import type { Run } from "@/lib/api";
 import { DefinitionList, NotRecorded, Panel, StatusBadge, type DefinitionItem } from "@/components";
 import { formatCount, formatDateTime, shortDeliveryRef } from "@/lib/format";
 import { channelLabel } from "@/lib/strings";
-import { cx } from "@/lib/cx";
-import { COUNT_LABELS, FIRST_RUN_NOTE, NEW_COUNT_TITLE, RUN_TERMS, runTitle } from "./strings";
+import { RUN_TERMS, runTitle } from "./strings";
 import styles from "./dashboard.module.css";
 
 export interface RunFactsProps {
   run: Run;
-  counts: Counts;
-  /** The run new_count is measured against. null on the first run here. */
-  previousRunId: number | null;
 }
 
-/** The four counts, then where they came from. */
-export function RunFacts({ run, counts, previousRunId }: RunFactsProps) {
+/** Where this run came from, and when. The counts are the stat rail's job. */
+export function RunFacts({ run }: RunFactsProps) {
   const facts: DefinitionItem[] = [
     { term: RUN_TERMS.status, value: <StatusBadge value={run.status} /> },
     { term: RUN_TERMS.date, value: run.business_date },
@@ -41,28 +37,13 @@ export function RunFacts({ run, counts, previousRunId }: RunFactsProps) {
 
   return (
     <Panel title={runTitle(run.id)} printBlock>
-      <div className={styles.counts}>
-        <div className={cx(styles.count, styles.countPull)}>
-          <span className={styles.countLabel}>{COUNT_LABELS.pull}</span>
-          <span className={styles.countValue}>{formatCount(counts.pull_count)}</span>
-        </div>
-        <div className={styles.count}>
-          <span className={styles.countLabel}>{COUNT_LABELS.held}</span>
-          <span className={styles.countValue}>{formatCount(counts.held_count)}</span>
-        </div>
-        <div className={styles.count}>
-          <span className={styles.countLabel}>{COUNT_LABELS.total}</span>
-          <span className={styles.countValue}>{formatCount(counts.total)}</span>
-        </div>
-        <div
-          className={styles.count}
-          title={previousRunId === null ? FIRST_RUN_NOTE : NEW_COUNT_TITLE}
-        >
-          <span className={styles.countLabel}>{COUNT_LABELS.fresh}</span>
-          <span className={styles.countValue}>{formatCount(counts.new_count)}</span>
-        </div>
-      </div>
-
+      {/*
+        The four counts are stated by the stat rail at the top of every route,
+        at a size you can read across a kitchen. Repeating them here put the
+        same four numbers twice on one screen, 300px apart, which is a large
+        part of why the page read as cluttered. What this panel is for is the
+        provenance of the run: where it came from and when.
+      */}
       <DefinitionList items={facts} columns={2} />
 
       {run.corpus_note ? (

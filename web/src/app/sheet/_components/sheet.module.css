@@ -231,13 +231,36 @@
    little air -- measured, not guessed. The pinned set was holding 227px the
    content did not use while Item and Triggered by, the two columns carrying
    what the sheet is for, shared 151px between them and rendered as ellipses. */
-.sheetTable col:nth-child(1) { width: 136px; }
-.sheetTable col:nth-child(3) { width: 76px; }
-.sheetTable col:nth-child(4) { width: 56px; }
-.sheetTable col:nth-child(5) { width: 92px; }
-.sheetTable col:nth-child(6) { width: 64px; }
-.sheetTable col:nth-child(7) { width: 104px; }
-.sheetTable col:nth-child(9) { width: 64px; }
+.sheetTable col:nth-child(1) { width: 88px; }
+.sheetTable col:nth-child(3) { width: 84px; }
+.sheetTable col:nth-child(4) { width: 68px; }
+.sheetTable col:nth-child(5) { width: 104px; }
+.sheetTable col:nth-child(6) { width: 68px; }
+.sheetTable col:nth-child(7) { width: 92px; }
+.sheetTable col:nth-child(9) { width: 88px; }
+
+/* Fira Code sets wider than the sans at the same nominal size, which is normal
+   for a mono. The evidence pair is code -- lot numbers, catalog numbers -- so
+   it takes the micro size and reads as a different kind of thing from the
+   prose beside it, which it is. */
+.sheetTable .code {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  /* A code string may break mid-token as a last resort. Prose may not -- that
+     is why this is scoped to .code and the item description is not. */
+  overflow-wrap: anywhere;
+}
+
+/* Tier over status, stacked, the way the printed sheet already sets them. Side
+   by side they needed 140px of the widest row in the table to say two short
+   words; stacked they need 88px, and the 52px goes to the columns that carry
+   what the line actually is. */
+.sheetTable td:nth-child(1) > * {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
 
 /* Item, Evidence and Triggered by wrap instead of ellipsing. Every column
    wanted 1,240px inside an 843px table, so something has to give, and what
@@ -308,6 +331,10 @@
 /* An AMENDED or TERMINATED tag sits under the description, not beside it.
    Inline, the tag ate half the first line and forced the name to wrap one
    word at a time; the name is what an operator reads to find the case. */
+.sheetTable td:nth-child(8) .code {
+  overflow-wrap: anywhere;
+}
+
 .sheetTable td:nth-child(2) .item {
   display: block;
 }

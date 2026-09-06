@@ -1,10 +1,15 @@
+/* Seven identically weighted cells in a tinted strip, each fenced off with its
+   own rule, is a row of boxes rather than a reading of the morning. The rail
+   now states its numbers at a size someone reads from across a kitchen, and
+   separates them with space instead of ink. */
 .rail {
   display: flex;
-  align-items: stretch;
-  min-height: 64px;
-  background: var(--surface-header);
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
+  align-items: flex-end;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--page-pad) var(--space-5);
+  background: none;
+  border-top: 0;
+  border-bottom: 1px solid var(--border-hairline);
   border-radius: var(--radius-flat);
   font-variant-numeric: tabular-nums lining-nums;
   overflow-x: auto;
@@ -12,22 +17,22 @@
 
 .stat {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: var(--space-2) var(--space-4);
-  border-left: 1px solid var(--border);
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  padding: 0;
+  border-left: 0;
 }
 
 .stat:first-child {
   border-left: 0;
-  padding-left: var(--page-pad);
+  padding-left: 0;
 }
 
 .label {
   font-size: var(--fs-micro);
   line-height: var(--lh-micro);
-  font-weight: var(--weight-strong);
+  font-weight: var(--weight-mid);
   letter-spacing: var(--ls-micro);
   text-transform: uppercase;
   color: var(--text-muted);
@@ -35,14 +40,19 @@
 }
 
 .value {
-  font-size: var(--fs-body);
-  line-height: var(--lh-body);
+  font-size: var(--fs-figure);
+  line-height: var(--lh-figure);
+  letter-spacing: var(--ls-figure);
   font-weight: var(--weight-strong);
   color: var(--text-primary);
   white-space: nowrap;
 }
 
+/* The clocks are a different kind of fact from the counts -- an obligation with
+   a deadline, not a tally -- so they sit apart rather than as two more cells. */
 .clocks {
   margin-left: auto;
-  padding-right: var(--page-pad);
+  padding-right: 0;
+  display: flex;
+  gap: var(--space-6);
 }

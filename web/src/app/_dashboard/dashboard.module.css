@@ -117,8 +117,11 @@
 .stale .mark {
   background: var(--attend-tint);
   padding: 0 var(--space-1);
+  /* The offset scales with the word: at 28px a 4px offset lands inside the
+     descenders of "pull" and the mark reads as a strikethrough. */
   text-decoration: underline dotted currentColor;
-  text-underline-offset: 4px;
+  text-underline-offset: 0.28em;
+  text-decoration-thickness: 1px;
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
