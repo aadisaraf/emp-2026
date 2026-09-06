@@ -56,7 +56,7 @@ ALIASES: dict[str, set[str]] = {
     # would leave "$/unit" indistinguishable from the unit column itself.
     "unit_cost": {"unit cost", "cost per unit", "unit price", "price", "cost",
                   "per unit", "cost unit", "cost per case", "cost case",
-                  "extended cost", "value"},
+                  "case cost", "case price", "extended cost", "value"},
     "received_date": {"received date", "date received", "rcv date", "date in",
                       "receipt date", "delivered", "delivery date"},
 }

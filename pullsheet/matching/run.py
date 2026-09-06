@@ -144,6 +144,8 @@ def ordered_matches(conn: sqlite3.Connection, site: str | None = None) -> list[s
                i.vendor_name, i.vendor_item_code,
                r.source, r.source_record_id, r.product_description, r.code_info,
                r.classification, r.class_rank, r.recalling_firm, r.status AS recall_status,
+               r.prior_status AS recall_prior_status, r.status_changed_at,
+               r.amended_from,
                r.reason_for_recall,
                (SELECT COUNT(*) FROM decisions d
                  WHERE d.target_type = 'match' AND d.target_id = CAST(m.id AS TEXT)

@@ -151,3 +151,4 @@ mark { background: #ffe680; padding: 0 .1em; }
 .alerts { border-left: 3px solid #8a1c1c; padding-left: .8rem; }
 form.inline { display: inline-flex; gap: .3rem; }
 form.inline input { width: 7rem; }
+.note-amended { color: #7a2a00; font-weight: 600; }

@@ -58,6 +58,14 @@ SOURCES: dict[str, tuple[Provenance, str, str]] = {
         "how 'unconfirmed' becomes visible -- without a roster, a building that never "
         "reported would simply not appear, which is the failure FR-050 exists to catch.",
     ),
+    "inbox": (
+        "hand-authored",
+        "data/fixtures/inbox.mbox",
+        "A fixture mailbox holding one emailed inventory export. The email_drop "
+        "adapter reads THIS FILE, not a mail server: no IMAP, no credentials, no "
+        "polling. Principle V forbids presenting a stub as working, so it is "
+        "labelled hand-authored wherever it appears.",
+    ),
     "unit_costs": (
         "hand-authored",
         "data/fixtures/unit_costs.csv",

@@ -18,16 +18,21 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from pullsheet import db
+from pullsheet.adapters.base import DECLARABLE
 from pullsheet.adapters.column_map import ALIASES
+from pullsheet.adapters.email_drop import EmailDropAdapter
 from pullsheet.adapters.paste import PasteAdapter
 from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
+from pullsheet.adapters.watched_folder import WatchedFolderAdapter
 from pullsheet.artifacts import credit_claim, hold_record, pull_sheet, state_report
 from pullsheet import monitor
 from pullsheet.matching.run import run_matcher
 from pullsheet.menu import cascade as menu_cascade
 from pullsheet.menu import substitute as menu_substitute
 from pullsheet.matching.screen import SCREENING_RULE
+from pullsheet.recalls import fetch as recalls_fetch
 from pullsheet.provenance import LABELS, SOURCES, label_for
+from pullsheet.recalls import corpus
 from pullsheet.rollup import deadlines as rollup_deadlines
 from pullsheet.rollup import status as rollup_status
 
@@ -214,6 +219,54 @@ def artifact_state_report(request: Request):
         conn.close()
 
 
+@app.get("/sources", response_class=HTMLResponse)
+def sources_page(request: Request):
+    """SC-007, FR-003. Every source, its provenance, and what each adapter can
+    honestly read -- straight from `declares()`, not from a hand-kept list that
+    could drift away from the code."""
+    conn = _conn()
+    try:
+        adapters = []
+        for adapter in (WatchedFolderAdapter(), SpreadsheetUploadAdapter(),
+                        PasteAdapter(), EmailDropAdapter()):
+            declared = adapter.declares()
+            adapters.append({
+                "name": adapter.name,
+                "provenance": adapter.provenance,
+                "declares": sorted(declared),
+                "cannot": sorted(DECLARABLE - declared),
+                "doc": (adapter.__class__.__doc__ or "").strip().split("\n")[0],
+            })
+        return templates.TemplateResponse("sources.html", {
+            "request": request,
+            "header": pull_sheet.header(conn, now()),
+            "sources": SOURCES,
+            "snapshots": corpus.corpus_summary(conn, now()),
+            "adapters": adapters,
+            "declarable": sorted(DECLARABLE),
+        })
+    finally:
+        conn.close()
+
+
+@app.post("/recalls/refresh")
+def refresh_recalls(request: Request):
+    """FR-060. Try the agency; fall back to the cached snapshot on any failure.
+
+    An unreachable endpoint is NEVER an error response. The page renders either
+    way and says which of the two happened.
+    """
+    conn = _conn()
+    try:
+        result = recalls_fetch.refresh(conn, now=now())
+    finally:
+        conn.close()
+    return JSONResponse(
+        {"status": result["status"], "message": result["message"],
+         "error": result["error"]},
+        status_code=200)
+
+
 @app.get("/match/{match_id}", response_class=HTMLResponse)
 def match_detail(request: Request, match_id: int):
     """Both source records, verbatim, with the triggering substring highlighted
@@ -228,7 +281,9 @@ def match_detail(request: Request, match_id: int):
                       i.unpopulated_fields, i.merged_from,
                       r.source, r.source_record_id, r.product_description, r.code_info,
                       r.classification, r.class_rank, r.recalling_firm, r.reason_for_recall,
-                      r.status AS recall_status, r.report_date, r.received_at, r.raw_json
+                      r.status AS recall_status, r.prior_status AS recall_prior_status,
+                      r.status_changed_at, r.amended_from,
+                      r.report_date, r.received_at, r.raw_json
                  FROM matches m
                  JOIN inventory_records i ON i.id = m.inventory_record_id
                  JOIN recall_records   r ON r.id = m.recall_record_id

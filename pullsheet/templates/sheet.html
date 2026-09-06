@@ -73,6 +73,17 @@
               </div>
             {% endif %}
             {% if m.lot_note %}<div class="note">{{ m.lot_note }}</div>{% endif %}
+            {# FR-016. A terminated or amended recall keeps its line. Both the
+               prior and the current state are shown, because "terminated" alone
+               does not tell an operator what it used to be. #}
+            {% if m.recall_status != 'active' %}
+              <div class="note note-amended">
+                Recall <strong>{{ m.recall_status }}</strong> by the agency
+                {%- if m.recall_prior_status %} (was {{ m.recall_prior_status }}){% endif %}
+                {%- if m.status_changed_at %} on {{ m.status_changed_at[:10] }}{% endif %}.
+                This line stays on the sheet &mdash; clearing it is a human action.
+              </div>
+            {% endif %}
           </td>
           <td class="num">{% if m.quantity is not none %}{{ m.quantity | round(0) | int }}{% if m.unit %} {{ m.unit }}{% endif %}{% else %}<span class="unknown">not recorded</span>{% endif %}</td>
           <td>{{ m.storage_location or '&mdash;' | safe }}</td>

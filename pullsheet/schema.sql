@@ -73,6 +73,11 @@ CREATE TABLE IF NOT EXISTS recall_records (
     received_at            TEXT    NOT NULL,   -- when this district first saw it (FR-051)
     reason_for_recall      TEXT,
     status                 TEXT    NOT NULL,   -- 'active' | 'terminated' | 'amended'
+    -- FR-016. What this record's status was BEFORE the agency changed it, so a
+    -- marked line can show prior AND current state rather than only the latest.
+    -- Inferring the prior state would be a guess dressed as a record.
+    prior_status           TEXT,
+    status_changed_at      TEXT,
     amended_from           INTEGER REFERENCES recall_records(id),
     raw_json               TEXT    NOT NULL,
 

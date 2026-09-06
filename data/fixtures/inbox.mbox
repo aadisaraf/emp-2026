@@ -1,0 +1,41 @@
+From MAILER-DAEMON Sun Sep  6 00:50:13 2026
+From: food.service@washington.lincolnusd.example
+To: nutrition.director@lincolnusd.example
+Subject: Washington Elementary - weekly inventory export 2026-09-05
+Date: Sat, 05 Sep 2026 06:14:02 -0700
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============0774238133203474539=="
+
+--===============0774238133203474539==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Attached is this week's count for Washington. Freezer 1 was recounted Friday.
+
+-- Food Service Office, Washington Elementary
+
+--===============0774238133203474539==
+Content-Type: text/csv
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="washington_inventory_2026-09-05.csv"
+MIME-Version: 1.0
+
+U2Nob29sLFN0b3JhZ2UgQXJlYSxQcm9kdWN0IERlc2NyaXB0aW9uLENhc2VzIE9uIEhhbmQsVW5p
+dCxQYWNrLEdUSU4sTG90IE51bWJlcixMYWJlbCxQcm9kdWNlcixNYW51ZmFjdHVyZXIgUHJvZHVj
+dCBDb2RlLFByaW1lIFZlbmRvcixEaXN0cmlidXRvciBQcm9kdWN0IENvZGUsQ2FzZSBDb3N0LERh
+dGUgUmVjZWl2ZWQKV2FzaGluZ3RvbiBFbGVtZW50YXJ5LEZyZWV6ZXIgMSxDSElDS0VOIFNUUklQ
+UyBCUkQgRkMgRlJPWkVOIDIvNSBMQiwxNCxDUywyLzUgbGIsLEhMMjQyMTksSGlnaCBMaW5lcixI
+aWdoIExpbmVyIEZvb2RzLDUzMzc0LFN5c2NvLDQ0NzEyMDksNDEuODUsMjAyNi0wOC0yOQpXYXNo
+aW5ndG9uIEVsZW1lbnRhcnksQ29vbGVyIDIsTUlMSyAxJSBMT1dGQVQgSEFMRiBQSU5ULDE5NSxD
+Uyw1MCBjdCwsTTA5MDMsUHJhaXJpZSBGYXJtcywsLFByYWlyaWUgRmFybXMsTS0xMDUwLDkuNjAs
+MjAyNi0wOS0wMwpXYXNoaW5ndG9uIEVsZW1lbnRhcnksRHJ5IFN0b3JlLEJSRUFEIFdIT0xFIEdS
+QUlOIFNMSUNFRCAyNCBPWiwyMixDUywxMi8yNCBveiwsQlItNDQxMCxCaW1ibyxCaW1ibyBCYWtl
+cmllcyBVU0EsQkItNDQxMCxVUyBGb29kcyw0NDEwMjc3LDE4LjMwLDIwMjYtMDktMDEKV2FzaGlu
+Z3RvbiBFbGVtZW50YXJ5LEZyZWV6ZXIgMSxQT1RBVE8gV0VER0UgQ1JJTktMRSBDVVQgU0FWT1JZ
+IDYgQ1VUIDUgTEIsOSxDUyw2LzUgbGIsLDQ3MzAxNSxTaW1wbG90LEpSIFNpbXBsb3QgQ29tcGFu
+eSw0NzMwMTUsU3lzY28sMTczMDU1OCwyNi40MCwyMDI2LTA4LTIyCldhc2hpbmd0b24gRWxlbWVu
+dGFyeSxEcnkgU3RvcmUsQVBQTEVTIEZSRVNIIDEyNSBDVCw2LENTLDEyNSBjdCwsLFJhaW5pZXIs
+LCxVUyBGb29kcywyMjUxMTgwLDMxLjc1LDIwMjYtMDktMDQK
+
+--===============0774238133203474539==--
+

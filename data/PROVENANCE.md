@@ -24,6 +24,7 @@ Three labels, and only three:
 | `inventory_lincoln` | `hand-authored` | `data/fixtures/inventory_lincoln.csv` | — | Hand-edit |
 | `expected_matches` | `hand-authored` | `data/fixtures/expected_matches.json` | — | Hand-edit |
 | `sites` | `hand-authored` | `data/fixtures/sites.csv` | — | Hand-edit |
+| `inbox` | `hand-authored` | `data/fixtures/inbox.mbox` | — | Hand-edit |
 | `unit_costs` | `hand-authored` | `data/fixtures/unit_costs.csv` | — | Hand-edit |
 | `recipes` | `hand-authored` | `data/fixtures/recipes.csv` | — | Hand-edit |
 | `recipe_ingredients` | `hand-authored` | `data/fixtures/recipe_ingredients.csv` | — | Hand-edit |

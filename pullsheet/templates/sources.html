@@ -1,0 +1,76 @@
+{% import "base.html" as ui with context %}
+<title>Sources &mdash; {{ header.district }}</title>
+{% include "base.html" %}
+
+<main>
+  <h1>Where every number comes from</h1>
+  <p class="generated">Generated {{ header.generated_at }}</p>
+
+  <p class="note">Three labels and only three.
+    <span class="prov prov-live">live</span> was fetched from the agency at run time;
+    <span class="prov prov-dated-snapshot">dated snapshot</span> was fetched once,
+    committed, and is shown with its capture date;
+    <span class="prov prov-hand-authored">hand-authored</span> was written by the build
+    team and is not sourced from anywhere. Nothing in this application may present
+    authored data as sourced data.</p>
+
+  <h2>Recall corpora</h2>
+  <table class="lines">
+    <thead><tr><th>Source</th><th>Provenance</th><th>Captured</th><th>Age</th>
+      <th>Records</th><th>How</th></tr></thead>
+    <tbody>
+    {% for s in snapshots %}
+      <tr class="{{ 'line-held' if s.stale else '' }}">
+        <td>{{ s.source }}</td>
+        <td>{{ ui.provenance(s.source, s.captured_at) }}</td>
+        <td>{{ s.captured_at[:19] }}</td>
+        <td class="num">{{ s.age_hours }}h{% if s.stale %} <strong>stale</strong>{% endif %}</td>
+        <td class="num">{{ s.record_count }}</td>
+        <td class="fine">{{ s.fetch_status }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Ingestion adapters</h2>
+  <p class="fine">This table is generated from each adapter's own
+    <code>declares()</code>, so it cannot drift away from what the code actually
+    reads. A field listed under <em>cannot read</em> is a field that will always
+    come back empty from that source &mdash; stated here rather than discovered
+    on a pull sheet.</p>
+  <table class="lines">
+    <thead><tr><th>Adapter</th><th>Provenance</th><th>Reads</th>
+      <th>Cannot read</th><th>What it is</th></tr></thead>
+    <tbody>
+    {% for a in adapters %}
+      <tr>
+        <td><code>{{ a.name }}</code></td>
+        <td><span class="prov prov-{{ a.provenance }}"
+              data-provenance="{{ PROVENANCE_LABELS[a.provenance] }}"
+            >{{ PROVENANCE_LABELS[a.provenance] }}</span></td>
+        <td class="fine">{{ a.declares | length }} of {{ declarable | length }}:
+          {{ a.declares | join(', ') }}</td>
+        <td class="fine">{% if a.cannot %}{{ a.cannot | join(', ') }}
+            {% else %}&mdash;{% endif %}</td>
+        <td class="fine">{{ a.doc }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Every file this build reads</h2>
+  <table class="lines">
+    <thead><tr><th>Source</th><th>Provenance</th><th>File</th><th>What it is</th></tr></thead>
+    <tbody>
+    {% for key, (prov, path, description) in sources.items() %}
+      <tr><td>{{ key }}</td><td>{{ ui.provenance(key) }}</td>
+          <td><code>{{ path }}</code></td>
+          <td class="fine">{{ description }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <footer class="sheet-footer">
+    <strong>Screening rule in force.</strong> {{ SCREENING_RULE }}
+  </footer>
+</main>

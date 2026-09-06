@@ -54,7 +54,12 @@
         <dt>Record</dt><dd><code>{{ m.source_record_id }}</code> ({{ m.source }})</dd>
         <dt>Firm</dt><dd>{{ m.recalling_firm or 'not stated' }}</dd>
         <dt>Class</dt><dd>{{ m.classification or 'unclassified (treated as Class I)' }}</dd>
-        <dt>Status</dt><dd>{{ m.recall_status }}</dd>
+        <dt>Status</dt><dd>{{ m.recall_status }}
+          {%- if m.recall_prior_status %} <span class="fine">(was
+            {{ m.recall_prior_status }}{% if m.status_changed_at %},
+            changed {{ m.status_changed_at[:19] }}{% endif %})</span>{% endif %}
+          {%- if m.amended_from %} <span class="fine">amends record
+            #{{ m.amended_from }}</span>{% endif %}</dd>
         <dt>Reported</dt><dd>{{ m.report_date or 'not stated' }}</dd>
         <dt>Received here</dt><dd>{{ m.received_at }}</dd>
         <dt>Reason</dt><dd>{{ m.reason_for_recall or 'not stated' }}</dd>
