@@ -21,7 +21,7 @@ from pullsheet import db
 from pullsheet.adapters.column_map import ALIASES
 from pullsheet.adapters.paste import PasteAdapter
 from pullsheet.adapters.spreadsheet_upload import SpreadsheetUploadAdapter
-from pullsheet.artifacts import pull_sheet
+from pullsheet.artifacts import credit_claim, hold_record, pull_sheet, state_report
 from pullsheet.matching.run import run_matcher
 from pullsheet.menu import cascade as menu_cascade
 from pullsheet.menu import substitute as menu_substitute
@@ -48,6 +48,14 @@ def now() -> datetime:
 
 def _conn():
     return db.connect(db.DB_PATH)
+
+
+def _resolve_site(conn, slug: str) -> str:
+    """Map a URL slug back to the site name exactly as the export spelled it."""
+    for known in pull_sheet.sites(conn):
+        if known.lower().replace(" ", "-") == slug.lower() or known.lower() == slug.lower():
+            return known
+    raise HTTPException(404, f"no site named {slug!r}")
 
 
 def _sync_form(request: Request) -> dict:
@@ -118,14 +126,7 @@ def index(request: Request):
 def sheet(request: Request, site: str | None = None):
     conn = _conn()
     try:
-        resolved = None
-        if site:
-            for known in pull_sheet.sites(conn):
-                if known.lower().replace(" ", "-") == site.lower() or known.lower() == site.lower():
-                    resolved = known
-                    break
-            if resolved is None:
-                raise HTTPException(404, f"no site named {site!r}")
+        resolved = _resolve_site(conn, site) if site else None
         return templates.TemplateResponse("sheet.html", {
             "request": request,
             "header": pull_sheet.header(conn, now(), resolved),
@@ -149,6 +150,54 @@ def menu(request: Request):
             # Keyed for the template; the list form is kept for the proof table.
             "proposals": {(p["site"], p["broken_recipe_id"]): p for p in proposals},
             "proofs": [p for p in proposals if p["kind"] == "none"],
+        })
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Compliance artifacts (US3). Each is a read of the same match rows the sheet
+# shows -- none of them can change a line, and none writes anything.
+# ---------------------------------------------------------------------------
+
+@app.get("/artifacts/hold/{site}", response_class=HTMLResponse)
+def artifact_hold(request: Request, site: str):
+    """FR-043. Per-site custody record, signature fields blank for a human."""
+    conn = _conn()
+    try:
+        resolved = _resolve_site(conn, site)
+        return templates.TemplateResponse("hold_record.html", {
+            "request": request,
+            "header": pull_sheet.header(conn, now(), resolved),
+            "record": hold_record.hold_record(conn, resolved, now()),
+        })
+    finally:
+        conn.close()
+
+
+@app.get("/artifacts/credit-claim", response_class=HTMLResponse)
+def artifact_credit_claim(request: Request):
+    """FR-046, FR-047. Quantity x unit cost. Nothing estimated, ever."""
+    conn = _conn()
+    try:
+        return templates.TemplateResponse("credit_claim.html", {
+            "request": request,
+            "header": pull_sheet.header(conn, now()),
+            "claim": credit_claim.credit_claim(conn, now()),
+        })
+    finally:
+        conn.close()
+
+
+@app.get("/artifacts/state-report", response_class=HTMLResponse)
+def artifact_state_report(request: Request):
+    """FR-044, FR-045. Derived fields filled; everything else MARKED, not blank."""
+    conn = _conn()
+    try:
+        return templates.TemplateResponse("state_report.html", {
+            "request": request,
+            "header": pull_sheet.header(conn, now()),
+            "report": state_report.state_report(conn, now()),
         })
     finally:
         conn.close()

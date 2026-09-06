@@ -415,8 +415,12 @@ the scheduled diff, and confirm an alert is raised naming exactly the affected s
 
 - **FR-043**: System MUST generate a per-site hold-and-destruction record listing every held
   item with quantity, lot, and location, with signature and date fields left for a human.
-- **FR-044**: System MUST generate a pre-filled state child-nutrition recall report.
-  [NEEDS CLARIFICATION: which state's report should be targeted? See Q2 below.]
+- **FR-044**: System MUST generate a pre-filled district child-nutrition recall report.
+  *Resolved by the interim default in Q2*: the report is modeled on USDA FNS district
+  recall-reporting guidance, is labeled `hand-authored`, states on its face that it is not an
+  official state form, and carries a structured export the director transfers into their own
+  state's form. Targeting one named state's form remains open and is a per-district
+  configuration question, not a blocker.
 - **FR-045**: In any generated form, every field System cannot derive MUST be visibly marked as
   requiring human entry. It MUST NOT be guessed or left silently blank.
 - **FR-046**: System MUST generate a distributor credit claim itemizing quantity and extended
@@ -581,10 +585,17 @@ signed agreement with a software vendor, distributor, or agency.
 
 ## Open Questions
 
-One decision remains deferred, recorded as a `[NEEDS CLARIFICATION]` marker in the requirements
-above. An interim default is stated so the specification remains actionable if it is not answered.
+No `[NEEDS CLARIFICATION]` marker remains. One question was answered by building its interim
+default rather than by waiting for an answer.
 
-**Q2 — State report target (FR-044).** A pre-filled state child-nutrition recall report needs a
-target form, and forms differ by state. *Interim default*: a hand-authored district recall report
-modeled on USDA FNS guidance, labeled hand-authored, plus a structured export the director can
-transfer into their own state's form.
+**Q2 — State report target (FR-044). RESOLVED by interim default; built in T062.** A pre-filled
+state child-nutrition recall report needs a target form, and forms differ by state. Rather than
+guess at one state's layout, `pullsheet/artifacts/state_report.py` produces a district recall
+report modeled on USDA FNS guidance, labeled `hand-authored`, which says on its face that it is
+not an official state form — plus a structured export the director transfers into their own
+state's form. Ten fields are derived from the database and thirteen are marked
+`REQUIRES HUMAN ENTRY` with the reason each one cannot be derived.
+
+Targeting a specific state's form stays open. It is a per-district configuration question that
+a real deployment answers once, not a design gap: the structured export is the seam where that
+answer would attach.

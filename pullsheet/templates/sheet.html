@@ -39,6 +39,12 @@
   {% for s in sections %}
   <section class="site-section">
     <h2>{{ s.site }} <span class="site-tally">{{ s.pull }} pull &middot; {{ s.held }} held</span></h2>
+    <p class="artifact-links">
+      <a href="/artifacts/hold/{{ s.site | lower | replace(' ', '-') }}">Hold record</a>
+      &middot; <a href="/artifacts/credit-claim">Credit claim</a>
+      &middot; <a href="/artifacts/state-report">State report</a>
+      &middot; <a href="/menu">Menu impact</a>
+    </p>
     <table class="lines">
       <thead>
         <tr>

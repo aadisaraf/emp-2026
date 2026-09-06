@@ -1,0 +1,54 @@
+{% import "base.html" as ui with context %}
+<title>District recall report &mdash; {{ report.district }}</title>
+{% include "base.html" %}
+
+<main>
+  <h1>District Child Nutrition Recall Report</h1>
+  <p class="generated">{{ report.district }} &mdash; generated {{ report.generated_at }}</p>
+
+  <p class="note">
+    <strong>{{ report.caveat }}</strong>
+  </p>
+  <p class="note">
+    {{ report.derived_count }} field(s) below were derived from the database.
+    {{ report.unfilled | length }} could not be, and each is marked
+    <span class="unknown">{{ report.human_marker }}</span> with the reason.
+    Nothing is guessed and nothing is silently blank.
+  </p>
+
+  {% for section, fields in report.sections.items() %}
+  <section class="site-section">
+    <h2>{{ section }}</h2>
+    <table class="lines">
+      <thead><tr><th>Field</th><th>Value</th><th>Where it came from</th></tr></thead>
+      <tbody>
+      {% for f in fields %}
+        <tr class="{{ 'line-held' if f.kind != 'derived' else '' }}">
+          <td>{{ f.label }}</td>
+          <td>{% if f.kind == 'derived' %}{{ f.display }}
+              {% else %}<span class="unknown">{{ report.human_marker }}</span>
+                <span class="rule"></span>{% endif %}</td>
+          <td class="fine">{% if f.kind == 'derived' %}{{ f.source }}
+              {% else %}{{ f.why }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+
+  <section class="site-section">
+    <h2>Structured export</h2>
+    <p class="fine">Copy these values into your own state agency's form.</p>
+    <pre class="verbatim">{% for k, v in report.export.items() %}{{ "%-46s"|format(k) }}{{ v }}
+{% endfor %}</pre>
+  </section>
+
+  <footer class="sheet-footer">
+    <strong>Sources.</strong>
+    {% for key in report.source_keys %}
+      {{ key }} {{ ui.provenance(key) }}{% if not loop.last %} &middot; {% endif %}
+    {% endfor %}
+    &middot; the form layout itself is hand-authored.
+  </footer>
+</main>

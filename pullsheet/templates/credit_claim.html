@@ -1,0 +1,72 @@
+{% import "base.html" as ui with context %}
+<title>Credit claim &mdash; {{ claim.district }}</title>
+{% include "base.html" %}
+
+<main>
+  <h1>Distributor Credit Claim</h1>
+  <p class="generated">{{ claim.district }} &mdash; generated {{ claim.generated_at }}</p>
+
+  <section class="tally">
+    <div class="stat stat-pull"><span class="n">${{ "{:,.2f}".format(claim.total) }}</span>
+      claimed</div>
+    <div class="stat"><span class="n">{{ claim.counted }}</span> lines with a price</div>
+    <div class="stat"><span class="n">{{ claim.excluded | length }}</span> quantity only</div>
+  </section>
+
+  <p class="note"><strong>{{ claim.exclusion_statement }}</strong></p>
+  <p class="fine">{{ claim.arithmetic }}</p>
+
+  <table class="lines">
+    <thead><tr>
+      <th>Site</th><th>Item</th><th>Vendor item #</th><th>Lot</th>
+      <th>Qty</th><th>Unit cost</th><th>Extended</th><th>Recall</th>
+    </tr></thead>
+    <tbody>
+    {% for l in claim.lines %}
+      <tr class="{{ 'line-held' if l.extended is none else 'line-pull' }}">
+        <td>{{ l.site }}</td>
+        <td class="verbatim">{{ l.raw_description }}</td>
+        <td>{{ l.vendor_item_code or '' }}
+          {% if l.vendor_name %}<span class="fine">{{ l.vendor_name }}</span>{% endif %}</td>
+        <td>{{ l.lot_code or '' }}</td>
+        <td class="num">{% if l.quantity is not none %}{{ l.quantity }} {{ l.unit or '' }}
+            {% else %}<span class="unknown">not reported</span>{% endif %}</td>
+        <td class="num">{% if l.unit_cost is not none %}${{ "%.2f"|format(l.unit_cost) }}
+            {% else %}<span class="unknown">no price</span>{% endif %}</td>
+        <td class="num">{% if l.extended is not none %}${{ "{:,.2f}".format(l.extended) }}
+            {% else %}<span class="unknown">excluded &mdash; {{ l.excluded_because }}</span>
+            {% endif %}</td>
+        <td class="fine">{% for r in l.recalls %}{{ r.source_record_id }}
+            {%- if not loop.last %}, {% endif %}{% endfor %}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="zero">No pulled lines. Nothing to claim.</td></tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr><th colspan="6">District total (excludes the lines marked above)</th>
+          <th class="num">${{ "{:,.2f}".format(claim.total) }}</th><th></th></tr>
+    </tfoot>
+  </table>
+
+  {% if claim.by_vendor %}
+  <h2>By vendor</h2>
+  <table class="lines">
+    <thead><tr><th>Vendor</th><th>Lines</th><th>Quantity only</th><th>Claimed</th></tr></thead>
+    <tbody>
+    {% for v in claim.by_vendor %}
+      <tr><td>{{ v.vendor }}</td><td class="num">{{ v.lines }}</td>
+          <td class="num">{{ v.excluded }}</td>
+          <td class="num">${{ "{:,.2f}".format(v.total) }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <footer class="sheet-footer">
+    <strong>Sources.</strong>
+    {% for key in claim.source_keys %}
+      {{ key }} {{ ui.provenance(key) }}{% if not loop.last %} &middot; {% endif %}
+    {% endfor %}
+  </footer>
+</main>

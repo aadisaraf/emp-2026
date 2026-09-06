@@ -1,0 +1,62 @@
+{% import "base.html" as ui with context %}
+<title>Hold record &mdash; {{ record.site }}</title>
+{% include "base.html" %}
+
+<main>
+  <h1>Hold and Destruction Record</h1>
+  <p class="generated">{{ record.district }} &mdash; <strong>{{ record.site }}</strong><br>
+     Generated {{ record.generated_at }}</p>
+
+  <p class="note">
+    {{ record.pull_count }} line(s) to remove from service, {{ record.held_count }} held
+    pending review. {{ record.quantity_caveat|capitalize }}.
+    Every signature and date field below is <strong>deliberately blank</strong> &mdash;
+    this system records what was found, never who handled it.
+  </p>
+
+  <table class="lines">
+    <thead><tr>
+      <th>Status</th><th>Item</th><th>Qty</th><th>Location</th><th>Lot</th>
+      <th>Supplier</th><th>Recall</th><th>Counted</th>
+    </tr></thead>
+    <tbody>
+    {% for l in record.lines %}
+      <tr class="line-{{ l.status | lower }}">
+        <td>{{ l.status }}</td>
+        <td class="verbatim">{{ l.raw_description }}
+          {% if l.pack_size %}<span class="fine">{{ l.pack_size }}</span>{% endif %}</td>
+        <td class="num">{% if l.quantity is not none %}{{ l.quantity }} {{ l.unit or '' }}
+            {% else %}<span class="unknown">not reported</span>{% endif %}</td>
+        <td>{{ l.storage_location or '' }}</td>
+        <td>{{ l.lot_code or '' }}</td>
+        <td class="fine">{{ l.brand or l.manufacturer or '' }}
+          {% if l.vendor_name %}<br>via {{ l.vendor_name }}
+            {% if l.vendor_item_code %}#{{ l.vendor_item_code }}{% endif %}{% endif %}</td>
+        <td class="fine">
+          {% for r in l.recalls %}
+            <a href="/match/{{ r.match_id }}">{{ r.source_record_id }}</a>
+            {%- if r.recall_status != 'active' %} <strong>{{ r.recall_status }}</strong>{% endif %}
+            {%- if not loop.last %}, {% endif %}
+          {% endfor %}</td>
+        <td class="checkbox">&#9744;</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="zero">No lines at this site.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <section class="signatures">
+    <h2>To be completed by hand</h2>
+    {% for f in record.signature_fields %}
+      <p class="sig-line">{{ f }} <span class="rule"></span></p>
+    {% endfor %}
+  </section>
+
+  <footer class="sheet-footer">
+    <strong>Sources.</strong>
+    {% for key in record.source_keys %}
+      {{ key }} {{ ui.provenance(key) }}{% if not loop.last %} &middot; {% endif %}
+    {% endfor %}
+  </footer>
+</main>

@@ -130,3 +130,12 @@ mark { background: #ffe680; padding: 0 .1em; }
            padding: .9rem 1.1rem; margin-bottom: 1.2rem; }
 .map-row { display: flex; gap: .6rem; align-items: center; margin: .6rem 0; font-size: .9rem; }
 .map-row select { font-size: .9rem; padding: .3rem; }
+
+/* Artifact forms (US3). A field a human must complete gets a ruled line, so the
+   printed page tells you where to write. */
+.sig-line { margin: 1.1rem 0 0; }
+.rule { display: inline-block; min-width: 16rem; border-bottom: 1px solid #333;
+        vertical-align: baseline; }
+.signatures { margin-top: 1.5rem; break-inside: avoid; }
+.checkbox { font-size: 1.1rem; text-align: center; }
+.artifact-links { margin: -.4rem 0 .6rem; font-size: .85rem; }

@@ -40,3 +40,8 @@ tr { break-inside: avoid; }
 .line-held td:first-child::after { content: " \25C6"; }
 .line-pull td:first-child::before { content: "\25A0 "; }
 .sheet-footer { break-inside: avoid; border-top: 1.5pt solid #000; font-size: 8pt; }
+
+/* Artifact navigation is screen furniture; the paperwork itself prints. */
+.artifact-links { display: none !important; }
+.rule { min-width: 18rem; border-bottom: 1px solid #000; }
+.sig-line { margin: 1.4rem 0 0; }
