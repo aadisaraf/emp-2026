@@ -69,9 +69,9 @@
    export: there is nothing to act on yet, so nothing here should look urgent. */
 .secondary {
   padding: 3px var(--space-3);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--border);
   border-radius: var(--radius-chip);
-  background: var(--surface);
+  background: var(--surface-page);
   color: var(--text-primary);
   text-decoration: none;
   white-space: nowrap;
