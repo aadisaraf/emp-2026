@@ -1,0 +1,75 @@
+.side {
+  min-width: 0;
+}
+
+.verbatimLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/*
+  The stored string, in a block of its own so the eye can find it on both
+  sides at the same height. Sunken rather than boxed-and-raised: nothing on
+  this page floats above anything else.
+*/
+.verbatim {
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.fields {
+  margin-top: var(--space-4);
+}
+
+.extras {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.extras > * + * {
+  margin-top: var(--space-1);
+}
+
+.trigger {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+}
+
+.triggerLabel {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.triggerValue {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.triggerMissing {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--attend-ink);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}

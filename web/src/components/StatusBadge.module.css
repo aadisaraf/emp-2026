@@ -1,0 +1,48 @@
+.badge {
+  display: inline-block;
+  min-width: 46px;
+  padding: 1px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-chip);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* The one filled chip in the table. */
+.pull {
+  background: var(--alert-fill);
+  color: var(--text-inverse);
+  border-color: var(--alert-fill);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* Hollow, and the most common state on the sheet, so also the quietest. */
+.held {
+  background: transparent;
+  color: var(--attend-ink);
+  border-color: var(--attend-outline);
+}
+
+.alert {
+  background: transparent;
+  color: var(--alert-ink);
+  border-color: var(--alert-outline);
+}
+
+.attend {
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+  border-color: var(--attend-outline);
+}
+
+.neutral {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border);
+}

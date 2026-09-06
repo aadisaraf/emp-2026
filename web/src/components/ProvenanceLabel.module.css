@@ -1,0 +1,19 @@
+.provenance {
+  display: inline;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* Authored data is separable from sourced data without reading the words. */
+.authored {
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 2px;
+}
+
+.captured {
+  font-weight: var(--weight-normal);
+}

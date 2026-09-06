@@ -1,0 +1,391 @@
+/*
+  Today.
+
+  Every value here is a token from styles/tokens.css. There is no gradient, no
+  shadow, no radius above 3px, no entrance animation and no icon: the only
+  motion on this page is the 100ms row hover the shared table already owns, and
+  the only thing that moves on its own is the numbers, because the poller
+  replaced them.
+
+  Green appears once, on the primary link, and it means "this is the recall
+  system", not "you are fine".
+*/
+
+/* ---------------------------------------------------------------------------
+   The statement. The status word is this page's title: the operator did not
+   open a recall tool to read the word "Today", and the nav already says it.
+--------------------------------------------------------------------------- */
+
+.statement {
+  padding: var(--space-4) 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 22px;
+}
+
+.eyebrowLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.primary {
+  padding: 3px var(--space-3);
+  border: 1px solid var(--green-800);
+  border-radius: var(--radius-chip);
+  background: var(--green-800);
+  color: var(--text-inverse);
+  font-weight: var(--weight-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.primary:hover {
+  background: var(--green-900);
+  border-color: var(--green-900);
+  color: var(--text-inverse);
+}
+
+/* Same shape, no fill. For the way in on a location that has never received an
+   export: there is nothing to act on yet, so nothing here should look urgent. */
+.secondary {
+  padding: 3px var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.secondary:hover {
+  border-color: var(--green-800);
+  color: var(--green-800);
+}
+
+.word {
+  margin-top: var(--space-2);
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+/* Act now: there are lines to pull, the sheet is old, or a delivery was
+   refused. Red is under 2% of the pixels on this screen and this is where it
+   is spent. */
+.word[data-state="action"],
+.word[data-state="overdue"],
+.word[data-state="rejected"] {
+  color: var(--alert-ink);
+}
+
+/* Never and clear are stated in words and left in the text colour. A location
+   that has never delivered is not a success, and neither is a clear run: the
+   claim is scoped to a corpus with a capture date, which is on this page. */
+.word[data-state="never"],
+.word[data-state="clear"] {
+  color: var(--text-primary);
+}
+
+/* Staleness gates this one word. It gains a tint, a dotted underline and an
+   age; not one line on the sheet moves. */
+.word[data-state="stale"],
+.stale {
+  color: var(--attend-ink);
+}
+
+.stale .mark {
+  background: var(--attend-tint);
+  padding: 0 var(--space-1);
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 4px;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.detail {
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+  max-width: 84ch;
+}
+
+.nextRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.nextLabel {
+  flex: none;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.next {
+  color: var(--text-primary);
+}
+
+.asOf {
+  margin-left: auto;
+  flex: none;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.asOfLabel {
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+.unreachable {
+  margin-top: var(--space-2);
+  color: var(--alert-ink);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.neverNote {
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+  max-width: 84ch;
+}
+
+/* ---------------------------------------------------------------------------
+   The page body. Two columns where two things are read together, full width
+   where a table needs the room. Not three cards in a row, and not centred.
+--------------------------------------------------------------------------- */
+
+.stack {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   The counts, in the stat-rail grammar: label over value, 1px verticals, no
+   box per number. 42 against 814 is two integers, not a donut, and neither of
+   them counts up.
+--------------------------------------------------------------------------- */
+
+.counts {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) var(--space-3);
+  background: var(--surface-page);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.count {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-left: 1px solid var(--border);
+  min-width: 0;
+}
+
+.count:first-child {
+  border-left: 0;
+}
+
+.countLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.countValue {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.countPull .countValue {
+  color: var(--alert-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Panel innards.
+--------------------------------------------------------------------------- */
+
+.note {
+  color: var(--text-secondary);
+  max-width: 84ch;
+}
+
+.note + .note {
+  margin-top: var(--space-2);
+}
+
+.fine {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  overflow-wrap: anywhere;
+}
+
+.fineLabel {
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+.item {
+  color: var(--text-primary);
+}
+
+.itemLink {
+  color: var(--green-700);
+}
+
+.sub {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.staleFlag {
+  display: inline-block;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--attend-outline);
+  border-radius: var(--radius-chip);
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.source {
+  font-family: var(--font-mono);
+}
+
+/* ---------------------------------------------------------------------------
+   Refused deliveries. A rejection reason is a sentence, so these are blocks
+   rather than a table cell that would clip it. The 2px outline is the second
+   channel: the word REJECTED carries the same fact for a mono printout.
+--------------------------------------------------------------------------- */
+
+.refusedList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.refused {
+  border: 2px solid var(--alert-outline);
+  border-radius: var(--radius-flat);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-page);
+}
+
+.refusedHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.refusedRef {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.refusedMeta {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.refusedReason {
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   The footer states the hold policy, which is the one thing on this screen an
+   operator cannot work out from the numbers above it.
+--------------------------------------------------------------------------- */
+
+.footer {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.footerNote {
+  color: var(--text-secondary);
+  max-width: 84ch;
+}
+
+.footerNote + .footerNote {
+  margin-top: var(--space-2);
+}
+
+@media print {
+  .actions {
+    display: none;
+  }
+
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

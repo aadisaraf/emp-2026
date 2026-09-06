@@ -1,0 +1,23 @@
+.empty {
+  border: 1px solid var(--border);
+  background: var(--surface-page);
+  padding: var(--space-4);
+  max-width: 78ch;
+}
+
+.heading {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.body {
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.action {
+  margin-top: var(--space-3);
+  color: var(--text-primary);
+}

@@ -1,0 +1,93 @@
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: var(--radius-flat);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.caption {
+  text-align: left;
+  padding-bottom: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.head {
+  padding: var(--space-1) var(--cell-pad-x);
+  background: var(--surface-header);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.headText {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.sortable {
+  cursor: default;
+}
+
+.sortMark {
+  font-size: var(--fs-micro);
+  color: var(--text-secondary);
+}
+
+/* The only shadow in the application, and it is one hairline. */
+.sticky thead th {
+  position: sticky;
+  top: var(--masthead-h);
+  z-index: 2;
+  box-shadow: 0 1px 0 0 var(--border);
+}
+
+.row {
+  transition: background-color 100ms;
+}
+
+.row:hover {
+  background: var(--surface-sunken);
+}
+
+.cell {
+  height: var(--row-h);
+  padding: var(--cell-pad-y) var(--cell-pad-x);
+  border-bottom: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  text-align: left;
+  vertical-align: top;
+}
+
+/* Measures stack on their right edge. Never centre a numeric column. */
+.measure {
+  text-align: right;
+}
+
+/* Identifiers are names spelled with digits. */
+.identifier {
+  font-family: var(--font-mono);
+  text-align: left;
+}
+
+/* A rule between column groups, not between every column. */
+.groupEdge {
+  border-left: 1px solid var(--border);
+}
+
+.emptyCell {
+  padding: var(--space-3) var(--cell-pad-x);
+  border-bottom: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+}

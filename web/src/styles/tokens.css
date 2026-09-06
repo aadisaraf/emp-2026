@@ -1,0 +1,108 @@
+/*
+  PullSheet design tokens.
+
+  Every value here comes from the visual brief and none of them are negotiable
+  by a page. If a screen needs a colour, a size or a space that is not in this
+  file, the answer is one of the values that is.
+
+  Light theme only, deliberately. The primary output of this application is a
+  pull sheet printed on white paper and carried into a walk-in cooler; a screen
+  that does not match the paper is a screen that has to be reconciled with it.
+
+  Green is the institution, never "fine". The ordinary morning here is
+  "there are 42 items to pull", so a green that meant "no action" would almost
+  never appear and would be misread the one morning it did. Red means act now,
+  ochre means unresolved, neutral means recorded.
+*/
+
+:root {
+  /* ---- surfaces ---------------------------------------------------- */
+  --surface-page:      #FFFFFF;  /* the sheet itself */
+  --surface-sunken:    #F4F6F5;  /* app ground behind panels; row hover */
+  --surface-header:    #EDF1EF;  /* table thead, stat rail */
+  --surface-selected:  #E2EBE6;  /* the currently selected line */
+  --surface-masthead:  #0D2E24;  /* fixed top bar */
+
+  /* ---- borders ----------------------------------------------------- */
+  --border-hairline:   #DCE2DF;  /* row rules inside a table */
+  --border:            #C6CFC9;  /* column rules, panel edges, chip outlines */
+  --border-strong:     #849289;  /* section boundary, input outline */
+  --focus-ring:        #144C3B;  /* 2px solid, 1px offset */
+
+  /* ---- text -------------------------------------------------------- */
+  --text-primary:      #16211D;  /* values, item names, headings */
+  --text-secondary:    #495852;  /* supporting lines: supplier, vendor, notes */
+  --text-muted:        #616F69;  /* column heads, provenance, timestamps */
+  --text-inverse:      #FFFFFF;  /* on masthead and on filled alert chips */
+
+  /* ---- green: institutional chrome only ---------------------------- */
+  --green-900:         #0D2E24;
+  --green-800:         #144C3B;  /* primary button, active nav, focus */
+  --green-700:         #1A6349;  /* links */
+  --green-100:         #DCE9E3;  /* active-nav fill, selected-row tint */
+  --green-050:         #F0F5F2;
+
+  /* ---- semantic: act now (PULL / OVERRUN / REJECTED) ---------------- */
+  --alert-ink:         #8E181E;  /* the word, on white or on tint */
+  --alert-fill:        #A61D24;  /* filled chip / overrun band, white label */
+  --alert-tint:        #FAEAEA;
+  --alert-outline:     #B96A6F;
+
+  /* ---- semantic: unresolved / attend (HELD / STALE) ---------------- */
+  --attend-ink:        #7A5A0B;
+  --attend-outline:    #9C7B1F;  /* the HELD chip border; no fill */
+  --attend-tint:       #FBF3DC;  /* STALE word only, never a whole row */
+
+  /* ---- semantic: recorded / cleared -------------------------------- */
+  --cleared-ink:       #616F69;
+  --cleared-outline:   #C6CFC9;
+
+  /* ---- type: the OS, never the network ----------------------------- */
+  --font-ui:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  /* Five sizes, three weights, and that is all. No 14px, no 16px body. */
+  --fs-micro:          11px;
+  --lh-micro:          14px;
+  --ls-micro:          0.06em;
+
+  --fs-body:           13px;
+  --lh-body:           18px;
+
+  --fs-section:        15px;
+  --lh-section:        20px;
+
+  --fs-page:           20px;
+  --lh-page:           26px;
+
+  --weight-normal:     400;
+  --weight-strong:     600;
+
+  /* ---- space: 4 / 6 / 10 / 16 / 24 / 32, applied unevenly ---------- */
+  --space-1:           4px;
+  --space-2:           6px;
+  --space-3:           10px;
+  --space-4:           16px;
+  --space-5:           24px;
+  --space-6:           32px;
+
+  /* ---- structure --------------------------------------------------- */
+  --page-pad:          20px;   /* side padding, fluid to the viewport */
+  --page-max:          1680px; /* optional cap, never a centred marketing measure */
+  --masthead-h:        48px;
+  --nav-w:             200px;
+  --row-h:             28px;
+  --cell-pad-y:        5px;
+  --cell-pad-x:        10px;
+  --detail-pane-w:     420px;
+
+  /* ---- radius by role. Nothing above 3px anywhere. ----------------- */
+  --radius-flat:       0;      /* tables, cells, rows, panes, the stat rail */
+  --radius-chip:       2px;    /* chips, badges, buttons */
+  --radius-drop:       3px;    /* the upload dropzone, once */
+}

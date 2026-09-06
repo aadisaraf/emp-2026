@@ -1,0 +1,61 @@
+.refs {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.group {
+  display: block;
+  min-width: 0;
+}
+
+.head {
+  display: block;
+}
+
+.source {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.count {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/*
+  One line is named by 52 notices and the whole set is printed, so the ids run
+  at the micro size: a reference column that pushed a 28px row to 300px would
+  make the custody table unreadable for the 50 lines that are not that one.
+  They stay mono and left aligned, because they are names spelled with digits
+  and somebody is comparing them against a notice on the counter.
+*/
+.ids {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.id {
+  color: var(--text-secondary);
+}
+
+/*
+  The agency withdrew or amended the notice, and the case is already in the
+  freezer. It keeps its place on the record and carries the word, quietly:
+  ochre here would put a second colour on a reference column and drown the
+  status chip that is the row's actual signal.
+*/
+.recallStatus {
+  font-family: var(--font-ui);
+  color: var(--text-muted);
+}

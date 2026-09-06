@@ -34,7 +34,7 @@ ALIASES: dict[str, set[str]] = {
     "lot_code": {"lot", "lot code", "lot no", "lot number", "batch", "batch no",
                  "batch number", "lot batch"},
     # Supplier identity (FR-069). Purchasing is what an item master is FOR, so
-    # these columns are present in district exports far more reliably than gtin
+    # these columns are present in real exports far more reliably than gtin
     # or lot -- and they are what a row with neither still matches on.
     "brand": {"brand", "brand name", "label", "mfr brand", "manufacturer brand"},
     "manufacturer": {"manufacturer", "mfr", "mfr name", "manufacturer name",
@@ -73,7 +73,7 @@ IGNORED: frozenset[str] = frozenset({
 })
 
 #: Headers that genuinely could be two things. We ask; we do not guess.
-#: "Code" is the common one -- half the districts mean the lot code by it and
+#: "Code" is the common one -- half the operators mean the lot code by it and
 #: half mean a product code.
 AMBIGUOUS: dict[str, tuple[str, ...]] = {
     "code": ("lot_code", "gtin"),

@@ -1,0 +1,8 @@
+.content {
+  margin-left: var(--nav-w);
+  max-width: var(--page-max);
+}
+
+.main {
+  padding: var(--space-3) var(--page-pad) var(--space-6);
+}

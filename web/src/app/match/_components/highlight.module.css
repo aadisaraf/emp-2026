@@ -1,0 +1,13 @@
+/*
+  The tint alone is not enough: it is light on purpose, and a mono laser drops
+  a light background entirely. The rule under it is the second channel, and it
+  is a border rather than a shadow because nothing on this page floats.
+*/
+.hit {
+  background: var(--attend-tint);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--attend-outline);
+  padding: 0 1px;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}

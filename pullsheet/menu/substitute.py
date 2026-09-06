@@ -152,7 +152,9 @@ def propose(conn: sqlite3.Connection, run_id: int, recipe_id: str) -> dict[str, 
     if unmet:
         reason = ("no clean recipe in this kitchen supplies "
                   + ", ".join(unmet)
-                  + f" -- {len(candidates)} candidate recipe(s) were checked")
+                  + f" -- {len(candidates)} candidate"
+                  + ("" if len(candidates) == 1 else "s")
+                  + " were checked")
     else:
         # Every component exists somewhere, but no single recipe carries all of
         # them. Name the closest candidate and exactly what it lacks.

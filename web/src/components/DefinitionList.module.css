@@ -1,0 +1,36 @@
+.list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3) var(--space-5);
+}
+
+.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.pair {
+  min-width: 0;
+}
+
+.term {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.value {
+  margin-top: 2px;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}

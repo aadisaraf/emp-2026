@@ -1,0 +1,73 @@
+.rail {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.rail > .clock:last-child {
+  padding-right: 0;
+}
+
+.clock {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 var(--space-4);
+  border-left: 1px solid var(--border);
+}
+
+.label {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.text {
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--weight-strong);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* The overrun is a band, spelled out, and it prints. */
+.overrun {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  background: var(--alert-fill);
+  color: var(--text-inverse);
+  border-radius: var(--radius-chip);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.none {
+  color: var(--text-primary);
+  padding: 0 var(--space-4);
+  align-self: center;
+}
+
+.notes {
+  padding-top: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.note {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.overrunNote {
+  color: var(--alert-ink);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+}

@@ -1,0 +1,180 @@
+/*
+  The log and the two forms.
+
+  Neither action animates, neither fires a toast, and neither removes anything
+  from the page. A clearing is permanent and audited, so it is reported where
+  the audit is: the log above the forms gains a row.
+*/
+
+.none {
+  color: var(--text-secondary);
+}
+
+.log {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.entry {
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+}
+
+.entry:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.what {
+  font-weight: var(--weight-strong);
+}
+
+.who {
+  font-weight: var(--weight-strong);
+}
+
+.when {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The reason a person gave, on its own line so it is not read as a caption. */
+.why {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-secondary);
+}
+
+.elsewhere {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.kept {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+/* ---------------------------------------------------------------------------
+   The two forms, side by side, so the cheap action and the consequential one
+   are read against each other rather than one after the other.
+--------------------------------------------------------------------------- */
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+@media (max-width: 1100px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 46ch;
+}
+
+.field {
+  display: block;
+}
+
+.label {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.input {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 3px var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Never a red border alone: the message under it carries the same fact. */
+.invalid {
+  border-color: var(--alert-outline);
+}
+
+.error {
+  color: var(--alert-ink);
+  font-weight: var(--weight-strong);
+}
+
+.button {
+  justify-self: start;
+  padding: 3px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--weight-strong);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--surface-sunken);
+}
+
+.button:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.primary {
+  background: var(--green-800);
+  border-color: var(--green-800);
+  color: var(--text-inverse);
+}
+
+.primary:hover {
+  background: var(--green-900);
+}
+
+.primary:disabled {
+  background: var(--border-strong);
+  border-color: var(--border-strong);
+  color: var(--text-inverse);
+}
+
+.done {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.standing {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  max-width: 60ch;
+}

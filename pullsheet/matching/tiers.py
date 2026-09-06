@@ -83,7 +83,7 @@ def _digits(text: str) -> str:
 def item_key(code: str | None) -> Optional[str]:
     """Index key for a manufacturer's catalog number.
 
-    Uppercased, punctuation dropped, leading zeros removed: a district that
+    Uppercased, punctuation dropped, leading zeros removed: a kitchen that
     stores High Liner's cod portions as ``02075`` and an agency that prints
     ``Item Number: 2075`` are naming one product.
     """
@@ -254,7 +254,7 @@ def build_evidence(inv, rec, is_distinctive: Optional[Callable[[str], bool]] = N
     # The maker is being recalled AND the two descriptions agree on a word that
     # is rare across the corpus. Either signal alone is weak -- a firm recalls
     # one line out of hundreds, and one shared word is the POSSIBLE tier -- but
-    # a district holding a High Liner product when High Liner recalls a cod
+    # a kitchen holding a High Liner product when High Liner recalls a cod
     # portion, where both descriptions say "cod", is not a coincidence.
     if firm_ok:
         distinctive = {t for t in shared if is_distinctive(t)}

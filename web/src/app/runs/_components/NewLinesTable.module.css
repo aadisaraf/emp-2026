@@ -1,0 +1,44 @@
+.table {
+  table-layout: fixed;
+}
+
+.tier {
+  display: block;
+  margin-top: 2px;
+}
+
+.item {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+/* The recall's own wording, under the inventory's own wording. Both are
+   verbatim; neither is rewritten to make them look more alike than they are. */
+.against {
+  display: block;
+  margin-top: 1px;
+  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  overflow-wrap: anywhere;
+}
+
+.recordId {
+  display: block;
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.provenance {
+  display: block;
+  margin-top: 1px;
+}
+
+.firm {
+  display: block;
+  margin-top: 1px;
+  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  overflow-wrap: anywhere;
+}

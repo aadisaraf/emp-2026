@@ -7,7 +7,7 @@ normalization cannot make those two disagree.
 
 **Words are compared as written.** There is no spelling correction, no fuzzy
 character distance, and no abbreviation dictionary. Neither side of the
-comparison is freehand text: a district's item master carries the string its
+comparison is freehand text: a kitchen's item master carries the string its
 distributor's catalog supplied, and agency notices quote the manufacturer's own
 catalog string back. They are the same dialect, written by the same industry:
 

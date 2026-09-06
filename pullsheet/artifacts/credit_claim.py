@@ -81,8 +81,8 @@ def credit_claim(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[s
     if excluded:
         statement = (
             f"This total covers {len(counted)} of {len(rows)} pulled lines. "
-            f"{len(excluded)} line(s) are shown with quantity only and are EXCLUDED "
-            f"from the ${total:,.2f}: "
+            f"{len(excluded)} {'line is' if len(excluded) == 1 else 'lines are'} "
+            f"shown with quantity only and EXCLUDED from the ${total:,.2f}: "
             + "; ".join(f"{r['raw_description']} ({r['storage_location']}) -- {r['excluded_because']}"
                         for r in excluded)
             + ". No price has been estimated for them.")

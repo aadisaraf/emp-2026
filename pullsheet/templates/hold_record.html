@@ -10,8 +10,9 @@
      Inventory run #{{ record.run_id }} &middot; generated {{ record.generated_at }}</p>
 
   <p class="note">
-    {{ record.pull_count }} line(s) to remove from service, {{ record.held_count }} held
-    pending review. {{ record.quantity_caveat|capitalize }}.
+    {{ record.pull_count }} line{{ "" if record.pull_count == 1 else "s" }} to remove
+    from service, {{ record.held_count }} held undecided and on the sheet.
+    {{ record.quantity_caveat|capitalize }}.
     Every signature and date field below is <strong>deliberately blank</strong> &mdash;
     this system records what was found, never who handled it.
   </p>

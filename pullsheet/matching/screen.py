@@ -13,7 +13,7 @@ Four in-memory inverted indexes, rebuilt on every run:
   UPC-12 printed on the same case collide on one key instead of missing each
   other over a packaging indicator.
 * **firm index** -- the identifying words of ``recalling_firm``. Populated on
-  100% of the corpus, which makes it the channel most district rows actually
+  100% of the corpus, which makes it the channel most kitchen rows actually
   reach a recall through: barcodes and lot codes are absent from most item
   masters, but every purchasing system knows its suppliers.
 * **item index** -- manufacturer catalog numbers, keyed *within* a firm. An item
@@ -83,7 +83,7 @@ def code_key(code: str | None) -> Optional[str]:
         return None
     # openFDA routinely prints a UPC-12 with its leading zero dropped
     # ("41220273355"). Left-pad so it keys identically to the 12-digit form the
-    # district scanned, rather than missing it over a character that carries no
+    # kitchen scanned, rather than missing it over a character that carries no
     # information.
     if len(digits) < 12:
         digits = digits.rjust(12, "0")
@@ -176,7 +176,7 @@ def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
         for token in firm:
             by_firm[token].add(rec.id)
             # Catalog numbers are filed under the firm that issued them, so a
-            # district item number can only ever collide with the same maker's.
+            # kitchen item number can only ever collide with the same maker's.
             for code in codes.get("item_codes", ()):
                 key = _item_key(code)
                 if key:
@@ -209,7 +209,7 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     Why safe:     the channels are independent, and each covers the others'
                   blind spots. A row with no barcode is reachable by supplier or
                   by name (FR-026) -- which is the ordinary case, not the
-                  exception: most district rows carry neither a barcode nor a
+                  exception: most kitchen rows carry neither a barcode nor a
                   lot. A row whose description normalizes to nothing is still
                   reachable by code or supplier. The token conditions only refuse
                   a pair whose ONLY link is a single word that reaches a large

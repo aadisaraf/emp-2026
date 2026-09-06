@@ -1,0 +1,368 @@
+/*
+  The paper. Shared by the hold record, the credit claim and the state report.
+
+  These three are not dashboard screens with a print stylesheet bolted on. They
+  are documents: a person prints one, signs the blank fields with a pen, and
+  files it where an inspector or a distributor can ask for it later. So the
+  screen is a preview of the page, and the page is the artefact.
+
+  Print rules live at the bottom of this file rather than in globals.css,
+  because they are about these three routes only and the shell around them
+  belongs to another owner. A CSS module is loaded on the routes that import
+  it, which is exactly the scope wanted here.
+*/
+
+/* --------------------------------------------------------------------------
+   Screen chrome that never reaches paper: the print action and one line
+   saying what the document is for.
+-------------------------------------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0 var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbarText {
+  min-width: 0;
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+/* --------------------------------------------------------------------------
+   The sheet itself.
+-------------------------------------------------------------------------- */
+
+.sheet {
+  margin-top: var(--space-4);
+  border: 1px solid var(--border);
+  background: var(--surface-page);
+  padding: var(--space-5);
+  border-radius: var(--radius-flat);
+}
+
+.docHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--green-800);
+}
+
+.docHeadMain {
+  min-width: 0;
+}
+
+.docTitle {
+  font-size: var(--fs-page);
+  line-height: var(--lh-page);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.issuer {
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+}
+
+.issuerName {
+  color: var(--text-primary);
+  font-weight: var(--weight-strong);
+}
+
+.stamp {
+  flex: none;
+  width: 280px;
+}
+
+/* --------------------------------------------------------------------------
+   Notes: a past run, a stale corpus, a caveat the server wrote. Bordered on
+   all four sides, because a coloured left strip is a status channel this
+   design spends elsewhere.
+-------------------------------------------------------------------------- */
+
+.notes {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.note {
+  border: 1px solid var(--border-strong);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  max-width: 96ch;
+}
+
+.noteStrong {
+  font-weight: var(--weight-strong);
+}
+
+.caveat {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+/* --------------------------------------------------------------------------
+   Body sections inside a document.
+-------------------------------------------------------------------------- */
+
+.section {
+  margin-top: var(--space-5);
+}
+
+.sectionHead {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.sectionNote {
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+  max-width: 96ch;
+}
+
+.sectionTable {
+  margin-top: var(--space-3);
+  border: 1px solid var(--border);
+}
+
+.lead {
+  margin-top: var(--space-3);
+  color: var(--text-primary);
+  max-width: 96ch;
+}
+
+.leadSecond {
+  margin-top: var(--space-2);
+  color: var(--text-secondary);
+  max-width: 96ch;
+}
+
+/* A quantity, a total, a count: the strong number in a sentence. */
+.figure {
+  font-weight: var(--weight-strong);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* --------------------------------------------------------------------------
+   The total line under an itemised table. It reads as a table foot without
+   pretending to be one, and its rule is heavier than a row rule because it
+   closes the arithmetic.
+-------------------------------------------------------------------------- */
+
+.total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  padding: var(--space-2) var(--cell-pad-x);
+  background: var(--surface-header);
+}
+
+.totalLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.totalValue {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* --------------------------------------------------------------------------
+   Cell furniture.
+-------------------------------------------------------------------------- */
+
+.item {
+  color: var(--text-primary);
+}
+
+.fine {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+/* A chip that sits under the value it annotates, not beside it. */
+.markLine {
+  display: block;
+  margin-top: 2px;
+}
+
+.checkbox {
+  color: var(--text-primary);
+  font-size: var(--fs-section);
+  line-height: var(--lh-body);
+}
+
+.excluded {
+  color: var(--attend-ink);
+}
+
+.excludedWhy {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  white-space: normal;
+}
+
+/* --------------------------------------------------------------------------
+   Sources footer. Full paths and full descriptions, on paper as on screen.
+   This block is the answer to "did you make the data up", so it does not get
+   shortened for tidiness.
+-------------------------------------------------------------------------- */
+
+.sources {
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--border-strong);
+  padding-top: var(--space-3);
+}
+
+.sourcesHead {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sourceList {
+  margin-top: var(--space-2);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.source {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: var(--space-1) var(--space-3);
+}
+
+.sourceKey {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.sourcePath {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.sourceWhat {
+  grid-column: 2;
+  color: var(--text-secondary);
+}
+
+.sourceLegend {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  max-width: 96ch;
+}
+
+.sourceFsis {
+  margin-top: var(--space-2);
+  color: var(--text-primary);
+  max-width: 96ch;
+}
+
+/* --------------------------------------------------------------------------
+   Print. Letter, portrait, no navigation chrome and no dashboard counters.
+
+   The stat rail and the status line are hidden on these routes on purpose:
+   the rail reports the pull sheet's match-line counts, and printing those
+   above a custody record whose counts are inventory lines would put two
+   different numbers for "how many" on one signed page.
+-------------------------------------------------------------------------- */
+
+@page {
+  size: Letter portrait;
+  margin: 14mm;
+}
+
+@media print {
+  :global([data-role="masthead"]),
+  :global([data-role="statusline"]),
+  :global([data-role="statrail"]) {
+    display: none !important;
+  }
+
+  :global(body) {
+    padding-top: 0;
+  }
+
+  .toolbar {
+    display: none;
+  }
+
+  .sheet {
+    margin-top: 0;
+    border: 0;
+    padding: 0;
+  }
+
+  .docHead {
+    border-bottom: 1px solid var(--green-800);
+  }
+
+  .stamp {
+    width: 240px;
+  }
+
+  .section,
+  .sources {
+    break-inside: auto;
+  }
+
+  .sectionHead,
+  .sectionNote {
+    break-after: avoid;
+  }
+
+  .total,
+  .note {
+    break-inside: avoid;
+  }
+
+  .sheet table {
+    font-size: 9pt;
+    line-height: 12pt;
+  }
+
+  .sheet thead {
+    display: table-header-group;
+  }
+
+  .sheet tr {
+    break-inside: avoid;
+  }
+}

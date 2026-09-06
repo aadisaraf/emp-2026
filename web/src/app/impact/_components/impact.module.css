@@ -1,0 +1,225 @@
+/*
+  Impact page styles.
+
+  Every value here is a token from styles/tokens.css. There is no radius above
+  2px, no shadow, no gradient and no fill that is not a token, because this page
+  is printed and carried into a walk-in with the pull sheet.
+
+  Two things carry meaning by shape rather than hue, so they survive a mono
+  laser: the excluded chip and the substitution chips are hollow with a word in
+  them, and the unmet component is set at weight 600 because it is the proof.
+*/
+
+.stack {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+/* ---------------------------------------------------------------------------
+   Notes and statements.
+--------------------------------------------------------------------------- */
+
+/*
+  The exclusion statement names every line that is not in the total. It is the
+  sentence the claim stands on, so it is body size in primary ink and it is not
+  a caveat in the footer.
+*/
+.statement {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  max-width: 104ch;
+}
+
+.note {
+  color: var(--text-secondary);
+  max-width: 104ch;
+}
+
+.note + .note {
+  margin-top: var(--space-2);
+}
+
+.caveat {
+  margin-top: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  letter-spacing: 0.01em;
+  max-width: 110ch;
+}
+
+.rail {
+  margin-bottom: var(--space-3);
+}
+
+.tableBlock {
+  margin-top: var(--space-4);
+}
+
+/*
+  A minimum width so a narrow viewport scrolls the table inside its own
+  container instead of crushing the item name into a five-line column. The
+  DataTable is width 100%; min-width only bites when the container is smaller,
+  and the scroll wrapper around it is what moves. The page body never scrolls
+  sideways.
+*/
+.wideMoney { min-width: 1120px; }
+.wideMeals { min-width: 900px; }
+.wideEntries { min-width: 1140px; }
+.wideSubstitution { min-width: 1040px; }
+.wideSources { min-width: 1000px; }
+
+.subhead {
+  margin-bottom: var(--space-3);
+  color: var(--text-primary);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Cell interiors. A cell is a stack of at most three lines: the value, a
+   supporting line, and a label. Anything more belongs in another column.
+--------------------------------------------------------------------------- */
+
+.cellStack {
+  display: block;
+}
+
+.primary {
+  display: block;
+  color: var(--text-primary);
+}
+
+.strong {
+  display: block;
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.support {
+  display: block;
+  color: var(--text-secondary);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+/* A field label inside a running line, where a block label would break it. */
+.inlineLabel {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+.reason {
+  display: block;
+  margin-top: 2px;
+  color: var(--attend-ink);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.list {
+  display: block;
+}
+
+.listItem {
+  display: block;
+}
+
+.listItem + .listItem {
+  margin-top: var(--space-1);
+  padding-top: var(--space-1);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.identifier {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.dates {
+  display: block;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Schema tokens, spelled the way the backend spells them. */
+.tokens {
+  display: block;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* The proof. Bold here means one thing: the component nothing supplies. */
+.unmet {
+  display: block;
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.nothingUnmet {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------------------
+   Planned meals. Never a served count, and never a bare number.
+--------------------------------------------------------------------------- */
+
+.planned {
+  white-space: nowrap;
+}
+
+.plannedTag {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+   Chips. All hollow: nothing on this page is an alert, and the word inside is
+   what carries the state through a grayscale printout.
+--------------------------------------------------------------------------- */
+
+.chip {
+  display: inline-block;
+  padding: 1px var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-chip);
+  color: var(--text-primary);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Unresolved: the export carried no price, so a person has to supply one. */
+.chipAttend {
+  border-color: var(--attend-outline);
+  color: var(--attend-ink);
+}
+
+/* Recorded: a covering recipe exists and is named. */
+.chipRecorded {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}

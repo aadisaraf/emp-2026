@@ -1,0 +1,69 @@
+/*
+  Page rhythm. The spacing scale is applied unevenly on purpose: 6px inside a
+  block, 16px between the two sides, 24px between the sections of the argument,
+  32px before the appendix. Uniform gaps everywhere is what a template looks
+  like, and it also flattens a hierarchy this page needs.
+*/
+
+.crumb {
+  padding-top: var(--space-3);
+}
+
+.bothRecords {
+  margin-top: var(--space-5);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+/*
+  Side by side on a wide screen, because the whole point is comparing them.
+  Below 1100px they stack, and the inventory side stays first: it is the row
+  the operator has in their hands.
+*/
+.sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .sides {
+    grid-template-columns: 1fr;
+  }
+}
+
+.codeInfo {
+  overflow-wrap: anywhere;
+}
+
+.absent {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.decisions {
+  margin-top: var(--space-5);
+}
+
+.appendix {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+/*
+  Print. The two records go on one sheet next to each other, which is how a
+  health inspector reads them, and the appendix follows.
+*/
+@media print {
+  .sides {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .crumb {
+    display: none;
+  }
+}

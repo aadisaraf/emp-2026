@@ -42,7 +42,7 @@ _LOT_LABEL = re.compile(
 _LOT_TOKEN = re.compile(r"[A-Z0-9][A-Z0-9.\-]{2,}", re.I)
 
 # "Item Number: 10002800"  /  "Item #473015"  /  "SKU: 3107"  /  "Item # 74384"
-# The manufacturer's own catalog number. Districts carry these because they order
+# The manufacturer's own catalog number. Kitchens carry these because they order
 # by them, and 239 of the 1000 committed openFDA records print one. A code is
 # only ever product identity ALONGSIDE an agreeing manufacturer (FR-070): item
 # number 02075 means a cod portion at High Liner and something else everywhere

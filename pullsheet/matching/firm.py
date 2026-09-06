@@ -1,9 +1,9 @@
 """Supplier identity: does this inventory line come from the firm being recalled?
 
 The most reliably present join key in the whole system. ``recalling_firm`` is
-populated on 100% of the openFDA corpus, and a district item master always knows
+populated on 100% of the openFDA corpus, and a kitchen's item master always knows
 who supplies a line -- it has to, in order to reorder it. Barcodes and lot codes
-are both absent from most district rows; the supplier never is.
+are both absent from most kitchen rows; the supplier never is.
 
 Matching is containment over token sets, not string equality, because the two
 sides write the same company differently and both are right:
@@ -81,8 +81,8 @@ def firm_tokens(name: str | None) -> frozenset[str]:
 def agrees(inventory_name: str | None, recalling_firm: str | None) -> bool:
     """True when the inventory's brand or manufacturer names the recalling firm.
 
-    Containment in ONE direction: every identifying word the district wrote must
-    appear in the agency's firm name. The direction is not arbitrary. Districts
+    Containment in ONE direction: every identifying word the kitchen wrote must
+    appear in the agency's firm name. The direction is not arbitrary. Operators
     record the short trade name (``Simplot``); agencies record the legal entity
     (``JR Simplot Company``), which is the longer of the two in essentially every
     record in the corpus.
@@ -100,7 +100,7 @@ def agrees(inventory_name: str | None, recalling_firm: str | None) -> bool:
     >>> agrees("Sun World", "World Food LLC.")
     False
 
-    -- which under the old two-way rule pulled a district's table grapes for a
+    -- which under the old two-way rule pulled a kitchen's table grapes for a
     recall by an unrelated company that happened to share the word "world".
     """
     a, b = firm_tokens(inventory_name), firm_tokens(recalling_firm)

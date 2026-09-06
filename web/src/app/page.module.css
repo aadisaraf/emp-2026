@@ -1,0 +1,28 @@
+.stack {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+.note {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  overflow-wrap: anywhere;
+}
+
+.clocks {
+  padding: 0;
+}
+
+.body {
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+.body + .body {
+  margin-top: var(--space-2);
+}

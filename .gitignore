@@ -30,3 +30,9 @@ Thumbs.db
 .vscode/
 .idea/
 data/uploads/
+
+# Next.js dashboard. The web/ tree is committed; its dependencies, its build
+# output and its local environment file are not.
+/web/node_modules
+/web/.next
+/web/.env.local

@@ -32,6 +32,8 @@ ATTACHMENT_SUFFIXES = (".csv", ".txt")
 
 
 class EmailDropAdapter(InventoryAdapter):
+    """Reads an export that arrived as an attachment, through the same reader."""
+
     name = "email_drop"
     #: Reads a committed fixture mailbox, not a mail server. Labelled honestly.
     provenance = "hand-authored"

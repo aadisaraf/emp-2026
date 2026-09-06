@@ -1,0 +1,114 @@
+/*
+  Flat, bordered, and monochrome except where a refused delivery has to be
+  read across the room. No shading by magnitude, no rounded tiles, no
+  animation, and nothing behind the cells.
+*/
+
+/* The strip always sits inside a Panel, which supplies the border and the
+   heading band. Two stacked header bands would be chrome arguing with itself. */
+.strip {
+  background: var(--surface-page);
+}
+
+.summary {
+  padding: var(--space-3) var(--space-3) 0;
+  color: var(--text-primary);
+}
+
+.scroll {
+  overflow-x: auto;
+  padding: var(--space-3) var(--space-3) var(--space-2);
+}
+
+.days {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.day {
+  flex: none;
+  width: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-flat);
+  text-align: center;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.mark {
+  display: block;
+  height: 20px;
+  padding-top: 3px;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* The date sits on its own opaque strip so it stays readable over the hatch
+   on a day with no run. The hatch belongs to the marker, which is the half of
+   the cell that says what happened. */
+.dayNumber {
+  display: block;
+  padding-bottom: 2px;
+  border-top: 1px solid var(--border-hairline);
+  background: var(--surface-page);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-normal);
+  color: var(--text-muted);
+}
+
+/* A day that produced a sheet. The number is the fact; the fill is only the
+   difference between "a run happened" and "nothing did". */
+.ok {
+  background: var(--surface-header);
+}
+
+/* The same 2px edge a refused run carries in the table, so the two readings
+   of the same event look like the same event. */
+.rejected {
+  border: 2px solid var(--alert-outline);
+  background: var(--surface-page);
+}
+
+.rejected .mark {
+  color: var(--alert-ink);
+  padding-top: 2px;
+}
+
+/* Started and not finalized. Dashed, because it is neither of the other two. */
+.running {
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+
+/*
+  The gap. Hatched rather than blank, so a missing morning is a mark on the
+  page and not an absence of one, and it prints.
+
+  The hatch is drawn with hard colour stops, which is the only way to get a
+  repeating rule without shipping an image to a build that runs offline. It is
+  a pattern, not a ramp: no value is interpolated and nothing is shaded by
+  magnitude.
+*/
+.gap {
+  border-color: var(--border-hairline);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 3px,
+    var(--border-hairline) 3px 4px
+  );
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.legend {
+  padding: 0 var(--space-3) var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}

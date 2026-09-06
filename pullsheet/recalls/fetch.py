@@ -2,7 +2,7 @@
 
 Constitution Principle III: no external dependency at demo time. Everything
 between a dropped export and a printed sheet reads committed snapshot files.
-This module exists so a district can pull fresh data when it has a network, and
+This module exists so a location can pull fresh data when it has a network, and
 it is designed around the assumption that it will fail.
 
 **An unreachable agency is never an error response.** It is a fact reported on

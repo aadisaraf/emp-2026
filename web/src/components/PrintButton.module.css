@@ -1,0 +1,29 @@
+.button {
+  padding: 3px var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-chip);
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--weight-strong);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--surface-sunken);
+}
+
+.primary {
+  background: var(--green-800);
+  border-color: var(--green-800);
+  color: var(--text-inverse);
+}
+
+.primary:hover {
+  background: var(--green-900);
+}
+
+.plain {
+  background: var(--surface-page);
+}

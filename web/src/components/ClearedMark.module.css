@@ -1,0 +1,10 @@
+.mark {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--cleared-outline);
+  border-radius: var(--radius-chip);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--cleared-ink);
+  white-space: nowrap;
+}

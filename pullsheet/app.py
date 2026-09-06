@@ -19,6 +19,7 @@ from pathlib import Path
 
 from fastapi import Form, HTTPException, Request, UploadFile
 from fastapi.applications import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -43,6 +44,15 @@ UPLOADS = ROOT / "data" / "uploads"
 
 app = FastAPI(title="PullSheet", docs_url=None, redoc_url=None)
 app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
+
+# The browser dashboard is served from :3000 and reads the JSON API on :8000.
+# Both loopback spellings, because a browser treats them as different origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 templates = Jinja2Templates(directory=str(HERE / "templates"))
 templates.env.globals["label_for"] = label_for
@@ -629,3 +639,11 @@ def clear_match(match_id: int, actor: str = Form(""), note: str = Form("")):
     finally:
         conn.close()
     return RedirectResponse(f"/match/{match_id}", status_code=303)
+
+
+# The JSON API the browser dashboard reads. Imported last, and only for its
+# router: `api.py` calls back into the two decision writers above, so the import
+# has to run after they exist.
+from pullsheet.api import router as api_router  # noqa: E402
+
+app.include_router(api_router)

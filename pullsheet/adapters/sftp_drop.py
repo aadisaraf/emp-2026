@@ -61,6 +61,8 @@ def _number(value: str | None) -> float | None:
 
 
 class SftpDropAdapter(InventoryAdapter):
+    """Watches the drop directory the inventory system writes to each morning."""
+
     name = "sftp_drop"
     provenance = "live"
     channel = "sftp_drop"
@@ -90,7 +92,7 @@ class SftpDropAdapter(InventoryAdapter):
         if missing:
             raise AdapterRejection(
                 path.name, ", ".join(sorted(missing)),
-                f"no column matched the required field(s): {', '.join(sorted(missing))}. "
+                f"no column matched: {', '.join(sorted(missing))}. "
                 f"Headers seen: {', '.join(headers)}")
 
         for source_row, row in enumerate(rows, start=1):
@@ -103,7 +105,7 @@ class SftpDropAdapter(InventoryAdapter):
 
         The signature is a newline inside a value: no real inventory description
         contains one. Rejecting the whole source is right here -- half a file
-        looks exactly like a district with fewer items in it.
+        looks exactly like a kitchen with fewer items in it.
         """
         for header, value in row.items():
             if isinstance(value, str) and "\n" in value:

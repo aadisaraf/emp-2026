@@ -49,13 +49,30 @@ Open `http://localhost:8000`. Within one poll interval the sheet exists.
 **No network is required at any point**, and the file moves itself to
 `data/archive/`.
 
+## Dashboard
+
+`web/` is a Next.js front end over the same data, and it is what a manager
+opens. It reads `/api/v1` and writes nothing of its own: a decision it records
+goes through the same two named routes as the server-rendered pages, so there is
+still exactly one place in the system that can clear a line.
+
+```bash
+cd web && npm install && npm run dev
+```
+
+Open `http://localhost:3000`, with the Python process still running on 8000.
+Point it elsewhere with `NEXT_PUBLIC_API_BASE`.
+
+The Jinja app on :8000 stays. It is the printable, addressable fallback, and it
+is the one that runs when nothing else does.
+
 ## Tests
 
 ```bash
 .venv/bin/python -m pytest -q
 ```
 
-402 tests. The full validation walkthrough is
+443 tests. The full validation walkthrough is
 [specs/001-recall-pull-sheet/quickstart.md](specs/001-recall-pull-sheet/quickstart.md).
 
 ---

@@ -1,0 +1,14 @@
+.kind {
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.unknown {
+  color: var(--attend-ink);
+}
+
+.raw {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+}

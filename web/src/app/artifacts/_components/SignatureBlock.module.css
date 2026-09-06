@@ -1,0 +1,58 @@
+.block {
+  margin-top: var(--space-5);
+  border: 1px solid var(--border);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  break-inside: avoid;
+}
+
+.heading {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.note {
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+  max-width: 96ch;
+}
+
+.fields {
+  margin-top: var(--space-4);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5) var(--space-6);
+}
+
+.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.field {
+  display: block;
+  min-width: 0;
+}
+
+.label {
+  display: block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* The line a pen goes on. Nothing is ever rendered above it. */
+.rule {
+  display: block;
+  margin-top: var(--space-4);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+@media print {
+  .fields {
+    gap: 26px var(--space-6);
+  }
+}

@@ -90,7 +90,8 @@ def run_status(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
                   "successfully, unchanged.")
     elif pulls:
         word, state = ACTION_REQUIRED, "action"
-        detail = f"{pulls} line(s) are marked PULL on the most recent run."
+        lines = "line is" if pulls == 1 else "lines are"
+        detail = f"{pulls} {lines} marked PULL on the most recent run."
     elif stale:
         # Deliberately NOT "clear". The lines are unchanged -- what is gated is
         # the confidence of the word, and only the word.

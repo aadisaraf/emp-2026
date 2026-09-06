@@ -1,0 +1,74 @@
+.crumb {
+  padding-top: var(--space-3);
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+/* The rejection reason is the sentence the operator has to act on today, so it
+   is the largest thing in its panel and it is not softened. */
+.reason {
+  font-size: var(--fs-section);
+  line-height: var(--lh-section);
+  font-weight: var(--weight-strong);
+  color: var(--alert-ink);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  margin-top: var(--space-3);
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+/* The frozen counts sit in the same band grammar as the shell's stat rail, one
+   panel down and under a heading that says whose numbers they are. */
+.rail {
+  margin: calc(var(--space-3) * -1) calc(var(--space-3) * -1) 0;
+  border-top: 0;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.linkRule {
+  display: inline-block;
+  width: 1px;
+  height: 12px;
+  margin: 0 var(--space-3);
+  background: var(--border);
+}
+
+.noFile {
+  color: var(--text-muted);
+}
+
+.columnMap {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  overflow-wrap: anywhere;
+}
+
+.footer {
+  border-top: 1px solid var(--border-hairline);
+  padding-top: var(--space-3);
+}
+
+.note {
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+.note + .note {
+  margin-top: var(--space-2);
+}

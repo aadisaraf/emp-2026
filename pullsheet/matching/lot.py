@@ -1,7 +1,7 @@
 """Lot code normalization and comparison (R3).
 
 The single hardest string problem in this system, and the one with the most
-direct consequence: a district writes ``4829-B``, the agency writes
+direct consequence: a kitchen writes ``4829-B``, the agency writes
 ``LOT 4829B``, and those are the same case of chicken.
 
 Adapters pass lot codes through VERBATIM. All reconciliation happens here, so
@@ -23,7 +23,7 @@ from typing import Literal, Optional
 
 LotComparison = Literal["equal", "contained", "none", "unparseable"]
 
-# Words agencies and districts put in front of the actual code.
+# Words agencies and operators put in front of the actual code.
 _NOISE = re.compile(
     r"\b(LOT|LOTS|LOTE|BATCH|CODE|CODES|NO|NUMBER|NUM|PACK|PACKED|DAYCODE|"
     r"PRODUCTION|PROD|ITEM|SKU)\b\.?",

@@ -1,0 +1,59 @@
+/*
+  The state report's own two pieces: the field table's cells, and the plain
+  text export block.
+*/
+
+.label {
+  color: var(--text-primary);
+  font-weight: var(--weight-strong);
+}
+
+.value {
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.why {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+/*
+  A row waiting for a person. No fill and no left strip: the marker chip in the
+  value cell already carries the state in a word, and a tinted band behind 13 of
+  24 rows would make the 11 answered fields look like the exception.
+*/
+.unfilledRow td:first-child {
+  color: var(--text-primary);
+}
+
+/*
+  The export block is the thing a director copies out of, so it is monospaced,
+  left aligned, and padded to a fixed column the same way the server-rendered
+  page does it. It scrolls sideways rather than wrapping, because a wrapped
+  label breaks the alignment that makes it copyable.
+*/
+.export {
+  margin-top: var(--space-3);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  padding: var(--space-3);
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+@media print {
+  .export {
+    background: #ffffff;
+    font-size: 8pt;
+    line-height: 11pt;
+    white-space: pre-wrap;
+    overflow-x: visible;
+  }
+}

@@ -23,6 +23,18 @@ cd "$(dirname "$0")/.."
 PY="${PY:-.venv/bin/python}"
 [ -x "$PY" ] || PY=python3
 
+# A "Refresh source" during a rehearsal writes a new snapshot next to the two
+# committed ones, and load_snapshots reads every file in that directory. Left in
+# place it silently changes the record counts the next rehearsal reports, so the
+# reset removes anything git does not track. The committed pair is never touched.
+echo "removing snapshots written since the last commit"
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  git ls-files --others --ignored --exclude-standard -- pullsheet/recalls/snapshots \
+    | while read -r stray; do rm -f -- "$stray"; done
+  git ls-files --others --exclude-standard -- pullsheet/recalls/snapshots \
+    | while read -r stray; do rm -f -- "$stray"; done
+fi
+
 echo "resetting database"
 "$PY" -m pullsheet.db --reset >/dev/null
 

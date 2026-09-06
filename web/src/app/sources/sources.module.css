@@ -1,0 +1,206 @@
+/*
+  Sources. The page that exists to be checked.
+
+  Nothing here is styled to be reassuring. The tables are the same tables as
+  everywhere else in the application, at the same density, and the two facts
+  most likely to be quietly softened somewhere else, that the FSIS corpus is
+  hand-authored and that one delivery channel reads a committed file rather
+  than a mail server, are given a bordered block of their own.
+*/
+
+.sections {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+/* --------------------------------------------------------------------------
+   The three labels, defined once, at the top.
+-------------------------------------------------------------------------- */
+
+.legend {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: var(--space-2) var(--space-4);
+  align-items: baseline;
+}
+
+.legendValue {
+  color: var(--text-secondary);
+}
+
+.legendNote {
+  margin-top: var(--space-3);
+  color: var(--text-primary);
+  max-width: 96ch;
+}
+
+/* --------------------------------------------------------------------------
+   A fact that has to be stated rather than implied.
+-------------------------------------------------------------------------- */
+
+.declaration {
+  border: 1px solid var(--border-strong);
+  padding: var(--space-3);
+  color: var(--text-primary);
+  max-width: 96ch;
+}
+
+.declarationHead {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.declarationBody {
+  margin-top: var(--space-2);
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.prose {
+  color: var(--text-secondary);
+  max-width: 96ch;
+}
+
+.proseStrong {
+  color: var(--text-primary);
+}
+
+/* --------------------------------------------------------------------------
+   Table cells.
+-------------------------------------------------------------------------- */
+
+.key {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.path {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.what {
+  color: var(--text-secondary);
+}
+
+.stale {
+  color: var(--alert-ink);
+  font-weight: var(--weight-strong);
+}
+
+.fresh {
+  color: var(--text-muted);
+}
+
+/* Reads and cannot: a word, never a tick and never a colour on its own. */
+.reads {
+  color: var(--text-primary);
+}
+
+.cannot {
+  color: var(--attend-ink);
+  font-weight: var(--weight-strong);
+}
+
+.fine {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.figure {
+  font-weight: var(--weight-strong);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.rule {
+  color: var(--text-primary);
+  max-width: 96ch;
+}
+
+/* --------------------------------------------------------------------------
+   Refresh.
+-------------------------------------------------------------------------- */
+
+.refresh {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.refreshRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.button {
+  flex: none;
+  border: 1px solid var(--green-800);
+  border-radius: var(--radius-chip);
+  background: var(--green-800);
+  color: var(--text-inverse);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--weight-strong);
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--green-900);
+  border-color: var(--green-900);
+}
+
+.button:disabled {
+  background: var(--surface-header);
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.refreshNote {
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+.refreshResult {
+  border: 1px solid var(--border-strong);
+  padding: var(--space-3);
+  max-width: 96ch;
+}
+
+.refreshMessage {
+  color: var(--text-primary);
+}
+
+.refreshError {
+  margin-top: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.refreshCorpus {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}
+
+.refreshSource {
+  padding: 2px var(--space-2);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}

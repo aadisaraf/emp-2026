@@ -1,0 +1,73 @@
+.source {
+  font-family: var(--font-mono);
+}
+
+.fetch {
+  color: var(--text-secondary);
+}
+
+/* Staleness gates one word. It never touches a line. */
+.stale {
+  display: inline-block;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  background: var(--attend-tint);
+  color: var(--attend-ink);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* The frozen sentence, verbatim. It carries the provenance words for a past
+   run, so it is set at reading size and not shrunk into a caption. */
+.frozen {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-flat);
+  background: var(--surface-sunken);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.absent {
+  color: var(--text-secondary);
+}
+
+.coverage {
+  margin-top: var(--space-3);
+  color: var(--text-secondary);
+  max-width: 78ch;
+}
+
+.coverageLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.caveat {
+  color: var(--text-muted);
+}
+
+.legend {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  max-width: 90ch;
+}
+
+.legend + .legend {
+  border-top: 0;
+  margin-top: var(--space-2);
+  padding-top: 0;
+}

@@ -1,0 +1,107 @@
+/*
+  The verdict block. Header band, body, footer legend, one 1px border around
+  the lot. It is the only element on the page drawn with --border-strong,
+  which is how it outranks the panels below it without a shadow or a radius.
+*/
+
+.verdict {
+  margin-top: var(--space-4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-flat);
+  background: var(--surface-page);
+}
+
+.rail {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  background: var(--surface-header);
+  border-bottom: 1px solid var(--border);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-4);
+  border-left: 1px solid var(--border);
+  min-height: 52px;
+}
+
+.cell:first-child {
+  border-left: 0;
+}
+
+/* The source pair carries a provenance label, so it needs room to breathe. */
+.wide {
+  min-width: 200px;
+}
+
+.label {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: var(--weight-strong);
+  color: var(--text-primary);
+}
+
+.new {
+  font-weight: var(--weight-strong);
+}
+
+.body {
+  padding: var(--space-3) var(--space-4);
+}
+
+.sentence {
+  color: var(--text-secondary);
+  max-width: 84ch;
+}
+
+.sentence + .sentence {
+  margin-top: var(--space-2);
+}
+
+.note {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  max-width: 84ch;
+}
+
+.noteLabel {
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: var(--space-1);
+}
+
+.stays {
+  color: var(--text-secondary);
+}
+
+.legend {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+}

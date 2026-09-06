@@ -54,7 +54,7 @@ _LADDER: dict[str, Tier] = {
     "gtin": "CONFIRMED",
     "upc": "CONFIRMED",
     # A manufacturer's own catalog number, on an agreeing manufacturer. Product
-    # identity, and the only kind of it most district rows can offer: barcodes
+    # identity, and the only kind of it most kitchen rows can offer: barcodes
     # and lot codes are both absent from the majority of item masters, while the
     # supplier and the number used to order from them are always there (FR-070).
     "mfr_item": "CONFIRMED",
@@ -96,7 +96,7 @@ def decide(inv, rec, evidence: Evidence) -> Decision:
     notes: list[str] = []
 
     # --- Widening rule 1 (FR-027) -----------------------------------------
-    # The recall names a lot; this district does not record lots for the item.
+    # The recall names a lot; this kitchen does not record lots for the item.
     # We cannot rule the case out, and not being able to rule it out is exactly
     # what keeps it on the sheet.
     if evidence.recall_lot_present and not evidence.inventory_lot_present:
