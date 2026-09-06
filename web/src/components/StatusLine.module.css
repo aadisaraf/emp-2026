@@ -1,5 +1,13 @@
+/* The sentence and the corpus sit on one row rather than stacking. Two stacked
+   paragraphs cost 47px of a 200px chrome budget, and the sheet needs that space
+   for rows. They wrap back to two lines when the viewport cannot hold them. */
 .line {
-  padding: var(--space-2) var(--page-pad) var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--space-3);
+  row-gap: 2px;
+  padding: var(--space-1) var(--page-pad);
   background: var(--surface-page);
 }
 

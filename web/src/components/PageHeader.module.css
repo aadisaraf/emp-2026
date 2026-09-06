@@ -1,13 +1,18 @@
+/* Title and context on one baseline. Stacked with space-4 above and space-3
+   below, the header took 75px to say "Pull sheet" and which run it is. */
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4) 0 var(--space-3);
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border);
 }
 
 .text {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -19,8 +24,9 @@
 }
 
 .context {
-  margin-top: var(--space-1);
+  margin-top: 0;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 
 .actions {

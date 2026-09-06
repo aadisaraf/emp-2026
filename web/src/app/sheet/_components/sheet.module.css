@@ -13,10 +13,12 @@
    Page scaffolding
 --------------------------------------------------------------------------- */
 
+/* Tightened from space-4: 32px of the 200px chrome budget was sitting in the
+   gaps between the page header, the section head and the table head. */
 .stack {
   display: grid;
-  gap: var(--space-4);
-  margin-top: var(--space-4);
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 /*
@@ -156,8 +158,8 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-  padding-bottom: var(--space-2);
-  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-1);
+  margin-bottom: var(--space-2);
   border-bottom: 1px solid var(--border-strong);
 }
 
@@ -231,12 +233,12 @@
    little air -- measured, not guessed. The pinned set was holding 227px the
    content did not use while Item and Triggered by, the two columns carrying
    what the sheet is for, shared 151px between them and rendered as ellipses. */
-.sheetTable col:nth-child(1) { width: 88px; }
+.sheetTable col:nth-child(1) { width: 148px; }
 .sheetTable col:nth-child(3) { width: 84px; }
 .sheetTable col:nth-child(4) { width: 68px; }
-.sheetTable col:nth-child(5) { width: 104px; }
-.sheetTable col:nth-child(6) { width: 68px; }
-.sheetTable col:nth-child(7) { width: 92px; }
+.sheetTable col:nth-child(5) { width: 100px; }
+.sheetTable col:nth-child(6) { width: 72px; }
+.sheetTable col:nth-child(7) { width: 124px; }
 /* 88, not less: the uppercase tracked header needs it, and a checkbox column
    whose header is cut to "PULLED..." does not tell an operator what to tick. */
 .sheetTable col:nth-child(9) { width: 88px; }
@@ -253,33 +255,17 @@
   overflow-wrap: anywhere;
 }
 
-/* Tier over status, stacked, the way the printed sheet already sets them. Side
-   by side they needed 140px of the widest row in the table to say two short
-   words; stacked they need 88px, and the 52px goes to the columns that carry
-   what the line actually is. */
-.sheetTable td:nth-child(1) > * {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-}
-
 /* Item, Evidence and Triggered by wrap instead of ellipsing. Every column
    wanted 1,240px inside an 843px table, so something has to give, and what
    the item IS cannot be the thing that gives: "GROUN..." identifies no food,
    and "P... -> P..." is not evidence. The scalar columns above keep nowrap --
    they never truncate at these widths, so the row rhythm is unchanged. */
-.sheetTable td:nth-child(2),
-.sheetTable td:nth-child(7),
-.sheetTable td:nth-child(8),
-.sheetTable td:nth-child(2) *,
-.sheetTable td:nth-child(7) *,
-.sheetTable td:nth-child(8) * {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: break-word;
-}
+/* These three columns keep the table's ellipsis rather than wrapping. Nine
+   columns of full text want 1,603px and the table has 1,185px at 1440x900, so
+   something truncates; DESIGN.md's 28px row is the thing that must not. The
+   widths below are set so the common case -- a lot code, a single word -- fits
+   whole, and the detail pane carries the long supplier pairs verbatim with
+   both sides labelled. */
 
 /* While the pane is open, the table keeps the columns an operator walks by --
    what it is, where it is, how much, and whether it has been pulled -- and
@@ -337,13 +323,8 @@
   overflow-wrap: anywhere;
 }
 
-.sheetTable td:nth-child(2) .item {
-  display: block;
-}
-
-.sheetTable td:nth-child(2) .item > * + * {
-  margin-top: var(--space-1);
-}
+/* The amendment tag sits inline again: a stacked tag is a second line, and a
+   second line is not a 28px row. */
 
 /* The description, verbatim, and the control that opens the line. A button,
    not a card, and it prints as plain text. */
