@@ -1,5 +1,6 @@
 // Sift API v1 types, transcribed from brief/API.md section 21.
 // Do not edit a field name, a type or a nullability here without editing
+// brief/API.md and pullsheet/api.py to match.
 
 export type Provenance = "live" | "dated-snapshot" | "hand-authored";
 export type RecallSource = "openfda" | "fsis";
@@ -24,11 +25,6 @@ export type DeploymentType = "school" | "restaurant";
 export type Component = "grain" | "meat_or_alternate" | "fruit" | "vegetable" | "milk";
 export type ReportFieldKind = "derived" | "human" | "blank";
 export type DeadlineKey = "distributor_notification" | "inventory_assessment";
-
-/** The one error body shape, for every non-2xx response. */
-export interface ApiErrorBody {
-  error: { status: number; code: string; message: string };
-}
 
 export interface Location {
   name: string;
@@ -589,11 +585,3 @@ export interface RefreshResponse {
   corpus: CorpusSnapshot[];
 }
 
-export interface ClearRequest {
-  actor: string;
-  note?: string | null;
-}
-
-export interface ConfirmPulledRequest {
-  actor: string;
-}

@@ -4,12 +4,6 @@ import { EVIDENCE_LABEL, NOT_RECORDED } from "@/lib/strings";
 import { formatQuantity } from "@/lib/format";
 import { byTier } from "@/lib/tier";
 import { cx } from "@/lib/cx";
-import type { ClearedFacts } from "./clearedFacts";
-
-export interface StorageSectionsProps {
-  sections: SheetSection[];
-  cleared: ClearedFacts;
-}
 
 const ROMAN: Record<1 | 2 | 3, string> = { 1: "I", 2: "II", 3: "III" };
 
@@ -18,13 +12,9 @@ export function locationId(storage: string): string {
   return `loc-${storage.replace(/\s+/g, "-")}`;
 }
 
-/*
-  Where the case is, then what it is, then why. Storage location is the only
-  grouping on this sheet, because it is the walking order through the kitchen.
-*/
+/* Grouped by storage location: the walking order through the kitchen. */
 
-function LineRow({ line, cleared }: { line: SheetLine; cleared: ClearedFacts }) {
-  const fact = cleared.get(line.id);
+function LineRow({ line }: { line: SheetLine }) {
   const firm = line.recalling_firm ?? line.source;
 
   return (
@@ -54,17 +44,16 @@ function LineRow({ line, cleared }: { line: SheetLine; cleared: ClearedFacts }) 
       </td>
       <td className={ui.optSm}>
         {line.cleared ? (
-          <>
-            <Chip tone="done">recorded</Chip>
-            {fact?.actor ? <span className={ui.sub}>{fact.actor}</span> : null}
-          </>
+          <Chip tone="done">recorded</Chip>
         ) : null}
       </td>
     </tr>
   );
 }
 
-export function StorageSections({ sections, cleared }: StorageSectionsProps) {
+export function StorageSections({ sections }: {
+  sections: SheetSection[];
+}) {
   return (
     <>
       {sections.map((section) => (
@@ -108,7 +97,7 @@ export function StorageSections({ sections, cleared }: StorageSectionsProps) {
             </thead>
             <tbody>
               {byTier(section.lines).map((line) => (
-                <LineRow key={line.id} line={line} cleared={cleared} />
+                <LineRow key={line.id} line={line} />
               ))}
             </tbody>
           </table>

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { EmptyState, ErrorState, PageHeader } from "@/components";
-import { attempt, getSheetForRun, getSources, getStatus } from "@/lib/api";
+import { getSheetForRun, getSources, getStatus } from "@/lib/api";
 import { PAGE_TITLES } from "@/lib/strings";
 import { SheetView } from "../_components/SheetView";
-import { clearedFacts } from "../_components/clearedFacts";
 
 /* A past run's sheet, shown exactly as it was printed that morning. */
 
@@ -31,39 +30,33 @@ export default async function PastRunSheetPage({
   }
 
   const [sheet, sources, status] = await Promise.all([
-    attempt(getSheetForRun(id)),
-    attempt(getSources()),
-    attempt(getStatus()),
+    getSheetForRun(id),
+    getSources(),
+    getStatus(),
   ]);
 
   if (!sheet.ok) {
-    if (sheet.error.code === "no_run" || sheet.error.status === 404) {
-      return (
-        <>
-          <PageHeader title={PAGE_TITLES.pullSheet} />
+    const missing = sheet.error.code === "no_run" || sheet.error.status === 404;
+    return (
+      <>
+        <PageHeader title={PAGE_TITLES.pullSheet} />
+        {missing ? (
           <EmptyState
             heading={`There is no run #${id}.`}
             body="No delivery with this id has ever been recorded at this location."
             action={<Link href="/runs">Every delivery is listed in the run history.</Link>}
           />
-        </>
-      );
-    }
-    return (
-      <>
-        <PageHeader title={PAGE_TITLES.pullSheet} />
-        <ErrorState failure={sheet.error} />
+        ) : (
+          <ErrorState failure={sheet.error} />
+        )}
       </>
     );
   }
-
-  const cleared = await clearedFacts(sheet.data);
 
   return (
     <SheetView
       sheet={sheet.data}
       screeningRule={sources.ok ? sources.data.screening_rule : null}
-      cleared={cleared}
       currentRunId={status.ok ? (status.data.run?.id ?? null) : null}
     />
   );

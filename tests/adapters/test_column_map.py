@@ -7,13 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from pullsheet.adapters.column_map import (
-    ALIASES,
-    apply,
-    canonical,
-    detect,
-    required_missing,
-)
+from pullsheet.adapters.column_map import ALIASES, canonical, detect
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 VENDORS = ["headers_primeroedge.csv", "headers_linq_titan.csv",
@@ -58,7 +52,7 @@ def test_the_unambiguous_layouts_ask_nothing():
 @pytest.mark.parametrize("name", VENDORS)
 def test_required_fields_are_always_found(name):
     mapping, _ = detect(_headers(name))
-    assert required_missing(mapping) == set()
+    assert "raw_description" in mapping.values()
 
 
 def test_detection_is_case_and_punctuation_insensitive():
@@ -72,16 +66,6 @@ def test_canonical():
     assert canonical("GTIN-14") == "gtin 14"
     assert canonical("$/unit") == "cost unit"
     assert canonical(None) == ""
-
-
-def test_unrecognised_columns_are_kept_not_dropped():
-    mapping, _ = detect(["Storage Location", "Item Description", "Vendor Notes"])
-    row = {"Storage Location": "Freezer A",
-           "Item Description": "CHICKEN STRIPS BRD FC FROZEN",
-           "Vendor Notes": "substitute approved"}
-    out = apply(mapping, row)
-    assert out["storage_location"] == "Freezer A"
-    assert out["_extra"] == {"Vendor Notes": "substitute approved"}
 
 
 def test_a_field_is_never_claimed_twice():

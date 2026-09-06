@@ -1,5 +1,6 @@
 """Free-text ``code_info`` -> structured codes.
-The governing rule (FR-067): **failure to parse must widen, never narrow.** When
+
+The governing rule (FR-067): **failure to parse must widen, never narrow.**
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ _LOT_LABEL = re.compile(
 _LOT_TOKEN = re.compile(r"[A-Z0-9][A-Z0-9.\-]{2,}", re.I)
 
 # "Item Number: 10002800"  /  "Item #473015"  /  "SKU: 3107"  /  "Item # 74384"
-# The manufacturer's own catalog number. Kitchens carry these because they order
+# The manufacturer's own catalog number.
 _ITEM_CODE = re.compile(
     r"\b(?:ITEM|SKU|PRODUCT|CATALOG|CAT|MFR|MFG)\s*"
     r"(?:NUMBERS?|NOS?|CODES?|#)?\s*[:#.]?\s*([A-Z0-9][A-Z0-9\-]{3,19})\b", re.I)
@@ -81,18 +82,14 @@ def _dedupe(values):
 
 def parse_code_info(text: str | None) -> dict[str, Any]:
     """Extract codes from an agency's free-text code field."""
-    empty = {"gtins": [], "upcs": [], "lots": [], "date_codes": [],
-             "item_codes": [], "unparsed": True}
     if not text or not text.strip():
-        return empty
+        return {"gtins": [], "upcs": [], "lots": [], "date_codes": [],
+                "item_codes": [], "unparsed": True}
 
     gtins = _GTIN.findall(text) + _BARE_14.findall(text)
 
-    upcs: list[str] = []
-    for m in _UPC_LABELLED.findall(text):
-        upcs.append(m)
-    for m in _UPC_SPACED.findall(text):
-        upcs.append(re.sub(r"[\s-]", "", m))
+    upcs = (_UPC_LABELLED.findall(text)
+            + [re.sub(r"[\s-]", "", m) for m in _UPC_SPACED.findall(text)])
 
     # A 14-digit GTIN also matches the 11-13 digit UPC pattern in some strings;
     # keep them apart so the screening index does not key a GTIN as a UPC.
@@ -144,7 +141,8 @@ def parse_code_info(text: str | None) -> dict[str, Any]:
         "date_codes": date_codes,
         "item_codes": item_codes,
         # `unparsed` means "no identifier came out of this", which is what the
-        # matcher needs to know. Date codes alone do not count: a date window is
+        # matcher needs to know. Date codes alone do not count: a date window
+        # identifies no product, so a record with only dates is still unparsed.
         "unparsed": not (gtins or upcs or lots),
     }
 

@@ -3,27 +3,17 @@
 import { cx } from "@/lib/cx";
 import styles from "./PrintButton.module.css";
 
-export interface PrintButtonProps {
+/** Print. The printed sheet is the legal artefact, so it gets a real button. */
+export function PrintButton({ label = "Print sheet", variant = "plain" }: {
   /** Two or three words. It is a button, not a sentence. */
   label?: string;
   /** primary is the green button; plain is the bordered one. */
   variant?: "primary" | "plain";
-  className?: string;
-}
-
-/**
- * Print. The printed sheet is the legal artefact, so this is not an
- * afterthought action tucked into a menu.
- */
-export function PrintButton({
-  label = "Print sheet",
-  variant = "plain",
-  className,
-}: PrintButtonProps) {
+}) {
   return (
     <button
       type="button"
-      className={cx(styles.button, styles[variant], "no-print", className)}
+      className={cx(styles.button, variant === "primary" && styles.primary, "no-print")}
       onClick={() => window.print()}
     >
       {label}

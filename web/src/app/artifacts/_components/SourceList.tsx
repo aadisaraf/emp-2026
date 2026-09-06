@@ -3,7 +3,7 @@ import { ProvenanceLabel } from "@/components";
 import { FSIS_NOTE, PROVENANCE_LEGEND } from "@/lib/strings";
 import styles from "./document.module.css";
 
-export interface SourceListProps {
+interface SourceListProps {
   sources: SourceRef[];
   /** An extra sentence about this document's own layout, where it has one. */
   note?: string;

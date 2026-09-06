@@ -10,19 +10,14 @@ export interface ClockStripProps {
   deadlines: Deadline[];
   /** rail sits in the stat band; table is the Reporting clocks section. */
   variant?: "rail" | "table";
-  /** Show the standing note and the provenance line under the table. */
-  notes?: boolean;
   className?: string;
 }
 
-/**
-  The two USDA clocks: 24 hours to notify the distributor, 48 hours to finish
-  the inventory assessment, both measured from when the recall notice arrived
-*/
+/** The two USDA clocks: 24h to notify the distributor, 48h to finish the
+ *  inventory assessment, both from when the notice arrived. */
 export function ClockStrip({
   deadlines,
   variant = "rail",
-  notes,
   className,
 }: ClockStripProps) {
   if (deadlines.length === 0) {
@@ -38,20 +33,18 @@ export function ClockStrip({
           rowKey={(deadline) => deadline.key}
           caption={CLOCKS.heading}
         />
-        {notes ? (
-          <div className={styles.notes}>
-            <p className={styles.note}>{CLOCKS.standingNote}</p>
-            <p className={styles.note}>
-              {clockProvenance(
-                formatDateTime(deadlines[0].received_at) ?? deadlines[0].received_at,
-                deadlines[0].records,
-              )}
-            </p>
-            {deadlines.some((deadline) => deadline.overrun) ? (
-              <p className={styles.overrunNote}>{CLOCKS.overrunNote}</p>
-            ) : null}
-          </div>
-        ) : null}
+        <div className={styles.notes}>
+          <p className={styles.note}>{CLOCKS.standingNote}</p>
+          <p className={styles.note}>
+            {clockProvenance(
+              formatDateTime(deadlines[0].received_at) ?? deadlines[0].received_at,
+              deadlines[0].records,
+            )}
+          </p>
+          {deadlines.some((deadline) => deadline.overrun) ? (
+            <p className={styles.overrunNote}>{CLOCKS.overrunNote}</p>
+          ) : null}
+        </div>
       </div>
     );
   }

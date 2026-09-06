@@ -8,20 +8,13 @@ from pathlib import Path
 from typing import Iterator
 
 from pullsheet.adapters.base import AdapterRejection, InventoryAdapter, NormalizedRecord
-from pullsheet.adapters.column_map import apply, detect, required_missing
+from pullsheet.adapters.column_map import detect
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 WATCHED = ROOT / "data" / "watched"
 ARCHIVE = ROOT / "data" / "archive"
 
 READABLE_SUFFIXES = {".csv", ".xlsx", ".xlsm"}
-
-
-def _digits(value: str | None) -> str | None:
-    if not value:
-        return None
-    kept = "".join(c for c in str(value) if c.isdigit())
-    return kept or None
 
 
 def _number(value: str | None) -> float | None:
@@ -62,26 +55,22 @@ class SftpDropAdapter(InventoryAdapter):
             raise AdapterRejection(path.name, None, "no header row; the file is empty")
 
         mapping = column_map or detect(headers)[0]
-        missing = required_missing(mapping)
-        if missing:
+        if "raw_description" not in mapping.values():
             raise AdapterRejection(
-                path.name, ", ".join(sorted(missing)),
-                f"no column matched: {', '.join(sorted(missing))}. "
+                path.name, "raw_description",
+                "no column matched: raw_description. "
                 f"Headers seen: {', '.join(headers)}")
 
         for source_row, row in enumerate(rows, start=1):
-            self._guard_against_broken_quoting(path, source_row, row)
-            yield self._record(mapping, row, source_row)
-
-    @staticmethod
-    def _guard_against_broken_quoting(path: Path, source_row: int, row: dict) -> None:
-        """Reject the file if an unterminated quote swallowed later lines."""
-        for header, value in row.items():
-            if isinstance(value, str) and "\n" in value:
-                raise AdapterRejection(
-                    path.name, f"row {source_row}, column {header!r}",
-                    "unterminated quote: the value runs across a line break, so "
-                    "the rest of the file was absorbed into one cell")
+            # an unterminated quote swallows later lines into one cell
+            for header, value in row.items():
+                if isinstance(value, str) and "\n" in value:
+                    raise AdapterRejection(
+                        path.name, f"row {source_row}, column {header!r}",
+                        "unterminated quote: the value runs across a line break, so "
+                        "the rest of the file was absorbed into one cell")
+            yield self._record({mapping[h]: v for h, v in row.items() if h in mapping},
+                               source_row)
 
     def _rows(self, path: Path) -> tuple[list[dict], list[str] | None]:
         if path.suffix.lower() == ".csv":
@@ -108,8 +97,7 @@ class SftpDropAdapter(InventoryAdapter):
                                f"unsupported file type {path.suffix!r}; expected .csv or .xlsx")
 
     @staticmethod
-    def _record(mapping: dict[str, str], row: dict, source_row: int) -> NormalizedRecord:
-        f = apply(mapping, row)
+    def _record(fields: dict[str, str | None], source_row: int) -> NormalizedRecord:
         unpopulated: set[str] = set()
 
         def keep(field: str, value):
@@ -119,39 +107,39 @@ class SftpDropAdapter(InventoryAdapter):
             return value
 
         # FR-007: keep the row even when blank rather than dropping it.
-        description = (f.get("raw_description") or "").strip()
+        description = (fields.get("raw_description") or "").strip()
         if not description:
             unpopulated.add("raw_description")
 
-        quantity = _number(f.get("quantity"))
+        quantity = _number(fields.get("quantity"))
         if quantity is None:
             unpopulated.add("quantity")
 
-        gtin = _digits(f.get("gtin"))
+        gtin = "".join(c for c in str(fields.get("gtin") or "") if c.isdigit()) or None
         if not gtin:
             unpopulated.add("gtin")
 
-        unit_cost = _number(f.get("unit_cost"))
+        unit_cost = _number(fields.get("unit_cost"))
         if unit_cost is None:
             unpopulated.add("unit_cost")
 
         # FR-069: passed through verbatim; firm.agrees() does all normalizing.
-        supplier = {name: keep(name, (f.get(name) or "").strip() or None)
+        supplier = {name: keep(name, (fields.get(name) or "").strip() or None)
                     for name in ("brand", "manufacturer", "manufacturer_item_code",
                                  "vendor_name", "vendor_item_code")}
 
         return NormalizedRecord(
-            storage_location=keep("storage_location", (f.get("storage_location") or "").strip() or None),
+            storage_location=keep("storage_location", (fields.get("storage_location") or "").strip() or None),
             raw_description=description,
             quantity=quantity,
-            unit=keep("unit", (f.get("unit") or "").strip() or None),
-            pack_size=keep("pack_size", (f.get("pack_size") or "").strip() or None),
+            unit=keep("unit", (fields.get("unit") or "").strip() or None),
+            pack_size=keep("pack_size", (fields.get("pack_size") or "").strip() or None),
             gtin=gtin,
             # VERBATIM. Case, punctuation and whitespace exactly as written (R3).
-            lot_code=keep("lot_code", f.get("lot_code") or None),
+            lot_code=keep("lot_code", fields.get("lot_code") or None),
             **supplier,
             unit_cost=unit_cost,
-            received_date=keep("received_date", (f.get("received_date") or "").strip() or None),
+            received_date=keep("received_date", (fields.get("received_date") or "").strip() or None),
             source_row=source_row,
             unpopulated=frozenset(unpopulated),
         )

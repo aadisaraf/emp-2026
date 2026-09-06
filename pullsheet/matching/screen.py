@@ -54,21 +54,12 @@ def code_key(code: str | None) -> Optional[str]:
     return digits[:-1][-11:]
 
 
-def _item_key(code: str | None) -> Optional[str]:
-    """Index key for a manufacturer catalog number: see ``tiers.item_key``."""
-    import re
-    if not code:
-        return None
-    return re.sub(r"[^A-Z0-9]", "", str(code).upper()).lstrip("0") or None
-
-
 class ScreenRecord(NamedTuple):
     """The minimum a recall record must expose to be screened."""
 
     id: Any
     normalized_description: str
     parsed_codes: dict
-    lot_codes: tuple[str, ...] = ()
     recalling_firm: str = ""
 
 
@@ -86,18 +77,14 @@ class Indexes(NamedTuple):
     by_lot: dict[str, set]
     by_token: dict[str, set]
     record_count: int
-    doc_freq: dict[str, int] = {}
-    by_firm: dict[str, set] = {}
-    by_item: dict[str, set] = {}
+    doc_freq: dict[str, int]
+    by_firm: dict[str, set]
 
     def is_distinctive(self, token: str) -> bool:
         """True when this token is rare enough to justify a comparison alone."""
         if not self.record_count:
             return True
         return self.doc_freq.get(token, 0) <= COMMON_TOKEN_SHARE * self.record_count
-
-    def significant_tokens(self, text: str | None) -> frozenset[str]:
-        return significant_tokens(text)
 
 
 def significant_tokens(text: str | None) -> frozenset[str]:
@@ -111,7 +98,6 @@ def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
     by_lot: dict[str, set] = defaultdict(set)
     by_token: dict[str, set] = defaultdict(set)
     by_firm: dict[str, set] = defaultdict(set)
-    by_item: dict[str, set] = defaultdict(set)
     doc_freq: dict[str, int] = defaultdict(int)
     n = 0
 
@@ -122,25 +108,18 @@ def build_indexes(records: Iterable[ScreenRecord]) -> Indexes:
             key = code_key(code)
             if key:
                 by_code[key].add(rec.id)
-        for lot in list(codes.get("lots", ())) + list(rec.lot_codes):
+        for lot in codes.get("lots", ()):
             key = normalize_lot(lot)
             if key:
                 by_lot[key].add(rec.id)
-        firm = firm_tokens(rec.recalling_firm)
-        for token in firm:
+        for token in firm_tokens(rec.recalling_firm):
             by_firm[token].add(rec.id)
-            # Catalog numbers are filed under the firm that issued them, so a
-            # kitchen item number can only ever collide with the same maker's.
-            for code in codes.get("item_codes", ()):
-                key = _item_key(code)
-                if key:
-                    by_item[f"{token}|{key}"].add(rec.id)
         for token in significant_tokens(rec.normalized_description):
             by_token[token].add(rec.id)
             doc_freq[token] += 1
 
     return Indexes(dict(by_code), dict(by_lot), dict(by_token), n, dict(doc_freq),
-                   dict(by_firm), dict(by_item))
+                   dict(by_firm))
 
 
 def generate_candidates(inv, indexes: Indexes) -> set:
@@ -156,10 +135,9 @@ def generate_candidates(inv, indexes: Indexes) -> set:
                     - a barcode fragment (right-most 11 digits, check digit off)
                     - a normalized lot code
                     - a word from the supplier's name
-                    - the same catalog number under the same supplier
                     - two or more significant product words
                     - one product word appearing in <= 2% of the corpus
-                  Union, never intersection. Any one of the six is enough.
+                  Union, never intersection. Any one of the five is enough.
     Why safe:     the channels are independent, and each covers the others'
                   blind spots. A row with no barcode is reachable by supplier or
                   by name (FR-026) -- which is the ordinary case, not the
@@ -180,14 +158,13 @@ def generate_candidates(inv, indexes: Indexes) -> set:
     """
     hits: set = set()
 
-    for code in (getattr(inv, "gtin", None),):
-        key = code_key(code)
-        if key and key in indexes.by_code:
-            hits |= indexes.by_code[key]
+    code = code_key(getattr(inv, "gtin", None))
+    if code:
+        hits |= indexes.by_code.get(code, set())
 
     lot_key = normalize_lot(getattr(inv, "lot_code", None))
-    if lot_key and lot_key in indexes.by_lot:
-        hits |= indexes.by_lot[lot_key]
+    if lot_key:
+        hits |= indexes.by_lot.get(lot_key, set())
 
     # Supplier channels. Any shared firm word admits the pair; whether the two
     # names actually agree is decided later, by firm.agrees(), on the full name.
@@ -196,11 +173,6 @@ def generate_candidates(inv, indexes: Indexes) -> set:
         supplier_tokens |= firm_tokens(name)
     for token in supplier_tokens:
         hits |= indexes.by_firm.get(token, set())
-
-    item = _item_key(getattr(inv, "manufacturer_item_code", None))
-    if item:
-        for token in supplier_tokens:
-            hits |= indexes.by_item.get(f"{token}|{item}", set())
 
     # Name channel. Count how many of this row's significant tokens each recall
     # shares, so "two common tokens" and "one distinctive token" can both admit

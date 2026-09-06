@@ -1,6 +1,5 @@
 import { ErrorState } from "@/components";
 import {
-  attempt,
   getCreditClaim,
   getSheet,
   getStateReport,
@@ -20,7 +19,7 @@ function first(value: string | string[] | undefined): string {
 
 export default async function TodayPage({ searchParams }: { searchParams: Params }) {
   const params = await searchParams;
-  const result = await attempt(getStatus());
+  const result = await getStatus();
   if (!result.ok) {
     return <ErrorState failure={result.error} />;
   }
@@ -33,10 +32,10 @@ export default async function TodayPage({ searchParams }: { searchParams: Params
   const claims = status.location.deployment_type === "restaurant";
   const [sheet, credit, report] = hasRun
     ? await Promise.all([
-        attempt(getSheet()),
-        claims ? attempt(getCreditClaim()) : Promise.resolve(null),
+        getSheet(),
+        claims ? getCreditClaim() : Promise.resolve(null),
         status.location.serves_meal_program
-          ? attempt(getStateReport())
+          ? getStateReport()
           : Promise.resolve(null),
       ])
     : [null, null, null];
@@ -50,7 +49,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Params
 
   return (
     <TodayBoard
-      initial={status}
+      status={status}
       sheet={sheet?.ok ? sheet.data : null}
       artifacts={artifacts}
       filters={{ q: first(params.q), loc: first(params.loc), show: first(params.show) }}

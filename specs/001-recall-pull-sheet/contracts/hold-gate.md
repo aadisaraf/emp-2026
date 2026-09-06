@@ -11,13 +11,15 @@ through it, and it is the only place a status is assigned.
 ```python
 # matching/gate.py
 def decide(
-    inv: InventoryRecord,
-    rec: RecallRecord,
     evidence: Evidence,        # from matching/tiers.py
 ) -> Decision:                 # Decision(status, tier, evidence_kind,
                                #          trigger_inventory_text,
                                #          trigger_recall_text, score, lot_note)
 ```
+
+The gate is handed the evidence and never the records. Everything a decision may rest on has
+already been named and quoted by `matching/tiers.py`, so the gate cannot reach back into an
+inventory row or a recall record for anything the evidence does not say.
 
 `Decision.status` is `Literal["PULL", "HELD"]`. There is no third value, so an automatically
 cleared item is not merely forbidden — it is unrepresentable. (FR-018)
@@ -81,8 +83,8 @@ for "where can something be lost?" has exactly one file to open.
 3b. Demotion is scoped: a lot-based kind demotes on an unequal lot, a supplier-based kind demotes
    on an absent firm agreement, and a barcode match demotes on neither.
 4. `Decision.status` is only ever `PULL` or `HELD` — property test over generated inputs.
-5. Determinism: the same `(inv, rec, evidence)` triple yields an identical Decision across 100
-   calls and across two process runs.
+5. Determinism: the same `Evidence` yields an identical Decision across 100 calls and across two
+   process runs.
 6. **The clearing audit** (SC-003): a test that walks every function in `matching/` and asserts
    none of them can produce a row absent from `matches`, and that no code path outside
    `app.py`'s decision route writes to `decisions`.

@@ -1,54 +1,18 @@
-import { channelLabel } from "@/lib/strings";
-/*
-  Formatting, in one place, so a quantity looks the same on the sheet, in the
-  claim and on the printed hold record.
-*/
+/* Formatting, in one place, so a value looks the same on every page. */
 
-/** Matches pullsheet/location.py TIMEZONE_NAME. Override per call if needed. */
+/** Matches pullsheet/location.py TIMEZONE_NAME. */
 export const DEFAULT_TIME_ZONE =
   process.env.NEXT_PUBLIC_TIME_ZONE ?? "America/Los_Angeles";
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Parse an API timestamp. Returns null for null, empty and unparseable input. */
-export function parseTimestamp(value: string | null | undefined): Date | null {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function parts(
-  value: string,
-  timeZone: string,
-): Record<string, string> | null {
-  const date = parseTimestamp(value);
-  if (!date) return null;
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
-  const out: Record<string, string> = {};
-  for (const part of formatter.formatToParts(date)) out[part.type] = part.value;
-  return out;
-}
-
-/**
- * "2026-09-05". A date-only string (business_date, service day, received_date)
- * is returned untouched: shifting it into a timezone would move the day.
- */
+/** "2026-09-05". A date-only string is returned untouched: shifting it into a
+ *  timezone would move the day. */
 export function formatDate(
   value: string | null | undefined,
   timeZone: string = DEFAULT_TIME_ZONE,
 ): string | null {
-  if (!value) return null;
-  if (DATE_ONLY.test(value)) return value;
-  const p = parts(value, timeZone);
-  return p ? `${p.year}-${p.month}-${p.day}` : null;
+  return formatDateTime(value, timeZone)?.slice(0, 10) ?? null;
 }
 
 /** "2026-09-05 09:34", 24-hour, in the location's zone. */
@@ -58,18 +22,28 @@ export function formatDateTime(
 ): string | null {
   if (!value) return null;
   if (DATE_ONLY.test(value)) return value;
-  const p = parts(value, timeZone);
-  return p ? `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}` : null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const p: Record<string, string> = {};
+  for (const part of formatter.formatToParts(date)) p[part.type] = part.value;
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
 }
 
-/** "09:34". For a second column where the date is already on the row. */
+/** "09:34". Empty for a date-only value, which carries no time to show. */
 export function formatTime(
   value: string | null | undefined,
   timeZone: string = DEFAULT_TIME_ZONE,
 ): string | null {
-  if (!value) return null;
-  const p = parts(value, timeZone);
-  return p ? `${p.hour}:${p.minute}` : null;
+  return formatDateTime(value, timeZone)?.slice(11) || null;
 }
 
 /** "1,012". Counts are measures: right-align them. */
@@ -78,10 +52,7 @@ export function formatCount(value: number | null | undefined): string | null {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
-/**
- * "$8,862.50". The server has already rounded to 2 decimals; this only puts
- * the separators in. Never re-round, never estimate a missing cost.
- */
+/** "$8,862.50". The server already rounded; this only adds separators. */
 export function formatMoney(value: number | null | undefined): string | null {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
   return new Intl.NumberFormat("en-US", {
@@ -92,10 +63,8 @@ export function formatMoney(value: number | null | undefined): string | null {
   }).format(value);
 }
 
-/**
- * "240" or "240 CS". Quantity is a REAL and may be fractional; null is not
- * zero, so null comes back as null for the caller to render as not recorded.
- */
+/** "240" or "240 CS". null is not zero -- it comes back null to render as
+ *  "not recorded". */
 export function formatQuantity(
   value: number | null | undefined,
   unit?: string | null,
@@ -119,12 +88,6 @@ export function formatHours(value: number | null | undefined): string | null {
   return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value)}h`;
 }
 
-/** "31h". Whole hours, for an age that follows an absolute timestamp. */
-export function formatWholeHours(value: number | null | undefined): string | null {
-  if (value === null || value === undefined || Number.isNaN(value)) return null;
-  return `${Math.round(value)}h`;
-}
-
 /** "1 line", "2 lines". Written out, because "line(s)" is a form, not a
  *  sentence, and this copy is read aloud to an inspector. */
 export function plural(count: number, one: string, many?: string): string {
@@ -134,15 +97,6 @@ export function plural(count: number, one: string, many?: string): string {
 /** "not fetched" from "not_fetched". For a token with no authored label. */
 export function unslug(token: string): string {
   return token.replace(/_/g, " ");
-}
-
-/** "run #1 · 2026-09-05 · sftp drop". Peer facts, middot, no em dash. */
-export function formatRunStamp(run: {
-  id: number;
-  business_date: string;
-  channel: string;
-}): string {
-  return `run #${run.id} · ${run.business_date} · ${channelLabel(run.channel)}`;
 }
 
 /** "#8b65fe2c" from "inventory_lincoln.csv#8b65fe2cf7301b6a", for a narrow cell. */

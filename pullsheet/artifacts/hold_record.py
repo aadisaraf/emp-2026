@@ -25,14 +25,14 @@ SIGNATURE_FIELDS: tuple[str, ...] = (
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln")
 
 
-def lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
-    """One row per inventory LINE in this run, with every recall that hit it."""
+def hold_record(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
+    # One row per inventory LINE in this run, with every recall that hit it.
     grouped: dict[int, dict[str, Any]] = {}
     for row in conn.execute(
         """SELECT i.id, i.storage_location, i.raw_description, i.quantity,
                   i.unit, i.pack_size, i.lot_code, i.gtin, i.brand, i.manufacturer,
                   i.manufacturer_item_code, i.vendor_name, i.vendor_item_code,
-                  i.received_date, i.unpopulated_fields,
+                  i.received_date,
                   m.id AS match_id, m.status, m.tier, m.evidence_kind,
                   r.source, r.source_record_id, r.recalling_firm, r.classification,
                   r.class_rank, r.status AS recall_status,
@@ -62,11 +62,7 @@ def lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
         # A line is PULL if ANY recall against it pulls. Widening, per Principle I.
         if row["status"] == "PULL":
             entry["status"] = "PULL"
-    return list(grouped.values())
-
-
-def hold_record(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
-    rows = lines(conn, run_id)
+    rows = list(grouped.values())
     return {
         "location": location.summary(),
         "run_id": run_id,

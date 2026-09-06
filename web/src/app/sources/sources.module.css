@@ -118,11 +118,6 @@
   line-height: var(--lh-micro);
 }
 
-.figure {
-  font-weight: var(--weight-strong);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-
 .rule {
   color: var(--text-primary);
   max-width: 96ch;

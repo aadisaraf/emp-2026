@@ -15,7 +15,7 @@ import {
   Tag,
   ui,
 } from "@/components";
-import { attempt, getImpact } from "@/lib/api";
+import { getImpact } from "@/lib/api";
 import { EMPTY_NO_RUNS, PAGE_TITLES } from "@/lib/strings";
 import { formatCount, formatDate, formatMoney, formatQuantity } from "@/lib/format";
 import { cx } from "@/lib/cx";
@@ -133,7 +133,7 @@ function SourcesCard({
 }
 
 export default async function ImpactPage() {
-  const result = await attempt(getImpact());
+  const result = await getImpact();
 
   if (!result.ok) {
     // No ok run has ever existed. That is not a clear result, and it is not an

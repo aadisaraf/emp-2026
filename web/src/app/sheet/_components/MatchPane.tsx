@@ -12,13 +12,13 @@ import {
   TierBadge,
 } from "@/components";
 import {
-  attempt,
   getMatch,
   type ApiFailure,
   type MatchDetailResponse,
 } from "@/lib/api";
 import { formatDate, formatDateTime, formatMoney, formatQuantity } from "@/lib/format";
 import { UNCLASSIFIED } from "@/lib/strings";
+import { Highlighted, triggerParts } from "@/app/match/_components/highlight";
 import {
   DECISION_WORD,
   INVENTORY_FIELDS,
@@ -27,46 +27,9 @@ import {
 } from "@/app/match/_components/strings";
 import styles from "./sheet.module.css";
 
-export interface MatchPaneProps {
-  matchId: number;
-  onClose: () => void;
-}
-
 /* One line, opened beside the sheet rather than on top of it. */
 
-/** Wrap the first occurrence of each trigger component inside the source text. */
-function marked(text: string, trigger: string): ReactNode {
-  const parts = trigger
-    .split(" + ")
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const lower = text.toLowerCase();
-
-  const ranges: [number, number][] = [];
-  for (const part of parts) {
-    const at = lower.indexOf(part.toLowerCase());
-    if (at === -1) continue;
-    ranges.push([at, at + part.length]);
-  }
-  ranges.sort((a, b) => a[0] - b[0]);
-
-  const out: ReactNode[] = [];
-  let cursor = 0;
-  let key = 0;
-  for (const [start, end] of ranges) {
-    if (start < cursor) continue;
-    if (start > cursor) out.push(text.slice(cursor, start));
-    out.push(<mark key={`m${key++}`}>{text.slice(start, end)}</mark>);
-    cursor = end;
-  }
-  out.push(text.slice(cursor));
-  return out;
-}
-
-/**
-  The agency writes its classes in Roman numerals, so class_rank is spelled
-  back the way an inspector reads it. A record with no classification is not
-*/
+/** The agency writes classes in Roman numerals; class_rank is spelled back. */
 const CLASS_NUMERAL: Record<number, string> = { 1: "I", 2: "II", 3: "III" };
 
 function Row({ term, children }: { term: string; children: ReactNode }) {
@@ -87,17 +50,17 @@ type PaneState =
   | { phase: "ready"; detail: MatchDetailResponse }
   | { phase: "failed"; failure: ApiFailure };
 
-export function MatchPane({ matchId, onClose }: MatchPaneProps) {
-  /*
-    Keyed by line id where it is used, so opening a different line mounts a new
-    pane that starts at "loading" on its own. Nothing resets this on the way in,
-    which means one line's record can never be shown under another line's name.
-  */
+export function MatchPane({ matchId, onClose }: {
+  matchId: number;
+  onClose: () => void;
+}) {
+  /* Keyed by line id at the call site, so a different line mounts a fresh
+     pane and one line's record can never appear under another's name. */
   const [state, setState] = useState<PaneState>({ phase: "loading" });
 
   useEffect(() => {
     let cancelled = false;
-    attempt(getMatch(matchId)).then((result) => {
+    getMatch(matchId).then((result) => {
       if (cancelled) return;
       setState(
         result.ok
@@ -152,6 +115,8 @@ export function MatchPane({ matchId, onClose }: MatchPaneProps) {
   }
 
   const { match, inventory, recall, decisions } = state.detail;
+  const inventoryParts = triggerParts(match.trigger_inventory_text);
+  const recallParts = triggerParts(match.trigger_recall_text);
 
   return (
     <aside className={`${styles.pane} no-print`} aria-label={`Line ${matchId}`}>
@@ -178,7 +143,7 @@ export function MatchPane({ matchId, onClose }: MatchPaneProps) {
       <div className={styles.paneSection}>
         <p className={styles.paneLabel}>The inventory line</p>
         <p className={styles.paneVerbatim}>
-          {marked(inventory.raw_description, match.trigger_inventory_text)}
+          <Highlighted text={inventory.raw_description} parts={inventoryParts} />
         </p>
         <Row term={INVENTORY_FIELDS.storage}>
           <Value>{inventory.storage_location}</Value>
@@ -191,7 +156,9 @@ export function MatchPane({ matchId, onClose }: MatchPaneProps) {
         </Row>
         <Row term={INVENTORY_FIELDS.lot}>
           {inventory.lot_code ? (
-            <code className={styles.code}>{marked(inventory.lot_code, match.trigger_inventory_text)}</code>
+            <code className={styles.code}>
+              <Highlighted text={inventory.lot_code} parts={inventoryParts} />
+            </code>
           ) : (
             <NotRecorded />
           )}
@@ -242,7 +209,7 @@ export function MatchPane({ matchId, onClose }: MatchPaneProps) {
       <div className={styles.paneSection}>
         <p className={styles.paneLabel}>The recall record</p>
         <p className={styles.paneVerbatim}>
-          {marked(recall.product_description, match.trigger_recall_text)}
+          <Highlighted text={recall.product_description} parts={recallParts} />
         </p>
         <Row term={RECALL_FIELDS.record}>
           <code className={styles.code}>{recall.source_record_id}</code>{" "}
@@ -263,7 +230,9 @@ export function MatchPane({ matchId, onClose }: MatchPaneProps) {
         </Row>
         <Row term={RECALL_FIELDS.codeInfo}>
           {recall.code_info ? (
-            <code className={styles.code}>{marked(recall.code_info, match.trigger_recall_text)}</code>
+            <code className={styles.code}>
+              <Highlighted text={recall.code_info} parts={recallParts} />
+            </code>
           ) : (
             <NotRecorded />
           )}

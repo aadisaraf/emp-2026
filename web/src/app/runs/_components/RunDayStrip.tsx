@@ -12,13 +12,6 @@ const DAY_MS = 86_400_000;
 /** Past this, the strip stops being readable and the table is the record. */
 const MAX_DAYS = 45;
 
-export interface RunDayStripProps {
-  /** Newest first, as the API returns them. */
-  runs: readonly RunHistoryEntry[];
-  /** The API's generated_at. "Today" comes from the server, never the browser. */
-  generatedAt: string;
-}
-
 type DayKind = "ok" | "rejected" | "running" | "gap";
 
 interface Day {
@@ -138,7 +131,12 @@ function summarise(days: Day[], truncated: boolean): string {
   return `${head}${middle}${tail}`;
 }
 
-export function RunDayStrip({ runs, generatedAt }: RunDayStripProps) {
+export function RunDayStrip({ runs, generatedAt }: {
+  /** Newest first, as the API returns them. */
+  runs: readonly RunHistoryEntry[];
+  /** The API's generated_at. "Today" comes from the server, never the browser. */
+  generatedAt: string;
+}) {
   const { days, truncated } = buildDays(runs, formatDate(generatedAt));
 
   // One cell is not a strip. The table below is already the record for that.

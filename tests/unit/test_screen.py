@@ -96,16 +96,6 @@ def test_significant_tokens_drop_the_stoplist_but_normalization_keeps_it():
     assert significant_tokens(desc) == {"chicken", "strips", "brd", "fc"}
 
 
-def test_item_key_agrees_with_tiers():
-    """``screen`` defines its own copy because ``tiers`` imports from it. Two
-    implementations of one key is exactly the kind of thing that drifts.
-    """
-    from pullsheet.matching.screen import _item_key
-    from pullsheet.matching.tiers import item_key
-    for code in ("02075", "2075", "B-1133", "473015", "", None, "0", "  53374 "):
-        assert _item_key(code) == item_key(code), code
-
-
 def test_a_row_that_normalizes_to_nothing_is_still_reachable_by_code():
     row = SimpleNamespace(normalized_description="", gtin="10073803048293",
                           lot_code=None)
@@ -237,9 +227,11 @@ def test_a_row_with_no_barcode_and_no_lot_is_reachable_by_its_supplier():
     assert _any_high_liner_id() in generate_candidates(row, INDEXES)
 
 
-def test_a_catalog_number_only_reaches_its_own_manufacturer():
-    """FR-070. Item 53374 is a pollock wedge at High Liner and is nothing at all
-    at any other company, so it is indexed under the firm rather than alone.
+def test_a_row_reaches_only_its_own_suppliers_recalls():
+    """A row bought from High Liner reaches High Liner's records; the same item
+    number bought from Simplot reaches none of them. Screening admits on the
+    supplier name; FR-070's catalog-number rung is enforced downstream, in
+    tiers.build_evidence and gate.decide.
     """
     ours = SimpleNamespace(normalized_description="", gtin=None, lot_code=None,
                            brand="High Liner", manufacturer=None, manufacturer_item_code="53374")

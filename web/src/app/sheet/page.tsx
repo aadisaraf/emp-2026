@@ -1,13 +1,9 @@
 import { EmptyState, ErrorState, PageHero } from "@/components";
-import { attempt, getSheet, getSources } from "@/lib/api";
+import { getSheet, getSources } from "@/lib/api";
 import { EMPTY_NO_RUNS, PAGE_TITLES } from "@/lib/strings";
 import { SheetView } from "./_components/SheetView";
-import { clearedFacts } from "./_components/clearedFacts";
 
-/*
-  The current pull sheet: the latest run that was read successfully, every line
-  it produced, in the order it produced them.
-*/
+/* The latest good run's lines, in the order it produced them. */
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +12,7 @@ type Params = Promise<Record<string, string | string[] | undefined>>;
 export default async function PullSheetPage({ searchParams }: { searchParams: Params }) {
   const params = await searchParams;
   const q = Array.isArray(params.q) ? (params.q[0] ?? "") : (params.q ?? "");
-  const [sheet, sources] = await Promise.all([attempt(getSheet()), attempt(getSources())]);
+  const [sheet, sources] = await Promise.all([getSheet(), getSources()]);
 
   if (!sheet.ok) {
     if (sheet.error.code === "no_inventory" || sheet.error.status === 404) {
@@ -39,13 +35,10 @@ export default async function PullSheetPage({ searchParams }: { searchParams: Pa
     );
   }
 
-  const cleared = await clearedFacts(sheet.data);
-
   return (
     <SheetView
       sheet={sheet.data}
       screeningRule={sources.ok ? sources.data.screening_rule : null}
-      cleared={cleared}
       currentRunId={sheet.data.run.id}
       query={q}
     />

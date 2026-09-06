@@ -4,7 +4,6 @@ import type {
   CreditClaim,
   HoldRecordResponse,
   ImpactResponse,
-  Location,
   MatchDetailResponse,
   RefreshResponse,
   RunDetailResponse,
@@ -40,42 +39,7 @@ export interface ApiFailure {
   url: string;
 }
 
-export class ApiRequestError extends Error {
-  readonly failure: ApiFailure;
-
-  constructor(failure: ApiFailure) {
-    super(failure.message);
-    this.name = "ApiRequestError";
-    this.failure = failure;
-  }
-}
-
 export type Attempt<T> = { ok: true; data: T } | { ok: false; error: ApiFailure };
-
-/**
-  Run a request and return the failure instead of throwing it. This is the
-  shape every page uses:
-*/
-export async function attempt<T>(promise: Promise<T>): Promise<Attempt<T>> {
-  try {
-    return { ok: true, data: await promise };
-  } catch (thrown) {
-    return { ok: false, error: toFailure(thrown) };
-  }
-}
-
-/** Turn anything thrown into an ApiFailure. Never throws itself. */
-export function toFailure(thrown: unknown): ApiFailure {
-  if (thrown instanceof ApiRequestError) return thrown.failure;
-  const message = thrown instanceof Error ? thrown.message : String(thrown);
-  return {
-    kind: "unreachable",
-    status: null,
-    code: null,
-    message,
-    url: API_BASE,
-  };
-}
 
 /** True when the API said this run, match or location has no record. */
 export function isNotFound(failure: ApiFailure): boolean {
@@ -100,7 +64,9 @@ function cause(thrown: unknown): string {
   return String(thrown);
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/** Every endpoint goes through here. Resolves to an error instead of throwing,
+ *  so a page branches on `result.ok`. */
+async function request<T>(path: string, init?: RequestInit): Promise<Attempt<T>> {
   const url = `${API_BASE}${path}`;
   let response: Response;
 
@@ -119,13 +85,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       },
     });
   } catch (thrown) {
-    throw new ApiRequestError({
-      kind: "unreachable",
-      status: null,
-      code: null,
-      message: `${url} did not answer. ${cause(thrown)}`,
-      url,
-    });
+    return {
+      ok: false,
+      error: {
+        kind: "unreachable",
+        status: null,
+        code: null,
+        message: `${url} did not answer. ${cause(thrown)}`,
+        url,
+      },
+    };
   }
 
   const text = await response.text();
@@ -140,25 +109,31 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // A non-JSON error body is itself the fact worth reporting.
     }
-    throw new ApiRequestError({
-      kind: "http",
-      status: response.status,
-      code,
-      message,
-      url,
-    });
+    return {
+      ok: false,
+      error: {
+        kind: "http",
+        status: response.status,
+        code,
+        message,
+        url,
+      },
+    };
   }
 
   try {
-    return JSON.parse(text) as T;
+    return { ok: true, data: JSON.parse(text) as T };
   } catch (thrown) {
-    throw new ApiRequestError({
-      kind: "malformed",
-      status: response.status,
-      code: null,
-      message: `${url} answered ${response.status} with a body that is not JSON. ${cause(thrown)}`,
-      url,
-    });
+    return {
+      ok: false,
+      error: {
+        kind: "malformed",
+        status: response.status,
+        code: null,
+        message: `${url} answered ${response.status} with a body that is not JSON. ${cause(thrown)}`,
+        url,
+      },
+    };
   }
 }
 
@@ -166,71 +141,61 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
    GET
 --------------------------------------------------------------------------- */
 
-/** The single location this deployment serves. There is no roster. */
-export function getLocation(): Promise<Location> {
-  return request<Location>("/api/v1/location");
-}
-
-/**
-  The status word, the counts, both clocks, corpus provenance and the refused
-  deliveries. This is the polled endpoint, and it never returns an error
-*/
-export function getStatus(): Promise<StatusResponse> {
+/** The polled endpoint. Answers 200 with state "never" when no run exists. */
+export function getStatus(): Promise<Attempt<StatusResponse>> {
   return request<StatusResponse>("/api/v1/status");
 }
 
 /** Run history, newest first, rejections included. */
-export function getRuns(limit?: number): Promise<RunsResponse> {
+export function getRuns(limit?: number): Promise<Attempt<RunsResponse>> {
   return request<RunsResponse>(`/api/v1/runs${query({ limit })}`);
 }
 
 /** One run's facts. Deliberately carries no lines; use getSheetForRun. */
-export function getRun(runId: number): Promise<RunDetailResponse> {
+export function getRun(runId: number): Promise<Attempt<RunDetailResponse>> {
   return request<RunDetailResponse>(`/api/v1/runs/${runId}`);
 }
 
-/**
-  The current pull sheet. PULL and HELD arrive interleaved in one order
-  (class rank, tier rank, score, id). Render them in the order received: do not
-*/
-export function getSheet(): Promise<SheetResponse> {
+/** The current pull sheet. PULL and HELD arrive interleaved in one order --
+ *  render them as received; do not re-sort or split them. */
+export function getSheet(): Promise<Attempt<SheetResponse>> {
   return request<SheetResponse>("/api/v1/sheet");
 }
 
 /** A past run's sheet, exactly as it was printed that morning. */
-export function getSheetForRun(runId: number): Promise<SheetResponse> {
+export function getSheetForRun(runId: number): Promise<Attempt<SheetResponse>> {
   return request<SheetResponse>(`/api/v1/sheet/${runId}`);
 }
 
 /** One match: both records verbatim, and every decision taken on this pair. */
-export function getMatch(matchId: number): Promise<MatchDetailResponse> {
+export function getMatch(matchId: number): Promise<Attempt<MatchDetailResponse>> {
   return request<MatchDetailResponse>(`/api/v1/matches/${matchId}`);
 }
 
 /** Money always; the menu cascade only where the location runs a meal program. */
-export function getImpact(): Promise<ImpactResponse> {
+export function getImpact(): Promise<Attempt<ImpactResponse>> {
   return request<ImpactResponse>("/api/v1/impact");
 }
 
 /** The hold-and-destruction record. Signature fields render blank, always. */
-export function getHoldRecord(runId?: number): Promise<HoldRecordResponse> {
+export function getHoldRecord(runId?: number): Promise<Attempt<HoldRecordResponse>> {
   return request<HoldRecordResponse>(`/api/v1/artifacts/hold${query({ run: runId })}`);
 }
 
 /** Quantity times unit cost, summed. Nothing is estimated. */
-export function getCreditClaim(runId?: number): Promise<CreditClaim> {
+export function getCreditClaim(runId?: number): Promise<Attempt<CreditClaim>> {
   return request<CreditClaim>(`/api/v1/artifacts/credit-claim${query({ run: runId })}`);
 }
 
 /** The child-nutrition report. 404 not_a_meal_program on a restaurant. */
-export function getStateReport(runId?: number): Promise<StateReportResponse> {
+export function getStateReport(runId?: number): Promise<Attempt<StateReportResponse>> {
   return request<StateReportResponse>(
     `/api/v1/artifacts/state-report${query({ run: runId })}`,
   );
 }
 
 /** Every channel and corpus with its provenance label. Works before any run. */
-export function getSources(): Promise<SourcesResponse> {
+export function getSources(): Promise<Attempt<SourcesResponse>> {
   return request<SourcesResponse>("/api/v1/sources");
 }
 
@@ -238,39 +203,31 @@ export function getSources(): Promise<SourcesResponse> {
    POST. Three mutations exist and these are all of them.
 --------------------------------------------------------------------------- */
 
-/**
-  Mark a line cleared. The only action in the system that can do that, and it
-  needs a named person. It writes one audit row: the match is not edited, the
-*/
+/** Mark a line cleared. Needs a named person, and writes one audit row: the
+ *  matches row itself is never touched. */
 export function clearMatch(
   matchId: number,
   body: { actor: string; note?: string | null },
-): Promise<MatchDetailResponse> {
+): Promise<Attempt<MatchDetailResponse>> {
   return request<MatchDetailResponse>(`/api/v1/matches/${matchId}/clear`, {
     method: "POST",
     body: JSON.stringify({ actor: body.actor, note: body.note ?? null }),
   });
 }
 
-/**
- * Record that a named person walked to the cooler. Touches no match and no
- * inventory row, which is why it is safe as one click.
- */
+/** Record that a named person walked to the cooler. Writes only an audit row. */
 export function confirmPulled(
   matchId: number,
   body: { actor: string },
-): Promise<MatchDetailResponse> {
+): Promise<Attempt<MatchDetailResponse>> {
   return request<MatchDetailResponse>(`/api/v1/matches/${matchId}/confirm-pulled`, {
     method: "POST",
     body: JSON.stringify({ actor: body.actor }),
   });
 }
 
-/**
-  Try the agency, fall back to the committed snapshot. Always answers 200:
-  offline, the answer is cached_fallback with the reason attached.
-*/
-export function refreshRecalls(): Promise<RefreshResponse> {
+/** Try the agency, fall back to the committed snapshot. Always answers 200. */
+export function refreshRecalls(): Promise<Attempt<RefreshResponse>> {
   return request<RefreshResponse>("/api/v1/recalls/refresh", {
     method: "POST",
     body: JSON.stringify({}),
@@ -319,7 +276,7 @@ export interface IngestAmbiguous {
 export type IngestResult = IngestOk | IngestDuplicate | IngestRejected | IngestAmbiguous;
 
 /** Send one export. The file is read once. */
-export function uploadInventory(file: File): Promise<IngestResult> {
+export function uploadInventory(file: File): Promise<Attempt<IngestResult>> {
   const body = new FormData();
   body.append("file", file);
   return request<IngestResult>("/api/v1/ingest/upload", { method: "POST", body });
@@ -329,7 +286,7 @@ export function uploadInventory(file: File): Promise<IngestResult> {
 export function answerMapping(
   filename: string,
   answers: Record<string, string>,
-): Promise<IngestResult> {
+): Promise<Attempt<IngestResult>> {
   return request<IngestResult>("/api/v1/ingest/mapping", {
     method: "POST",
     body: JSON.stringify({ filename, answers }),

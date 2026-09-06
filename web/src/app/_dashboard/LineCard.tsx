@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { SheetLine } from "@/lib/types";
-import { confirmPulled, toFailure } from "@/lib/api";
+import { confirmPulled } from "@/lib/api";
 import { formatCount } from "@/lib/format";
 import { Icon } from "@/components/Icon";
 import { cx } from "@/lib/cx";
@@ -61,17 +61,16 @@ export function LineCard({ line }: { line: SheetLine }) {
   async function confirm(actor: string) {
     setPending(true);
     setFailed(null);
-    try {
-      await confirmPulled(line.id, { actor });
+    const result = await confirmPulled(line.id, { actor });
+    if (result.ok) {
       rememberActor(actor);
       setConfirmed(true);
       setAsking(false);
       router.refresh();
-    } catch (thrown) {
-      setFailed(toFailure(thrown).message);
-    } finally {
-      setPending(false);
+    } else {
+      setFailed(result.error.message);
     }
+    setPending(false);
   }
 
   function onTick() {

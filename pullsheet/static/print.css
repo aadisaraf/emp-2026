@@ -45,7 +45,6 @@ tr { break-inside: avoid; }
 .artifact-links { display: none !important; }
 .rule { min-width: 18rem; border-bottom: 1px solid #000; }
 .sig-line { margin: 1.4rem 0 0; }
-.refresh { display: none !important; }
 
 /* The verdict word prints. A sheet that reads "3 items to pull" at the
    top is a sheet an operator can act on without the screen. */

@@ -21,12 +21,8 @@
 .fields {
   margin-top: var(--space-4);
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-5) var(--space-6);
-}
-
-.two {
   grid-template-columns: 1fr 1fr;
+  gap: var(--space-5) var(--space-6);
 }
 
 .field {

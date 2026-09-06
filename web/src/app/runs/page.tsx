@@ -12,7 +12,7 @@ import {
   Tag,
   ui,
 } from "@/components";
-import { attempt, getRuns } from "@/lib/api";
+import { getRuns } from "@/lib/api";
 import { EMPTY_NO_DELIVERIES, EMPTY_NO_RUNS, PAGE_TITLES } from "@/lib/strings";
 import { formatCount, formatDate, formatTime } from "@/lib/format";
 import { cx } from "@/lib/cx";
@@ -72,7 +72,7 @@ function RunRow({ run, current }: { run: RunHistoryEntry; current: boolean }) {
 }
 
 export default async function RunHistoryPage() {
-  const result = await attempt(getRuns(LIMIT));
+  const result = await getRuns(LIMIT);
 
   if (!result.ok) {
     return (

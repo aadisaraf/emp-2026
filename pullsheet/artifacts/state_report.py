@@ -40,8 +40,7 @@ class Field:
 
 
 def _scalar(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> Any:
-    row = conn.execute(sql, params).fetchone()
-    return row[0] if row else None
+    return conn.execute(sql, params).fetchone()[0]
 
 
 def derived_fields(conn: sqlite3.Connection, run_id: int, now: datetime) -> list[Field]:
@@ -93,39 +92,39 @@ def derived_fields(conn: sqlite3.Connection, run_id: int, now: datetime) -> list
     ]
 
 
-def human_fields() -> list[Field]:
-    """T062a. Everything the system cannot know, each saying WHY."""
-    H, B = "human", "blank"
-    return [
-        Field("Location", "Child nutrition agreement number", H,
-              why="issued by the state agency; not present in any ingested source"),
-        Field("Location", "Nutrition director name", H,
-              why="no user accounts exist in this build"),
-        Field("Location", "Director telephone", H, why="not present in any ingested source"),
-        Field("Location", "Director email", H, why="not present in any ingested source"),
-        Field("Recall", "State agency contact notified", H,
-              why="notification is an action taken outside this system"),
-        Field("Recall", "Date state agency notified", H,
-              why="notification is an action taken outside this system"),
-        Field("Recall", "Distributor notified (name and date)", H,
-              why="notification is an action taken outside this system"),
-        Field("Product", "USDA Foods or commercially purchased", H,
-              why="the export does not distinguish USDA Foods from commercial purchases"),
-        Field("Product", "Disposition (hold / destroy / return)", H,
-              why="a custody decision; the system records what was pulled, not its fate"),
-        Field("Product", "Date of disposition", H,
-              why="a custody decision taken outside this system"),
-        Field("Certification", "Certifying official name and title", B,
-              why="a signature block is left blank for a human, by design"),
-        Field("Certification", "Signature", B,
-              why="a signature block is left blank for a human, by design"),
-        Field("Certification", "Date signed", B,
-              why="a signature block is left blank for a human, by design"),
-    ]
+H, B = "human", "blank"
+
+# T062a. Everything the system cannot know, each saying WHY.
+HUMAN_FIELDS: list[Field] = [
+    Field("Location", "Child nutrition agreement number", H,
+          why="issued by the state agency; not present in any ingested source"),
+    Field("Location", "Nutrition director name", H,
+          why="no user accounts exist in this build"),
+    Field("Location", "Director telephone", H, why="not present in any ingested source"),
+    Field("Location", "Director email", H, why="not present in any ingested source"),
+    Field("Recall", "State agency contact notified", H,
+          why="notification is an action taken outside this system"),
+    Field("Recall", "Date state agency notified", H,
+          why="notification is an action taken outside this system"),
+    Field("Recall", "Distributor notified (name and date)", H,
+          why="notification is an action taken outside this system"),
+    Field("Product", "USDA Foods or commercially purchased", H,
+          why="the export does not distinguish USDA Foods from commercial purchases"),
+    Field("Product", "Disposition (hold / destroy / return)", H,
+          why="a custody decision; the system records what was pulled, not its fate"),
+    Field("Product", "Date of disposition", H,
+          why="a custody decision taken outside this system"),
+    Field("Certification", "Certifying official name and title", B,
+          why="a signature block is left blank for a human, by design"),
+    Field("Certification", "Signature", B,
+          why="a signature block is left blank for a human, by design"),
+    Field("Certification", "Date signed", B,
+          why="a signature block is left blank for a human, by design"),
+]
 
 
 def state_report(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
-    fields = derived_fields(conn, run_id, now) + human_fields()
+    fields = derived_fields(conn, run_id, now) + HUMAN_FIELDS
     sections: dict[str, list[Field]] = {}
     for field in fields:
         sections.setdefault(field.section, []).append(field)
@@ -142,6 +141,5 @@ def state_report(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[s
         "caveat": FORM_CAVEAT,
         "source_keys": SOURCE_KEYS,
         # The structured export the interim default promises.
-        "export": {f.label: (f.value if f.kind == "derived" else HUMAN_MARKER)
-                   for f in fields},
+        "export": {f.label: f.display for f in fields},
     }

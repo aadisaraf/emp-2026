@@ -2,12 +2,9 @@
 
 import { useEffect } from "react";
 import { ErrorState } from "@/components";
-import { toFailure } from "@/lib/api";
 
-/**
-  The boundary of last resort. A page that fetches through attempt() never
-  reaches here; this catches the rest, and it still refuses to invent a number
-*/
+/** The last-resort boundary. The API client resolves rather than throws, so
+ *  only a render fault gets here. */
 export default function RouteError({
   error,
   retry,
@@ -22,9 +19,8 @@ export default function RouteError({
   return (
     <div>
       <ErrorState
-        failure={toFailure(error)}
         heading="This page did not render."
-        detail={error.digest ? `Digest ${error.digest}.` : undefined}
+        detail={`${error.message}${error.digest ? ` Digest ${error.digest}.` : ""}`}
       />
       <p style={{ marginTop: "var(--space-3)" }}>
         <button type="button" onClick={() => retry()}>

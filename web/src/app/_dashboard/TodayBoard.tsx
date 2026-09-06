@@ -1,7 +1,4 @@
-"use client";
-
 import type { SheetResponse, StatusResponse } from "@/lib/types";
-import { useStatusFeed } from "./useStatusFeed";
 import { Hero, StageBar } from "./Hero";
 import { DocumentsColumn, LinesColumn, LocationCard, RunCard } from "./Columns";
 import styles from "./dashboard.module.css";
@@ -18,15 +15,14 @@ export interface Filters {
 }
 
 export interface TodayBoardProps {
-  initial: StatusResponse;
+  status: StatusResponse;
   sheet: SheetResponse | null;
   artifacts: ArtifactFacts;
   filters: Filters;
 }
 
 /* The morning screen. One figure, two clocks, three columns. */
-export function TodayBoard({ initial, sheet, artifacts, filters }: TodayBoardProps) {
-  const { status } = useStatusFeed(initial);
+export function TodayBoard({ status, sheet, artifacts, filters }: TodayBoardProps) {
   const run = status.run;
 
   return (

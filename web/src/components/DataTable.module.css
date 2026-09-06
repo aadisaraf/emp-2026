@@ -9,12 +9,6 @@
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-.caption {
-  text-align: left;
-  padding-bottom: var(--space-2);
-  color: var(--text-secondary);
-}
-
 .head {
   padding: var(--space-2) var(--cell-pad-x);
   background: none;
@@ -26,21 +20,6 @@
   text-align: left;
   white-space: nowrap;
   vertical-align: bottom;
-}
-
-.headText {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--space-1);
-}
-
-.sortable {
-  cursor: default;
-}
-
-.sortMark {
-  font-size: var(--fs-micro);
-  color: var(--text-secondary);
 }
 
 /* The only shadow in the application, and it is one hairline. */

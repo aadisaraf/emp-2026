@@ -6,14 +6,12 @@ import { SheetHeaderBlock } from "./SheetHeaderBlock";
 import { PastRunBanner, RunWithoutLines, ZeroMatchNotice } from "./SheetNotices";
 import { SheetSurface } from "./SheetSurface";
 import { StorageSections, locationId } from "./StorageSections";
-import type { ClearedFacts } from "./clearedFacts";
 import styles from "./sheet.module.css";
 
 export interface SheetViewProps {
   sheet: SheetResponse;
   /** matching/screen.SCREENING_RULE, or null when the API did not answer. */
   screeningRule: string | null;
-  cleared: ClearedFacts;
   /** The run that is current now, used only to point a past run back at it. */
   currentRunId: number | null;
   /** The search in the top bar. Empty means the whole sheet. */
@@ -33,16 +31,12 @@ function hit(line: { raw_description: string; product_description: string;
   );
 }
 
-/*
-  The pull sheet, for the current run and for any past run. One component, one
-  code path: a past run that rendered through different code could quietly
-  become a different document.
-*/
+/* The pull sheet, current or past. One code path, so a past run cannot
+   quietly become a different document. */
 
 export function SheetView({
   sheet,
   screeningRule,
-  cleared,
   currentRunId,
   query = "",
 }: SheetViewProps) {
@@ -150,7 +144,7 @@ export function SheetView({
 
           <SheetSurface>
             <div className={styles.sections}>
-              <StorageSections sections={sections} cleared={cleared} />
+              <StorageSections sections={sections} />
             </div>
           </SheetSurface>
         </>

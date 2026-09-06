@@ -1,7 +1,4 @@
-/*
-  The words this pair of routes owns, in one file, so the list and the detail
-  page cannot drift into two vocabularies for the same four channels.
-*/
+/* The words the two runs routes share. */
 
 import type { RunChannel, RunStatus } from "@/lib/api";
 /* Re-exported so the runs routes keep importing their vocabulary from one
@@ -31,19 +28,13 @@ export const NO_FILE_READ = "no file";
 export const REMATCH_ROWS_TITLE =
   "A rematch run reads no file. The corpus changed and the inventory did not.";
 
-export function channelExplanation(channel: RunChannel): string {
-  return CHANNEL_EXPLANATION[channel] ?? channel;
-}
-
 /** A rematch run has no delivery behind it, whatever delivery_ref holds. */
 export function hasDelivery(run: { channel: RunChannel }): boolean {
   return run.channel !== "rematch";
 }
 
-/* ---------------------------------------------------------------------------
-   The corpus note. Frozen at finalize, rendered verbatim where it exists.
-   Where it does not, the reason it does not is itself the fact.
---------------------------------------------------------------------------- */
+/* The corpus note, frozen at finalize. Where there is none, why there is
+   none is itself the fact. */
 
 export const CORPUS_NOT_FROZEN: Record<RunStatus, string> = {
   ok: "Not frozen.",
@@ -64,6 +55,9 @@ export function corpusNoteFor(run: { corpus_note: string | null; status: RunStat
 --------------------------------------------------------------------------- */
 
 export const STRIP_TITLE = "Runs by day";
+
+export const CURRENT_RUN_TAG_TITLE =
+  "The most recent accepted run. Its sheet is the one /sheet shows.";
 
 export const RUN_NOT_FOUND_HEADING = "That run is not in the run log.";
 

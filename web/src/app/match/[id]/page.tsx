@@ -9,7 +9,7 @@ import {
   ProvenanceLabel,
   type DefinitionItem,
 } from "@/components";
-import { attempt, getMatch, isNotFound } from "@/lib/api";
+import { getMatch, isNotFound } from "@/lib/api";
 import {
   formatDate,
   formatDateTime,
@@ -46,7 +46,7 @@ import {
   unpopulatedFields,
 } from "../_components/strings";
 import styles from "./page.module.css";
-import { PRINT_LABEL } from "@/lib/nav";
+import { PRINT_LABEL } from "@/lib/strings";
 
 /* One match, in full. */
 
@@ -78,7 +78,7 @@ export default async function MatchPage({
     );
   }
 
-  const result = await attempt(getMatch(matchId));
+  const result = await getMatch(matchId);
 
   if (!result.ok) {
     return (

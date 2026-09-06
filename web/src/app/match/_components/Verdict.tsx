@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import type { Decision, MatchCore, RecallSide } from "@/lib/api";
 import {
   EVIDENCE_EXPLANATION,
-  EVIDENCE_LABEL,
   EVIDENCE_UNKNOWN,
   TIER_EXPLANATION,
   TIER_LEGEND,
@@ -46,10 +45,7 @@ function Cell({
   );
 }
 
-/**
-  What the system found, in the two channels it is allowed to use: the status
-  word and the kind of evidence behind it.
-*/
+/** What the system found: the status word and the evidence behind it. */
 export function Verdict({
   match,
   recall,
@@ -57,10 +53,7 @@ export function Verdict({
   clearedCount,
   timeZone,
 }: VerdictProps) {
-  const known = Object.prototype.hasOwnProperty.call(EVIDENCE_LABEL, match.evidence_kind);
-  const evidenceSentence = known
-    ? EVIDENCE_EXPLANATION[match.evidence_kind]
-    : EVIDENCE_UNKNOWN;
+  const evidenceSentence = EVIDENCE_EXPLANATION[match.evidence_kind] ?? EVIDENCE_UNKNOWN;
 
   const amended =
     recall.status !== "active" && recall.prior_status

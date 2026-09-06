@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Iterator
 
-from pullsheet.adapters.base import AdapterRejection, InventoryAdapter, NormalizedRecord
+from pullsheet.adapters.base import AdapterRejection, NormalizedRecord
 from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -16,19 +16,16 @@ MAILBOX = ROOT / "data" / "fixtures" / "inbox.mbox"
 ATTACHMENT_SUFFIXES = (".csv", ".txt")
 
 
-class EmailDropAdapter(InventoryAdapter):
+# The declared fields are the drop's, inherited: after extraction the attachment
+# IS a dropped file. Only name, provenance and channel differ, and all three must
+# stay declared here -- inherited they would claim the drop's identity.
+class EmailDropAdapter(SftpDropAdapter):
     """Reads an export that arrived as an attachment, through the same reader."""
 
     name = "email_drop"
     # Reads a committed fixture mailbox, not a mail server. Labelled honestly.
     provenance = "hand-authored"
     channel = "email_drop"
-
-    def declares(self) -> frozenset[str]:
-        """Whatever the attached spreadsheet carries -- identical to the drop,
-        because after extraction the attachment IS a dropped file.
-        """
-        return SftpDropAdapter().declares()
 
     def attachments(self, path: Path = MAILBOX) -> list[tuple[str, str]]:
         """(filename, text) for every CSV attachment in the mailbox."""
@@ -55,9 +52,8 @@ class EmailDropAdapter(InventoryAdapter):
             raise AdapterRejection(path.name, None,
                                    "no CSV attachment found in the mailbox")
 
-        inner = SftpDropAdapter()
         with tempfile.TemporaryDirectory() as workspace:
             for filename, text in found:
                 extracted = Path(workspace) / Path(filename).name
                 extracted.write_text(text)
-                yield from inner.read(extracted, column_map)
+                yield from super().read(extracted, column_map)

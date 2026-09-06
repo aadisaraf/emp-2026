@@ -4,7 +4,6 @@ import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   answerMapping,
-  toFailure,
   uploadInventory,
   type IngestAmbiguous,
   type IngestResult,
@@ -54,26 +53,20 @@ export function UploadPanel() {
     setBusy(true);
     setFailed(null);
     setSettled(null);
-    try {
-      receive(await uploadInventory(file));
-    } catch (thrown) {
-      setFailed(toFailure(thrown).message);
-    } finally {
-      setBusy(false);
-    }
+    const result = await uploadInventory(file);
+    if (result.ok) receive(result.data);
+    else setFailed(result.error.message);
+    setBusy(false);
   }
 
   async function answer() {
     if (!question) return;
     setBusy(true);
     setFailed(null);
-    try {
-      receive(await answerMapping(question.filename, answers));
-    } catch (thrown) {
-      setFailed(toFailure(thrown).message);
-    } finally {
-      setBusy(false);
-    }
+    const result = await answerMapping(question.filename, answers);
+    if (result.ok) receive(result.data);
+    else setFailed(result.error.message);
+    setBusy(false);
   }
 
   function onPick(event: ChangeEvent<HTMLInputElement>) {

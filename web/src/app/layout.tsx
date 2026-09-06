@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { IconRail } from "@/components/IconRail";
-import { TopBar } from "@/components/TopBar";
-import { StatusPoller } from "@/components";
-import { attempt, getStatus } from "@/lib/api";
-import { statusSignature } from "@/lib/status";
+import { IconRail, StatusPoller, TopBar } from "@/components";
+import { getStatus } from "@/lib/api";
 import styles from "./layout.module.css";
 
 /* The shell, on every route: a top bar and an icon rail. */
@@ -18,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const result = await attempt(getStatus());
+  const result = await getStatus();
   const status = result.ok ? result.data : null;
 
   return (
@@ -27,9 +24,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <TopBar status={status} />
         <IconRail />
         <div className={styles.content} data-role="content">
+          {status ? <StatusPoller status={status} /> : null}
           <main className={styles.main}>{children}</main>
         </div>
-        <StatusPoller signature={status ? statusSignature(status) : null} />
       </body>
     </html>
   );

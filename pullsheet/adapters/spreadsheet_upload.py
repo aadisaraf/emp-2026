@@ -6,9 +6,8 @@ morning you need them.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterator
 
-from pullsheet.adapters.base import AdapterRejection, NormalizedRecord
+from pullsheet.adapters.base import AdapterRejection
 from pullsheet.adapters.column_map import detect
 from pullsheet.adapters.sftp_drop import SftpDropAdapter
 
@@ -28,7 +27,3 @@ class SpreadsheetUploadAdapter(SftpDropAdapter):
             raise AdapterRejection(path.name, None, "no header row; the file is empty")
         mapping, ambiguous = detect(headers)
         return headers, mapping, ambiguous
-
-    def read(self, source, column_map: dict[str, str] | None = None
-             ) -> Iterator[NormalizedRecord]:
-        return super().read(source, column_map)

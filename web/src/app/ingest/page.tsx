@@ -1,5 +1,5 @@
 import { Facts, Kv, Note, PageHero, Pill, TabCard } from "@/components";
-import { attempt, getSources, getStatus } from "@/lib/api";
+import { getSources, getStatus } from "@/lib/api";
 import { channelLabel } from "@/lib/strings";
 import { formatCount, formatDate } from "@/lib/format";
 import { plural } from "@/lib/format";
@@ -15,10 +15,7 @@ import styles from "./ingest.module.css";
 export const dynamic = "force-dynamic";
 
 export default async function AddInventoryPage() {
-  const [statusResult, sourcesResult] = await Promise.all([
-    attempt(getStatus()),
-    attempt(getSources()),
-  ]);
+  const [statusResult, sourcesResult] = await Promise.all([getStatus(), getSources()]);
   const status = statusResult.ok ? statusResult.data : null;
   const run = status?.run ?? null;
   const adapters = sourcesResult.ok ? sourcesResult.data.adapters : [];

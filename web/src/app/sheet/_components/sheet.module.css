@@ -290,22 +290,6 @@
   max-width: 108ch;
 }
 
-.footerItem {
-  color: var(--text-secondary);
-}
-
-.footerLead {
-  color: var(--text-primary);
-  font-weight: var(--weight-strong);
-}
-
-.artifactLinks {
-  display: flex;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-top: var(--space-4);
-}
-
 /* ---------------------------------------------------------------------------
    Narrow viewports. The pane stops pushing and goes under the sheet rather
    than squeezing eight columns into nothing.

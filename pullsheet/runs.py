@@ -1,5 +1,7 @@
 """The run-level status word, and the two guarantees it carries.
 **SC-013 -- a stale corpus gates a WORD, never a LINE.** When the recall corpus
+is older than its freshness window the summary word becomes STALE_CORPUS instead
+of CLEAR, and every match row is returned exactly as it stands.
 """
 
 from __future__ import annotations
@@ -13,6 +15,7 @@ from pullsheet.recalls import corpus
 
 # How long after a daily export is due before its absence is called out. Wider
 # than 24 hours on purpose: a delivery that slips from 06:00 to 07:00 is late,
+# not missing.
 OVERDUE_AFTER = timedelta(hours=30)
 
 # The words. Each is a different situation, and no two of them mean the same
@@ -33,20 +36,20 @@ def run_status(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
                 "detail": "PullSheet has processed no inventory export for this "
                           "location. Nothing on this page is a statement about "
                           "the food in the building.",
-                "pull_count": 0, "match_count": 0, "new_count": 0,
+                "pull_count": 0, "new_count": 0,
                 "stale_corpus": corpus.is_stale(conn, now)}
 
     age = (now - corpus._parse_ts(run["started_at"])).total_seconds() / 3600.0
     overdue = age > OVERDUE_AFTER.total_seconds() / 3600.0
     stale = corpus.is_stale(conn, now)
-    counts = conn.execute(
-        """SELECT SUM(status = 'PULL') AS pulls, COUNT(*) AS total,
-                  COALESCE(SUM(is_new), 0) AS news
-             FROM matches WHERE run_id = ?""", (run["id"],)).fetchone()
-    pulls = counts["pulls"] or 0
+    pulls = run["pull_count"]
+    news = conn.execute(
+        "SELECT COALESCE(SUM(is_new), 0) FROM matches WHERE run_id = ?",
+        (run["id"],)).fetchone()[0]
 
     # Was the latest DELIVERY (of any outcome) a rejection? A rejected export
     # never replaces a good sheet, but the operator has to be told that what
+    # they are looking at is the previous good run, not this morning's file.
     newest = conn.execute("SELECT status FROM runs ORDER BY id DESC LIMIT 1").fetchone()
     rejected_since = newest is not None and newest["status"] == "rejected"
 
@@ -78,21 +81,16 @@ def run_status(conn: sqlite3.Connection, now: datetime) -> dict[str, Any]:
 
     return {"word": word, "state": state, "run": dict(run), "detail": detail,
             "run_age_hours": round(age, 1), "stale_corpus": stale,
-            "pull_count": pulls, "match_count": counts["total"] or 0,
-            "new_count": counts["news"] or 0,
+            "pull_count": pulls, "new_count": news,
             "rejected_since": rejected_since}
 
 
 def history(conn: sqlite3.Connection, limit: int = 30) -> list[dict[str, Any]]:
     """Every run, newest first, rejections included."""
-    out = []
-    for row in db.recent_runs(conn, limit):
-        entry = dict(row)
-        entry["new_count"] = conn.execute(
-            "SELECT COALESCE(SUM(is_new), 0) FROM matches WHERE run_id = ?",
-            (row["id"],)).fetchone()[0]
-        out.append(entry)
-    return out
+    return [dict(r) for r in conn.execute(
+        """SELECT r.*, (SELECT COALESCE(SUM(m.is_new), 0) FROM matches m
+                         WHERE m.run_id = r.id) AS new_count
+             FROM runs r ORDER BY r.id DESC LIMIT ?""", (limit,))]
 
 
 def new_since_previous(conn: sqlite3.Connection, run_id: int) -> list[sqlite3.Row]:

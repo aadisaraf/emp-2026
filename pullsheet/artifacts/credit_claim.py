@@ -10,15 +10,10 @@ from typing import Any
 
 SOURCE_KEYS = ("openfda", "fsis", "inventory_lincoln", "unit_costs")
 
-# Only pulled lines. A held line is undecided, and billing a distributor for a
-# case you have not decided to remove is a claim you will have to withdraw.
-CLAIM_STATUSES = ("PULL",)
 
-
-def claim_lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
-    """One row per pulled inventory line in this run, deduplicated across its
-    recall matches.
-    """
+def credit_claim(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
+    # One row per pulled inventory line in this run, deduplicated across its
+    # recall matches.
     grouped: dict[int, dict[str, Any]] = {}
     for row in conn.execute(
         """SELECT i.id, i.storage_location, i.raw_description, i.quantity,
@@ -29,6 +24,9 @@ def claim_lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
              FROM matches m
              JOIN inventory_records i ON i.id = m.inventory_record_id
              JOIN recall_records   r ON r.id = m.recall_record_id
+            -- Only pulled lines. A held line is undecided, and billing a
+            -- distributor for a case you have not decided to remove is a claim
+            -- you will have to withdraw.
             WHERE m.run_id = ? AND m.status = 'PULL'
             ORDER BY i.storage_location, i.raw_description, m.id""",
         (run_id,),
@@ -39,11 +37,11 @@ def claim_lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
                 k: row[k] for k in (
                     "id", "storage_location", "raw_description", "quantity",
                     "unit", "pack_size", "lot_code", "brand", "manufacturer",
+                    # vendor_item_code is what a credit desk keys on. It never
+                    # appears in an FDA notice, so it is carried, not matched.
                     "manufacturer_item_code", "vendor_name", "vendor_item_code",
                     "unit_cost", "received_date")}
             entry["recalls"] = []
-            # The distributor's own item number is what a credit desk keys on.
-            # It never appears in an FDA notice, so it is carried, not matched.
             entry["extended"] = (
                 round(row["quantity"] * row["unit_cost"], 2)
                 if row["quantity"] is not None and row["unit_cost"] is not None else None)
@@ -54,11 +52,7 @@ def claim_lines(conn: sqlite3.Connection, run_id: int) -> list[dict[str, Any]]:
         if row["source_record_id"] not in [r["source_record_id"] for r in entry["recalls"]]:
             entry["recalls"].append({k: row[k] for k in
                                      ("source", "source_record_id", "recalling_firm")})
-    return list(grouped.values())
-
-
-def credit_claim(conn: sqlite3.Connection, run_id: int, now: datetime) -> dict[str, Any]:
-    rows = claim_lines(conn, run_id)
+    rows = list(grouped.values())
     counted = [r for r in rows if r["extended"] is not None]
     excluded = [r for r in rows if r["extended"] is None]
     total = round(sum(r["extended"] for r in counted), 2)

@@ -13,6 +13,7 @@ Tier = Literal["CONFIRMED", "PROBABLE", "POSSIBLE"]
 
 # Tier and status are locked together, and nothing may vary one without the
 # other. A widening rule that "makes something HELD" demotes the tier to
+# POSSIBLE; it never assigns a status directly.
 TIER_STATUS: dict[str, Status] = {
     "CONFIRMED": "PULL",
     "PROBABLE": "PULL",
@@ -48,13 +49,14 @@ _LADDER: dict[str, Tier] = {
 
 # Kinds whose whole claim rests on the supplier being the recalled firm. If the
 # evidence does not actually carry that agreement, the claim is not the one the
+# kind is named for, and the tier is demoted to POSSIBLE below.
 _NEEDS_FIRM: frozenset[str] = frozenset({"mfr_item", "firm_and_name"})
 
 # Kinds whose claim rests on two lot codes being the same code.
 _NEEDS_LOT: frozenset[str] = frozenset({"lot", "secondary_code"})
 
 
-def decide(inv, rec, evidence: Evidence) -> Decision:
+def decide(evidence: Evidence) -> Decision:
     """Turn evidence into a pull-or-hold decision.
     No clock, no config, no database handle, no I/O. FR-024, SC-011.
     """

@@ -9,17 +9,9 @@ import {
 } from "@/lib/format";
 import styles from "./sheet.module.css";
 
-export interface SheetHeaderBlockProps {
-  header: SheetHeader;
-}
+/* The printed sheet's header: kitchen, day, corpus, and the frozen counts. */
 
-/*
-  The header of the PRINTED artefact: which kitchen, which day, when this copy
-  was generated, what corpus it was matched against, and the counts the run
-  froze when it finalized.
-*/
-
-export function CorpusValue({ header }: { header: SheetHeader }) {
+function CorpusValue({ header }: { header: SheetHeader }) {
   if (header.corpora.length > 0) {
     return (
       <span className={styles.corpusList}>
@@ -48,7 +40,9 @@ export function CorpusValue({ header }: { header: SheetHeader }) {
   return <NotRecorded word="no recall snapshot has been loaded" />;
 }
 
-export function SheetHeaderBlock({ header }: SheetHeaderBlockProps) {
+export function SheetHeaderBlock({ header }: {
+  header: SheetHeader;
+}) {
   const run = header.run;
 
   const items: DefinitionItem[] = [

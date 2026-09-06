@@ -1,12 +1,10 @@
 import { AGENCY_RECORD_HEADING, AGENCY_RECORD_NOTE } from "./strings";
 import styles from "./AgencyRecord.module.css";
 
-export interface AgencyRecordProps {
-  raw: Record<string, unknown>;
-}
-
 /** The agency payload the recall record was built from. */
-export function AgencyRecord({ raw }: AgencyRecordProps) {
+export function AgencyRecord({ raw }: {
+  raw: Record<string, unknown>;
+}) {
   const keys = Object.keys(raw);
   if (keys.length === 0) return null;
 
