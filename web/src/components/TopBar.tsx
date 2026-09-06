@@ -7,12 +7,6 @@ import { channelLabel } from "@/lib/strings";
 import { Icon } from "./Icon";
 import styles from "./TopBar.module.css";
 
-export interface TopBarProps {
-  status: StatusResponse | null;
-  /** The current search, so the field keeps its text after a submit. */
-  query?: string;
-}
-
 /* Who the operator is, from the contact line: "Nutrition Services, (555)" -> NS. */
 function initials(contact: string): string {
   const name = contact.split(",")[0] ?? "";
@@ -20,7 +14,11 @@ function initials(contact: string): string {
   return letters.join("").toUpperCase() || "PS";
 }
 
-export function TopBar({ status, query = "" }: TopBarProps) {
+export function TopBar({ status, query = "" }: {
+  status: StatusResponse | null;
+  /** The current search, so the field keeps its text after a submit. */
+  query?: string;
+}) {
   const router = useRouter();
   const run = status?.run ?? null;
 

@@ -1,8 +1,4 @@
-/*
-  The three artifacts are printed documents, so they share a paper frame rather
-  than a dashboard layout. These components are local to /artifacts on purpose:
-  nothing else on the site is a document.
-*/
+/* The artifacts are printed documents, so they share a paper frame. */
 
 export { ArtifactUnavailable } from "./ArtifactUnavailable";
 export { DocumentSheet } from "./DocumentSheet";

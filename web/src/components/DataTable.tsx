@@ -30,18 +30,12 @@ export interface DataTableProps<T> {
   rowAttributes?: (row: T, index: number) => HTMLAttributes<HTMLTableRowElement>;
   /** What a table with no rows says. A zero-row result is still a result. */
   empty?: ReactNode;
-  /**
-   * Wrap the table in a horizontal scroller. Leave this off when sticky is on:
-   * a scroll container is what the sticky header sticks to.
-   */
+  /** Wrap in a horizontal scroller. Leave off when sticky is on. */
   scroll?: boolean;
   className?: string;
 }
 
-/**
-  The table. Dense, bordered, hairline row rules, no zebra striping, no card
-  per row, and no shadow except the one hairline under a stuck header.
-*/
+/* Dense, hairline rules, no zebra striping. */
 export function DataTable<T>({
   columns,
   rows,

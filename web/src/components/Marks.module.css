@@ -1,0 +1,34 @@
+.missing {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.tier {
+  display: inline-block;
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  font-weight: var(--weight-strong);
+  letter-spacing: var(--ls-micro);
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.new {
+  composes: tier;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-chip);
+  text-transform: none;
+}
+
+.cleared {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--cleared-outline);
+  border-radius: var(--radius-chip);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-micro);
+  color: var(--cleared-ink);
+  white-space: nowrap;
+}

@@ -1,3 +1,4 @@
+import { FSIS_NOTE, PAGE_TITLES, PRINT_LABEL, PROVENANCE_EXPLANATION, PROVENANCE_LEGEND, channelLabel } from "@/lib/strings";
 import type {
   AdapterInfo,
   CorpusSnapshot,
@@ -16,17 +17,9 @@ import {
   ProvenanceLabel,
   type Column,
 } from "@/components";
-import {
-  FSIS_NOTE,
-  PAGE_TITLES,
-  PROVENANCE_EXPLANATION,
-  PROVENANCE_LEGEND,
-} from "@/lib/strings";
 import { formatCount, formatDateTime, formatHours, unslug } from "@/lib/format";
-import { channelLabel } from "@/lib/strings";
 import { RefreshControl } from "./RefreshControl";
 import styles from "./sources.module.css";
-import { PRINT_LABEL } from "@/lib/nav";
 
 /* Where every number comes from. */
 

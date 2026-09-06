@@ -3,10 +3,7 @@ import { getSheet, getSources } from "@/lib/api";
 import { EMPTY_NO_RUNS, PAGE_TITLES } from "@/lib/strings";
 import { SheetView } from "./_components/SheetView";
 
-/*
-  The current pull sheet: the latest run that was read successfully, every line
-  it produced, in the order it produced them.
-*/
+/* The latest good run's lines, in the order it produced them. */
 
 export const dynamic = "force-dynamic";
 

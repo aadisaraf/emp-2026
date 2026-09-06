@@ -26,11 +26,6 @@ export type Component = "grain" | "meat_or_alternate" | "fruit" | "vegetable" | 
 export type ReportFieldKind = "derived" | "human" | "blank";
 export type DeadlineKey = "distributor_notification" | "inventory_assessment";
 
-/** The one error body shape, for every non-2xx response. */
-export interface ApiErrorBody {
-  error: { status: number; code: string; message: string };
-}
-
 export interface Location {
   name: string;
   operator: string;
@@ -588,11 +583,3 @@ export interface RefreshResponse {
   corpus: CorpusSnapshot[];
 }
 
-export interface ClearRequest {
-  actor: string;
-  note?: string | null;
-}
-
-export interface ConfirmPulledRequest {
-  actor: string;
-}

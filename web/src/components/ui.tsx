@@ -3,10 +3,7 @@ import type { ReactNode } from "react";
 import { cx } from "@/lib/cx";
 import styles from "./ui.module.css";
 
-/*
-  The shared page vocabulary: one figure, a row of facts, folder-tab cards and
-  the quiet table. Today speaks this; so do the sheet, run history and impact.
-*/
+/* The shared page vocabulary: figure, fact row, cards, table. */
 
 export type Tone = "plain" | "accent" | "sunken";
 
@@ -241,10 +238,6 @@ export function ChipRow({ children }: { children: ReactNode }) {
 
 export function Note({ children }: { children: ReactNode }) {
   return <p className={styles.note}>{children}</p>;
-}
-
-export function Empty({ children }: { children: ReactNode }) {
-  return <p className={styles.empty}>{children}</p>;
 }
 
 export { styles as ui };

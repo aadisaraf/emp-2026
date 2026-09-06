@@ -4,13 +4,11 @@ import { useCallback, useRef, useState, type MouseEvent, type ReactNode } from "
 import { MatchPane } from "./MatchPane";
 import styles from "./sheet.module.css";
 
-export interface SheetSurfaceProps {
-  children: ReactNode;
-}
-
 /* The sheet body, plus the detail pane when a line is open. */
 
-export function SheetSurface({ children }: SheetSurfaceProps) {
+export function SheetSurface({ children }: {
+  children: ReactNode;
+}) {
   const [selected, setSelected] = useState<number | null>(null);
   const highlighted = useRef<HTMLTableRowElement | null>(null);
 

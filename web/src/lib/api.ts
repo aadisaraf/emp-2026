@@ -64,10 +64,8 @@ function cause(thrown: unknown): string {
   return String(thrown);
 }
 
-/**
-  Every endpoint below goes through here. It resolves to `{ ok: false, error }`
-  and never rejects, so a page branches on `result.ok` instead of catching.
-*/
+/** Every endpoint goes through here. Resolves to an error instead of throwing,
+ *  so a page branches on `result.ok`. */
 async function request<T>(path: string, init?: RequestInit): Promise<Attempt<T>> {
   const url = `${API_BASE}${path}`;
   let response: Response;
@@ -139,11 +137,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<Attempt<T>>
    GET
 --------------------------------------------------------------------------- */
 
-/**
-  The status word, the counts, both clocks, corpus provenance and the refused
-  deliveries. This is the polled endpoint; it answers 200 with state "never"
-  rather than an error when no run exists.
-*/
+/** The polled endpoint. Answers 200 with state "never" when no run exists. */
 export function getStatus(): Promise<Attempt<StatusResponse>> {
   return request<StatusResponse>("/api/v1/status");
 }
@@ -158,11 +152,8 @@ export function getRun(runId: number): Promise<Attempt<RunDetailResponse>> {
   return request<RunDetailResponse>(`/api/v1/runs/${runId}`);
 }
 
-/**
-  The current pull sheet. PULL and HELD arrive interleaved in one order
-  (class rank, tier rank, score, id). Render them in the order received: do not
-  re-sort them and do not split PULL from HELD.
-*/
+/** The current pull sheet. PULL and HELD arrive interleaved in one order --
+ *  render them as received; do not re-sort or split them. */
 export function getSheet(): Promise<Attempt<SheetResponse>> {
   return request<SheetResponse>("/api/v1/sheet");
 }
@@ -208,11 +199,8 @@ export function getSources(): Promise<Attempt<SourcesResponse>> {
    POST. Three mutations exist and these are all of them.
 --------------------------------------------------------------------------- */
 
-/**
-  Mark a line cleared. The only action in the system that can do that, and it
-  needs a named person. It writes one audit row: the match is not edited, the
-  matches row is never UPDATEd and never deleted.
-*/
+/** Mark a line cleared. Needs a named person, and writes one audit row: the
+ *  matches row itself is never touched. */
 export function clearMatch(
   matchId: number,
   body: { actor: string; note?: string | null },
@@ -223,10 +211,7 @@ export function clearMatch(
   });
 }
 
-/**
- * Record that a named person walked to the cooler. Touches no match and no
- * inventory row, which is why it is safe as one click.
- */
+/** Record that a named person walked to the cooler. Writes only an audit row. */
 export function confirmPulled(
   matchId: number,
   body: { actor: string },
@@ -237,10 +222,7 @@ export function confirmPulled(
   });
 }
 
-/**
-  Try the agency, fall back to the committed snapshot. Always answers 200:
-  offline, the answer is cached_fallback with the reason attached.
-*/
+/** Try the agency, fall back to the committed snapshot. Always answers 200. */
 export function refreshRecalls(): Promise<Attempt<RefreshResponse>> {
   return request<RefreshResponse>("/api/v1/recalls/refresh", {
     method: "POST",

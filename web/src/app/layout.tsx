@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { IconRail } from "@/components/IconRail";
-import { TopBar } from "@/components/TopBar";
-import { StatusPoller } from "@/components";
+import { IconRail, StatusPoller, TopBar } from "@/components";
 import { getStatus } from "@/lib/api";
-import { statusSignature } from "@/lib/status";
 import styles from "./layout.module.css";
 
 /* The shell, on every route: a top bar and an icon rail. */
@@ -27,12 +24,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <TopBar status={status} />
         <IconRail />
         <div className={styles.content} data-role="content">
-          {status ? (
-            <StatusPoller
-              signature={statusSignature(status)}
-              asOf={status.generated_at}
-            />
-          ) : null}
+          {status ? <StatusPoller status={status} /> : null}
           <main className={styles.main}>{children}</main>
         </div>
       </body>

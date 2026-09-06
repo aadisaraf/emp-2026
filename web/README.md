@@ -1,16 +1,15 @@
 # PullSheet dashboard
 
-A Next.js front end over the PullSheet JSON API. It is an additional view of
-one location's recall response, not a replacement for anything: the
-server-rendered Jinja pages at `:8000` stay, because they are the print path and
-the offline fallback.
+A Next.js front end over the PullSheet JSON API. It is an additional view of one
+location's recall response, not a replacement: the server-rendered Jinja pages at
+`:8000` stay, because they are the print path and the offline fallback.
 
 One deployment serves one location. There is no site switcher, no district
-roll-up and no tenant selector anywhere in here, and none should be added.
+roll-up and no tenant selector, and none should be added.
 
-## Running it alongside the Python backend
+## Running it
 
-Two processes. From the repository root, start the backend first:
+Two processes. From the repository root:
 
 ```
 .venv/bin/python -m pullsheet.main --port 8000
@@ -26,68 +25,65 @@ npm run dev
 
 The dashboard is at `http://localhost:3000` and reads
 `http://127.0.0.1:8000/api/v1`. Copy `.env.local.example` to `.env.local` if the
-backend is on another port.
+backend is on another port. `npm run build && npm start` for a production check;
+`npm run lint` and `npm run typecheck` for the rest.
 
-For a production check, `npm run build && npm start`. `npm run lint` runs ESLint.
+The dashboard renders with the backend stopped: every fetch failure becomes a
+stated fact on screen, and no page shows a number it did not receive.
 
-The dashboard renders with the backend stopped. Every fetch failure becomes a
-stated fact on screen: the status line says the API did not answer, and no page
-shows a number it did not receive.
+Nothing is fetched from the network -- no web font, no CDN script, no analytics,
+no external image host. The only origin this application contacts is the local
+FastAPI process, and the demo runs with the network physically off.
 
-Nothing is fetched from the network. There is no web font, no CDN script, no
-analytics and no external image host, and the only origin this application
-contacts is the local FastAPI process. Keep it that way: the demo runs with the
-network physically off.
-
-The Python side owns the database. This application never writes to `data/`, and
-the only mutations it makes are the three POSTs in the API contract.
+The Python side owns the database. This application never writes to `data/`; its
+only mutations are the three POSTs in the API contract.
 
 ## What is here
 
 ```
-src/styles/tokens.css     every colour, size, space and radius, as custom properties
-src/app/globals.css       the reset, the base type, the global classes, the print rules
-src/app/layout.tsx        the shell: masthead, nav, status line, stat rail, poller
-src/components/           the shared library, one file and one CSS Module each
-src/lib/types.ts          every type from the API contract
-src/lib/api.ts            one function per endpoint, plus attempt()
-src/lib/format.ts         dates, hours, money, quantities
-src/lib/strings.ts        the UI copy the dashboard owns
-src/lib/nav.ts            the nav, as data
-src/app/_scaffold/        route placeholders; delete this once every page is built
+src/styles/tokens.css   every colour, size, space and radius, as custom properties
+src/app/globals.css     the reset, the base type, the global classes, the print rules
+src/app/layout.tsx      the shell: top bar, icon rail, status poller
+src/components/         the shared library, plus ui.tsx (the page vocabulary)
+src/lib/types.ts        every type from the API contract
+src/lib/api.ts          one function per endpoint
+src/lib/format.ts       dates, hours, money, quantities
+src/lib/strings.ts      the UI copy the dashboard owns
 ```
 
-Routes: `/`, `/sheet`, `/runs`, `/impact`, `/sources`, `/ingest`, and
-`/artifacts/hold`, `/artifacts/credit-claim`, `/artifacts/state-report`. Every
-one exists so the nav has nowhere dead to point; most are placeholders that say
-so and render no numbers.
+Routes: `/`, `/sheet`, `/sheet/[runId]`, `/runs`, `/runs/[id]`, `/match/[id]`,
+`/impact`, `/sources`, `/ingest`, and `/artifacts/hold`,
+`/artifacts/credit-claim`, `/artifacts/state-report`.
 
 ## The pattern every page follows
 
 Server component, one fetch, one honest failure branch:
 
 ```tsx
-import { attempt, getSheet } from "@/lib/api";
+import { getSheet } from "@/lib/api";
 import { ErrorState, PageHeader } from "@/components";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const result = await attempt(getSheet());
+  const result = await getSheet();
   if (!result.ok) return <ErrorState failure={result.error} />;
   const sheet = result.data;
   return <PageHeader title="Pull sheet" context={`Run #${sheet.run.id}`} />;
 }
 ```
 
-`attempt()` turns a thrown `ApiRequestError` into `{ ok: false, error }`, so a
-stopped backend is a branch rather than a crash. Every client function already
-fetches with `{ cache: "no-store" }`; keep `export const dynamic =
-"force-dynamic"` on pages so nothing is prerendered against a backend that was
-running at build time.
+The client never throws: `request()` resolves to `{ ok: false, error }`, so a
+stopped backend is a branch rather than a crash. Every call already fetches with
+`{ cache: "no-store" }`; keep `export const dynamic = "force-dynamic"` on pages
+so nothing is prerendered against a backend that was running at build time.
 
 `app/error.tsx` catches whatever escapes. It is the boundary of last resort, not
 the plan.
+
+Exactly one thing polls: `StatusPoller`, mounted by the layout. It asks
+`/api/v1/status` every two seconds, refreshes the tree when the run changes, and
+says so when a poll stops answering. Do not add a second timer.
 
 ## The component library
 
@@ -95,103 +91,76 @@ Import from `@/components`.
 
 | Component | For |
 |---|---|
-| `DataTable` | Homogeneous records. Dense, bordered, hairline row rules, sticky header, fixed column order. |
-| `StatusBadge` | `PULL`, `HELD`, the six status states, and the three run statuses. |
-| `TierBadge` | `CONFIRMED`, `PROBABLE`, `POSSIBLE`. Uncoloured, because tier is evidence and not severity. |
+| `DataTable` | Homogeneous records. Dense, hairline row rules, fixed column order. |
+| `StatusBadge` | `PULL`, `HELD`, the six status states, the three run statuses. |
+| `TierBadge` | `CONFIRMED`, `PROBABLE`, `POSSIBLE`. Uncoloured: tier is evidence, not severity. |
 | `EvidenceKind` | The evidence kind in words, with the unknown-key fallback. |
 | `ProvenanceLabel` | The three provenance labels. The only place they are rendered. |
-| `ClockStrip` | The two USDA clocks, as a rail item or as the Reporting clocks table. |
-| `PageHeader` | Title, one line of context, optional actions. |
-| `Panel` | A bordered section with a heading. |
-| `DefinitionList` | Label and value pairs. |
-| `EmptyState` | An empty region, stated. No illustration. |
-| `ErrorState` | The API did not answer. No apology, no placeholder numbers. |
-| `NotRecorded` | The word `not recorded`, for a field the export did not carry. |
-| `NewMark` | The word `new`, for a line whose `is_new` column is 1. |
-| `ClearedMark` | A cleared line, marked in place with who cleared it. |
-| `PrintButton` | Print. |
-| `Masthead`, `SideNav`, `StatRail`, `StatusLine`, `StatusPoller` | The shell. The layout already renders these. |
+| `ClockStrip` | The two USDA clocks, as a rail item or as a table. |
+| `PageHeader`, `Panel`, `DefinitionList` | Title blocks, sections, label/value pairs. |
+| `EmptyState`, `ErrorState` | An empty region and an unanswered API, both stated. |
+| `NotRecorded`, `NewMark`, `ClearedMark` | The inline marks, all in `Marks.tsx`. |
+| `TopBar`, `IconRail`, `StatRail`, `StatusPoller` | The shell. The layout renders these. |
+| `ui.tsx` | The page vocabulary: `PageHero`, `Facts`, `TabCard`, `Chip`, `Kv`. |
 
 Naming collision worth knowing: the component `EvidenceKind` and the type
-`EvidenceKind` share a name. In a file that needs both, alias the type:
+`EvidenceKind` share a name. Alias the type where you need both:
 `import type { EvidenceKind as EvidenceKindValue } from "@/lib/api"`.
 
-`DataTable` takes a column list. `variant` decides alignment and face, and the
-rule is measure against identifier:
+`DataTable` takes a column list; `variant` decides alignment and face:
 
 ```tsx
-{ key: "qty", header: "Qty", variant: "measure", width: "64px",
+{ key: "qty", header: "Qty", variant: "measure",
   render: (line) => formatQuantity(line.quantity, line.unit) ?? <NotRecorded /> }
 
-{ key: "lot", header: "Lot", variant: "identifier", width: "110px",
+{ key: "lot", header: "Lot", variant: "identifier",
   render: (line) => line.lot_code ?? <NotRecorded /> }
 ```
 
-Right-align anything you could sum: quantities, unit costs, totals, line counts,
-elapsed hours. Left-align and set in mono anything that is a name spelled with
-digits: lot codes, GTIN, UPC, run ids, item codes. Never centre a numeric
-column, and never let a column be a measure in one table and an identifier in
-another.
+Right-align anything you could sum. Left-align and set in mono anything that is a
+name spelled with digits: lot codes, GTIN, run ids, item codes. Never centre a
+numeric column, and never let a column be a measure in one table and an
+identifier in another.
 
-`DataTable` never sorts. Its `sort` prop draws the marker on a header and
-nothing else. The pull sheet arrives in one total order, class rank then tier
-rank then score then id, and is rendered in the order received.
+`DataTable` never sorts. The pull sheet arrives in one total order -- class rank,
+tier rank, score, id -- and is rendered in the order received.
 
 ## Styling
 
-CSS Modules next to the component, plus the tokens. There is no utility
-framework and no Tailwind: a screen assembled from forty utility classes reads
-as generated, and this one has to read as a logbook.
+CSS Modules next to the component, plus the tokens. No utility framework and no
+Tailwind.
 
 Use the tokens for every value. `globals.css` also carries `mono`, `sr-only`,
-`no-print`, `money`, `num` and `deadline`. That list is the whole set of global
-classes; anything else belongs in a module.
+`no-print`, `money`, `num` and `deadline`; that is the whole set of global
+classes, and anything else belongs in a module.
 
-The scale is five sizes and two weights: 11px uppercase labels, 13px body, 13px
-strong, 15px section headings, 20px page title, at weights 400 and 600. No 14px,
-no 16px body, no 500 weight.
+Borders instead of shadows. No gradient, no translucency, no entrance animation,
+no emoji. Icons are hand-written SVG in `Icon.tsx` rather than a package.
 
-Radius is by role: 0 for tables, cells, rows and the stat rail, 2px for chips
-and buttons, 3px once on a dropzone. Nothing above 3px. Borders instead of
-shadows; the only shadow permitted is the hairline under a stuck table header.
-No gradient, no translucency, no entrance animation, no emoji, no decorative
-icon. If a small icon is genuinely needed, hand-write the SVG rather than adding
-a package.
+Status is never carried by hue alone: PULL is a filled chip and HELD is hollow,
+so both survive a grayscale printout and a colourblind reader.
 
-Green is chrome: the masthead, the active nav item, the focus ring, the primary
-button. It never means "no action required". Red means act now, ochre means
-unresolved, neutral means recorded. Status is never carried by hue alone: PULL
-is a filled chip and HELD is a hollow one, so both survive a grayscale printout
-and a colourblind reader.
-
-Print is a first-class target. `@media print` in `globals.css` drops the nav,
-flattens the masthead to a rule, whitens the table header and keeps every chip,
-tier word and provenance label. Add `data-print-block` to a section that must
-not break across pages, and `no-print` to a control.
-
-Density target: at 1440x900 the sheet shows 25 or more line rows. Row height is
-28px and cell padding is 5px by 10px. If a change drops that count, the change
-is wrong.
+Print is a first-class target. `@media print` in `globals.css` drops the nav and
+keeps every chip, tier word and provenance label. Add `data-print-block` to a
+section that must not break across pages, and `no-print` to a control.
 
 ## Rules that are not style preferences
 
-These come from the constitution and the API contract. A page that breaks one of
-them is wrong even if it looks right.
+These come from the constitution and the API contract. A page that breaks one is
+wrong even if it looks right.
 
 - `PULL` and `HELD` are the only two line statuses. Never render a third, never
   put HELD behind a toggle or in its own section, and never default a filter to
   hiding it.
-- A cleared line stays on the sheet, in place, marked with who cleared it and
-  when. Clearing writes an audit row; it never removes, moves or greys out a
-  line, and only a named person can do it.
+- A cleared line stays on the sheet, in place, marked. Clearing writes an audit
+  row; it never removes, moves or greys out a line, and only a named person can
+  do it.
 - There is no confidence percentage. `score` breaks ties in ordering and decides
   nothing, so it is never a bar, a badge or a percentage.
-- Provenance is visible on screen and in print, on every source, always. It is
-  never a tooltip, never faded out, and never dropped because a row felt busy.
+- Provenance is visible on screen and in print, on every source, always.
 - `never` is not `clear`. A location that has received nothing reads "no
   inventory has ever been received", never an all-clear.
 - Staleness gates one word. The lines themselves are byte-identical.
 - `status.word`, `status.detail`, `deadline.label`, `deadline.text` and the
   provenance labels are server-owned. Render them verbatim.
-- A missing field is the words `not recorded`. A blank cell reads as zero, and
-  50 of the 56 fixture export rows carry no barcode.
+- A missing field is the words `not recorded`. A blank cell reads as zero.

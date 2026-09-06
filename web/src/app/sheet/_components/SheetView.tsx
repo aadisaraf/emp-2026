@@ -16,11 +16,8 @@ export interface SheetViewProps {
   currentRunId: number | null;
 }
 
-/*
-  The pull sheet, for the current run and for any past run. One component, one
-  code path: a past run that rendered through different code could quietly
-  become a different document.
-*/
+/* The pull sheet, current or past. One code path, so a past run cannot
+   quietly become a different document. */
 
 export function SheetView({ sheet, screeningRule, currentRunId }: SheetViewProps) {
   const { header, run } = sheet;

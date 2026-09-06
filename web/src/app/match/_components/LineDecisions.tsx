@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { DecisionKind, MatchDetailResponse } from "@/lib/api";
 import { clearMatch, confirmPulled } from "@/lib/api";
@@ -24,34 +24,24 @@ import {
 } from "./strings";
 import styles from "./LineDecisions.module.css";
 
-export interface LineDecisionsProps {
+const noSubscription = () => () => {};
+
+/** Every decision on this pair, and the two actions a person can take now. */
+export function LineDecisions({ detail, timeZone }: {
   detail: MatchDetailResponse;
   timeZone: string;
-}
-
-/**
-  Every decision ever taken about this food and this recall, and the two
-  actions a person can take now.
-*/
-export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
+}) {
   const router = useRouter();
 
   // What the last write returned, until the server render catches up with it.
   const [written, setWritten] = useState<MatchDetailResponse | null>(null);
-  useEffect(() => {
-    setWritten((current) =>
-      current && detail.decisions.length >= current.decisions.length ? null : current,
-    );
-  }, [detail]);
-  const view = written ?? detail;
+  const view = written && written.decisions.length > detail.decisions.length ? written : detail;
 
   const [pending, setPending] = useState<DecisionKind | null>(null);
 
-  /* Neither action is offered until this component is running. */
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    setReady(true);
-  }, []);
+  /* Server HTML carries no submit handler, so neither action is offered until
+     this component is running in the browser. */
+  const ready = useSyncExternalStore(noSubscription, () => true, () => false);
 
   const [clearActor, setClearActor] = useState("");
   const [clearNote, setClearNote] = useState("");
@@ -64,12 +54,8 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
   const [pulledDone, setPulledDone] = useState<string | null>(null);
   const pulledActorRef = useRef<HTMLInputElement>(null);
 
-  /*
-    Both actions are the same shape: name a person, POST, then show what the
-    server actually wrote rather than what was typed. Only the endpoint and
-    the wording differ, so they share one path -- a clear and a pulled
-    confirmation that drifted apart would be two different audit trails.
-  */
+  /* Both actions are the same shape -- name a person, POST, show what the
+     server wrote -- so they share one path. */
   async function submit(kind: DecisionKind, event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const clearing = kind === "clear_match";
@@ -202,11 +188,7 @@ export function LineDecisions({ detail, timeZone }: LineDecisionsProps) {
             </p>
           ) : null}
 
-          {/*
-            One standing paragraph, not three. The panel note says who may
-            clear and how long it lasts; this says what the system cannot do,
-            which is the part no other sentence on the page carries.
-          */}
+          {/* What the system cannot do. No other sentence here says it. */}
           <p className={styles.standing}>{CLEAR_IS_A_HUMAN_ACT}</p>
         </Panel>
 

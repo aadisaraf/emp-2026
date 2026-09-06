@@ -46,7 +46,7 @@ import {
   unpopulatedFields,
 } from "../_components/strings";
 import styles from "./page.module.css";
-import { PRINT_LABEL } from "@/lib/nav";
+import { PRINT_LABEL } from "@/lib/strings";
 
 /* One match, in full. */
 

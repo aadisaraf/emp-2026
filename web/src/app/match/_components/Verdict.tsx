@@ -45,10 +45,7 @@ function Cell({
   );
 }
 
-/**
-  What the system found, in the two channels it is allowed to use: the status
-  word and the kind of evidence behind it.
-*/
+/** What the system found: the status word and the evidence behind it. */
 export function Verdict({
   match,
   recall,

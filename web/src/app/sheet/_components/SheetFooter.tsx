@@ -3,18 +3,13 @@ import type { Coverage } from "@/lib/api";
 import { TIER_LEGEND } from "@/lib/strings";
 import { formatCount, formatPercent } from "@/lib/format";
 
-export interface SheetFooterProps {
+/* What the sheet leaves out, stated on the sheet. */
+
+export function SheetFooter({ coverage, screeningRule }: {
   coverage: Coverage;
   /** matching/screen.SCREENING_RULE, rendered verbatim. */
   screeningRule: string | null;
-}
-
-/*
-  What the sheet leaves out, stated on the sheet. Small and at the foot, but
-  present: a document that does not say what it excludes is not a record.
-*/
-
-export function SheetFooter({ coverage, screeningRule }: SheetFooterProps) {
+}) {
   return (
     <TabCard title="What this sheet leaves out" tone="sunken">
       <Note>

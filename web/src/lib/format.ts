@@ -1,18 +1,13 @@
-/*
-  Formatting, in one place, so a quantity looks the same on the sheet, in the
-  claim and on the printed hold record.
-*/
+/* Formatting, in one place, so a value looks the same on every page. */
 
-/** Matches pullsheet/location.py TIMEZONE_NAME. Override per call if needed. */
+/** Matches pullsheet/location.py TIMEZONE_NAME. */
 export const DEFAULT_TIME_ZONE =
   process.env.NEXT_PUBLIC_TIME_ZONE ?? "America/Los_Angeles";
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 
-/**
- * "2026-09-05". A date-only string (business_date, service day, received_date)
- * is returned untouched: shifting it into a timezone would move the day.
- */
+/** "2026-09-05". A date-only string is returned untouched: shifting it into a
+ *  timezone would move the day. */
 export function formatDate(
   value: string | null | undefined,
   timeZone: string = DEFAULT_TIME_ZONE,
@@ -57,10 +52,7 @@ export function formatCount(value: number | null | undefined): string | null {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
-/**
- * "$8,862.50". The server has already rounded to 2 decimals; this only puts
- * the separators in. Never re-round, never estimate a missing cost.
- */
+/** "$8,862.50". The server already rounded; this only adds separators. */
 export function formatMoney(value: number | null | undefined): string | null {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
   return new Intl.NumberFormat("en-US", {
@@ -71,10 +63,8 @@ export function formatMoney(value: number | null | undefined): string | null {
   }).format(value);
 }
 
-/**
- * "240" or "240 CS". Quantity is a REAL and may be fractional; null is not
- * zero, so null comes back as null for the caller to render as not recorded.
- */
+/** "240" or "240 CS". null is not zero -- it comes back null to render as
+ *  "not recorded". */
 export function formatQuantity(
   value: number | null | undefined,
   unit?: string | null,

@@ -3,22 +3,17 @@ import { EVIDENCE_EXPLANATION, EVIDENCE_LABEL, EVIDENCE_UNKNOWN } from "@/lib/st
 import { cx } from "@/lib/cx";
 import styles from "./EvidenceKind.module.css";
 
-export interface EvidenceKindProps {
-  /** The raw matches.evidence_kind value. Unknown keys are handled. */
-  kind: EvidenceKindValue | string;
-  /** Show the raw key after the label, for a detail pane. */
-  showRaw?: boolean;
-}
-
 function isKnown(kind: string): kind is EvidenceKindValue {
   return Object.prototype.hasOwnProperty.call(EVIDENCE_LABEL, kind);
 }
 
-/**
-  What agreed, in words. The column is called Evidence, not "Match type", and
-  the value is the kind of evidence, not a quality rating.
-*/
-export function EvidenceKind({ kind, showRaw }: EvidenceKindProps) {
+/** What agreed, in words. Not a match type and not a quality rating. */
+export function EvidenceKind({ kind, showRaw }: {
+  /** The raw matches.evidence_kind value. Unknown keys are handled. */
+  kind: EvidenceKindValue | string;
+  /** Show the raw key after the label, for a detail pane. */
+  showRaw?: boolean;
+}) {
   if (!isKnown(kind)) {
     return (
       <span className={cx(styles.kind, styles.unknown)} title={EVIDENCE_UNKNOWN}>

@@ -129,10 +129,7 @@ export function confirmChangesNothing(status: string): string {
 export const CLEAR_IS_A_HUMAN_ACT =
   "This records a judgement a person made. The system reaches CONFIRMED, PROBABLE or POSSIBLE and stops there; it cannot decide that this is not the recalled product, and clearing does not ask it to.";
 
-/* ---------------------------------------------------------------------------
-   The match row and the agency payload, for the reader who wants the floor
-   under the floor.
---------------------------------------------------------------------------- */
+/* The match row and the agency payload, verbatim. */
 
 export const MATCH_ROW_HEADING = "The match row itself";
 

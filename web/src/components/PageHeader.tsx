@@ -10,10 +10,7 @@ export interface PageHeaderProps {
   actions?: ReactNode;
 }
 
-/**
- * The title block. There is no hero here and there is not going to be one:
- * an operator who opened this page already knows what the product is.
- */
+/** The title block. */
 export function PageHeader({ title, context, actions }: PageHeaderProps) {
   return (
     <header className={styles.header}>

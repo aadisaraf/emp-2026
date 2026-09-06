@@ -1,9 +1,6 @@
-/*
-  The string table from brief/ANTI_AI_COPY.md part 4, in one file so a reviewer
-  can grep it and so six pages cannot each invent a synonym.
-*/
+/* Every user-facing string, so six pages cannot invent six synonyms. */
 
-import type { EvidenceKind, Provenance, StatusState, Tier } from "./types";
+import type { EvidenceKind, Provenance, Tier } from "./types";
 
 /** The empty-field word. Never "N/A", never a blank cell, which reads as zero. */
 export const NOT_RECORDED = "not recorded";
@@ -21,36 +18,6 @@ export const PAGE_TITLES = {
   addInventory: "Add inventory",
 } as const;
 
-/** The pull sheet subtitle: run id and the inventory date it was matched from. */
-export function pullSheetSubtitle(runId: number, businessDate: string): string {
-  return `Run #${runId}, inventory of ${businessDate}`;
-}
-
-/* ---------------------------------------------------------------------------
-   The six states. The dashboard owns the action line and nothing else.
---------------------------------------------------------------------------- */
-
-export const STATE_ACTIONS: Record<StatusState, string> = {
-  never: "Drop an export into data/watched/, or upload one.",
-  overdue: "Check the export job at your inventory system.",
-  rejected:
-    "Read the rejection reason under Deliveries that were refused, then re-send the export.",
-  action: "Print the pull sheet and work it by storage location.",
-  stale: "Refresh the corpus from Sources. No line on the sheet changes when you do.",
-  clear: "Nothing to pull. Held lines below are still held.",
-};
-
-/** The overdue action carries the age of the sheet, so it takes the hours. */
-export function overdueAction(hours: number): string {
-  return `Check the export job at your inventory system. The sheet below is ${Math.round(
-    hours,
-  )} hours old.`;
-}
-
-/** Never render the `never` state as clear, as green, or as an empty page. */
-export const NEVER_NOTE =
-  "This page is the argument that silence is not an answer. Nothing here is a statement about the food in the building.";
-
 /* ---------------------------------------------------------------------------
    Tier. Evidence, not severity, and never a percentage.
 --------------------------------------------------------------------------- */
@@ -67,10 +34,7 @@ export const TIER_EXPLANATION: Record<Tier, string> = {
 export const TIER_LEGEND =
   "CONFIRMED and PROBABLE lines are PULL. POSSIBLE lines are HELD. There is no percentage and no threshold; the tier is the kind of evidence, nothing else.";
 
-/* ---------------------------------------------------------------------------
-   Evidence kind. Seven values in the schema; label all of them, or a raw key
-   prints on a real line.
---------------------------------------------------------------------------- */
+/* Evidence kind. Label all seven, or a raw key prints on a real line. */
 
 export const EVIDENCE_LABEL: Record<EvidenceKind, string> = {
   gtin: "Barcode",
@@ -128,18 +92,8 @@ export function clearedBy(actor: string, whenText: string): string {
   return `cleared by ${actor} ${whenText}`;
 }
 
-/** Section header tally. The cleared segment is omitted at zero. */
-export function sectionTally(pull: number, held: number, cleared: number): string {
-  const parts = [`${pull} pull`, `${held} held`];
-  if (cleared > 0) parts.push(`${cleared} cleared`);
-  return parts.join(" · ");
-}
-
-/**
-  A recall the agency has since terminated or amended keeps its line. The
-  clauses the agency did not state are simply absent -- an empty "(was )" would
-  be a claim about a prior status nobody recorded.
-*/
+/** A terminated or amended recall keeps its line. Clauses the agency did not
+ *  state are left out, rather than printed empty. */
 export function amendedRecallNote(
   status: string,
   prior?: string | null,
@@ -180,10 +134,7 @@ export function confirmPulledConfirmation(actor: string, timestamp: string): str
   return `Confirmed pulled by ${actor} at ${timestamp}.`;
 }
 
-/* ---------------------------------------------------------------------------
-   Empty states. Deliberately different lengths: "no runs yet" is the longest
-   on the site because a short one would be read as reassurance.
---------------------------------------------------------------------------- */
+/* Empty states. None of them should read as reassurance. */
 
 export const EMPTY_NO_RUNS = {
   heading: "Nothing has been ingested yet.",
@@ -193,17 +144,9 @@ export const EMPTY_NO_RUNS = {
 
 export const EMPTY_ZERO_MATCHES_HEADING = "No inventory line matched a recall.";
 
-export const EMPTY_NO_MENU_PROGRAM = {
-  heading: "Menu",
-  body: "This deployment does not run a meal program, so a pull has no planned menu to cascade into. The money figures above still apply.",
-} as const;
-
 export const EMPTY_NO_DELIVERIES = "No delivery has ever arrived at this location.";
 
-/* ---------------------------------------------------------------------------
-   The two clocks. OVERRUN is the word: "overdue" already means something else
-   on this dashboard, and "missed" and "failed" are not used at all.
---------------------------------------------------------------------------- */
+/* The two clocks. OVERRUN, not "overdue" -- that word is a run state here. */
 
 export const CLOCKS = {
   heading: "Reporting clocks",
@@ -249,3 +192,13 @@ export const CHANNEL_LABEL: Record<string, string> = {
 export function channelLabel(channel: string): string {
   return CHANNEL_LABEL[channel] ?? channel.replace(/_/g, " ");
 }
+
+/** The print button's label, per route. */
+export const PRINT_LABEL: Record<string, string> = {
+  "/impact": "Print impact",
+  "/sources": "Print sources",
+  "/match": "Print this match",
+  "/artifacts/hold": "Print hold record",
+  "/artifacts/credit-claim": "Print credit claim",
+  "/artifacts/state-report": "Print state report",
+};

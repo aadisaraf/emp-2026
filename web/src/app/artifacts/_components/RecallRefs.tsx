@@ -21,10 +21,7 @@ interface Group {
   refs: RecallRef[];
 }
 
-/**
-  The recall notices behind one inventory line, grouped by the agency that
-  issued them.
-*/
+/** The recall notices behind one line, grouped by issuing agency. */
 export function RecallRefs({ refs }: RecallRefsProps) {
   const groups: Group[] = [];
 

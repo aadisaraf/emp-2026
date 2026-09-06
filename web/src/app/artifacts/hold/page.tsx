@@ -1,3 +1,4 @@
+import { PAGE_TITLES, PRINT_LABEL } from "@/lib/strings";
 import type { HoldLine } from "@/lib/api";
 import { getHoldRecord } from "@/lib/api";
 import {
@@ -8,7 +9,6 @@ import {
   type Column,
 } from "@/components";
 import { formatCount, formatQuantity } from "@/lib/format";
-import { PAGE_TITLES } from "@/lib/strings";
 import {
   ArtifactUnavailable,
   DocumentSheet,
@@ -19,7 +19,6 @@ import {
   type ArtifactSearchParams,
 } from "../_components";
 import styles from "../_components/document.module.css";
-import { PRINT_LABEL } from "@/lib/nav";
 
 /* The hold and destruction record. */
 

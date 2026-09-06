@@ -1,8 +1,8 @@
+import { PAGE_TITLES, PRINT_LABEL } from "@/lib/strings";
 import type { ReportField } from "@/lib/api";
 import { getStateReport } from "@/lib/api";
 import { DataTable, type Column } from "@/components";
 import { formatCount } from "@/lib/format";
-import { PAGE_TITLES } from "@/lib/strings";
 import {
   ArtifactUnavailable,
   DocumentSheet,
@@ -13,7 +13,6 @@ import {
 } from "../_components";
 import styles from "../_components/document.module.css";
 import reportStyles from "./report.module.css";
-import { PRINT_LABEL } from "@/lib/nav";
 
 /* The child nutrition recall report. */
 
@@ -116,10 +115,7 @@ export default async function StateReportPage({
   );
 }
 
-/**
-  Three columns and no fourth. The field, what is in it, and where that came
-  from or why it is empty.
-*/
+/** The field, its value, and where that came from or why it is empty. */
 function fieldColumns(marker: string): Column<ReportField>[] {
   return [
     {

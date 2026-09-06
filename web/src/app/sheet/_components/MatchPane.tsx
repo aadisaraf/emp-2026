@@ -27,17 +27,9 @@ import {
 } from "@/app/match/_components/strings";
 import styles from "./sheet.module.css";
 
-export interface MatchPaneProps {
-  matchId: number;
-  onClose: () => void;
-}
-
 /* One line, opened beside the sheet rather than on top of it. */
 
-/**
-  The agency writes its classes in Roman numerals, so class_rank is spelled
-  back the way an inspector reads it.
-*/
+/** The agency writes classes in Roman numerals; class_rank is spelled back. */
 const CLASS_NUMERAL: Record<number, string> = { 1: "I", 2: "II", 3: "III" };
 
 function Row({ term, children }: { term: string; children: ReactNode }) {
@@ -58,12 +50,12 @@ type PaneState =
   | { phase: "ready"; detail: MatchDetailResponse }
   | { phase: "failed"; failure: ApiFailure };
 
-export function MatchPane({ matchId, onClose }: MatchPaneProps) {
-  /*
-    Keyed by line id where it is used, so opening a different line mounts a new
-    pane that starts at "loading" on its own. Nothing resets this on the way in,
-    which means one line's record can never be shown under another line's name.
-  */
+export function MatchPane({ matchId, onClose }: {
+  matchId: number;
+  onClose: () => void;
+}) {
+  /* Keyed by line id at the call site, so a different line mounts a fresh
+     pane and one line's record can never appear under another's name. */
   const [state, setState] = useState<PaneState>({ phase: "loading" });
 
   useEffect(() => {

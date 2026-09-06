@@ -4,10 +4,6 @@ import { EVIDENCE_LABEL, NOT_RECORDED } from "@/lib/strings";
 import { formatQuantity } from "@/lib/format";
 import { cx } from "@/lib/cx";
 
-export interface StorageSectionsProps {
-  sections: SheetSection[];
-}
-
 const ROMAN: Record<1 | 2 | 3, string> = { 1: "I", 2: "II", 3: "III" };
 
 /** The anchor a jump pill and a section head agree on. */
@@ -15,10 +11,7 @@ export function locationId(storage: string): string {
   return `loc-${storage.replace(/\s+/g, "-")}`;
 }
 
-/*
-  Where the case is, then what it is, then why. Storage location is the only
-  grouping on this sheet, because it is the walking order through the kitchen.
-*/
+/* Grouped by storage location: the walking order through the kitchen. */
 
 function LineRow({ line }: { line: SheetLine }) {
   const firm = line.recalling_firm ?? line.source;
@@ -57,7 +50,9 @@ function LineRow({ line }: { line: SheetLine }) {
   );
 }
 
-export function StorageSections({ sections }: StorageSectionsProps) {
+export function StorageSections({ sections }: {
+  sections: SheetSection[];
+}) {
   return (
     <>
       {sections.map((section) => (

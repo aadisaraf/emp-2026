@@ -3,10 +3,7 @@ import { API_BASE } from "@/lib/api";
 import { PAGE_TITLES } from "@/lib/strings";
 import styles from "./ingest.module.css";
 
-/*
-  The three ways an export reaches this location, and what to do when the
-  scheduled one does not arrive.
-*/
+/* The three ways an export reaches this location. */
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +18,8 @@ const CHANNELS = [
     path: "data/watched/",
   },
   {
-    /*
-      Deliberately not described as working mail. The reader is real and
-      tested, and an attachment parses into exactly the same record as a
-      dropped file.
-    */
+    /* Not working mail: the reader parses an attachment into the same
+        record a dropped file would produce. */
     term: "Email",
     detail:
       "The same reader, behind an attachment instead of a file. There is no " +

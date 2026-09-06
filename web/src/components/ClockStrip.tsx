@@ -13,10 +13,8 @@ export interface ClockStripProps {
   className?: string;
 }
 
-/**
-  The two USDA clocks: 24 hours to notify the distributor, 48 hours to finish
-  the inventory assessment, both measured from when the recall notice arrived
-*/
+/** The two USDA clocks: 24h to notify the distributor, 48h to finish the
+ *  inventory assessment, both from when the notice arrived. */
 export function ClockStrip({
   deadlines,
   variant = "rail",

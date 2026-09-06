@@ -4,10 +4,7 @@ import { EMPTY_ZERO_MATCHES_HEADING } from "@/lib/strings";
 import { formatCount, formatDate, formatDateTime } from "@/lib/format";
 import styles from "./sheet.module.css";
 
-/*
-  The three things a sheet has to be able to say about itself, none of which is
-  an empty state and none of which reads as "clear":
-*/
+/* The three things a sheet says about itself. None of them is "clear". */
 
 export interface PastRunBannerProps {
   header: SheetHeader;
@@ -43,17 +40,12 @@ export function PastRunBanner({ header, decidedBefore, currentRunId }: PastRunBa
   );
 }
 
-export interface RunWithoutLinesProps {
+/** A rejected or still-running delivery. Either way, no lines. */
+export function RunWithoutLines({ run, showCurrentLink }: {
   run: Run;
   /** Offer the way back only when this is not the sheet the operator works. */
   showCurrentLink: boolean;
-}
-
-/**
-  A rejected delivery, or one still being read. Either way there are no lines,
-  and the plainest available sentence says so.
-*/
-export function RunWithoutLines({ run, showCurrentLink }: RunWithoutLinesProps) {
+}) {
   const rejected = run.status === "rejected";
   const when = formatDateTime(rejected ? run.finalized_at : run.started_at);
 
@@ -82,12 +74,10 @@ export function RunWithoutLines({ run, showCurrentLink }: RunWithoutLinesProps) 
   );
 }
 
-export interface ZeroMatchNoticeProps {
-  header: SheetHeader;
-}
-
 /** Zero lines matched. The comparison ran; this page is the record that it ran. */
-export function ZeroMatchNotice({ header }: ZeroMatchNoticeProps) {
+export function ZeroMatchNotice({ header }: {
+  header: SheetHeader;
+}) {
   const against =
     header.corpora.length > 0
       ? header.corpora

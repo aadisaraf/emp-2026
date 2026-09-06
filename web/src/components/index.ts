@@ -1,67 +1,22 @@
-/*
-  The shared component library. Import from "@/components", never from a file
-  path inside it, so a page never has to know how this directory is arranged.
-*/
+/* Import from "@/components", not from a path inside it. */
 
-export { ClearedMark } from "./ClearedMark";
-export type { ClearedMarkProps } from "./ClearedMark";
-
+export { ClearedMark, NewMark, NotRecorded, TierBadge } from "./Marks";
 export { ClockStrip } from "./ClockStrip";
-export type { ClockStripProps } from "./ClockStrip";
-
-export { DataTable } from "./DataTable";
-export type { Column, ColumnVariant, DataTableProps } from "./DataTable";
-
-export { DefinitionList } from "./DefinitionList";
-export type { DefinitionItem, DefinitionListProps } from "./DefinitionList";
-
+export { DataTable, type Column } from "./DataTable";
+export { DefinitionList, type DefinitionItem } from "./DefinitionList";
 export { EmptyState } from "./EmptyState";
-export type { EmptyStateProps } from "./EmptyState";
-
 export { ErrorState } from "./ErrorState";
-export type { ErrorStateProps } from "./ErrorState";
-
 export { EvidenceKind } from "./EvidenceKind";
-export type { EvidenceKindProps } from "./EvidenceKind";
-
-export { NewMark } from "./NewMark";
-export type { NewMarkProps } from "./NewMark";
-
-export { NotRecorded } from "./NotRecorded";
-export type { NotRecordedProps } from "./NotRecorded";
-
-export { PageHeader } from "./PageHeader";
-export type { PageHeaderProps } from "./PageHeader";
-
-export { Panel } from "./Panel";
-export type { PanelProps } from "./Panel";
-
-export { PrintButton } from "./PrintButton";
-export type { PrintButtonProps } from "./PrintButton";
-
-export { ProvenanceLabel } from "./ProvenanceLabel";
-export type { ProvenanceLabelProps } from "./ProvenanceLabel";
-
-export { StatRail } from "./StatRail";
-export type { StatRailItem, StatRailProps } from "./StatRail";
-
-export { StatusBadge } from "./StatusBadge";
-export type { StatusBadgeProps, StatusValue } from "./StatusBadge";
-
-export { StatusPoller } from "./StatusPoller";
-export type { StatusPollerProps } from "./StatusPoller";
-
-export { TierBadge } from "./TierBadge";
-export type { TierBadgeProps } from "./TierBadge";
-
 export { Icon } from "./Icon";
-export type { IconProps } from "./Icon";
-
 export { IconRail } from "./IconRail";
-
+export { PageHeader } from "./PageHeader";
+export { Panel } from "./Panel";
+export { PrintButton } from "./PrintButton";
+export { ProvenanceLabel } from "./ProvenanceLabel";
+export { StatRail, type StatRailItem } from "./StatRail";
+export { StatusBadge, type StatusValue } from "./StatusBadge";
+export { StatusPoller } from "./StatusPoller";
 export { TopBar } from "./TopBar";
-export type { TopBarProps } from "./TopBar";
 
-/* The page vocabulary: hero, facts, folder-tab cards, the quiet table.
-   `ui` is its stylesheet, for the table cells a page composes itself. */
+/* The page vocabulary: hero, facts, folder-tab cards, the quiet table. */
 export * from "./ui";
