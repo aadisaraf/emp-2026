@@ -60,6 +60,19 @@
   </section>
   {% endif %}
 
+  <section class="refresh">
+    <form method="post" action="/recalls/refresh">
+      <button type="submit">Refresh recalls</button>
+      <span class="fine">Tries the agency. If it cannot be reached, the cached
+        snapshot stands and the page says so &mdash; there is no error page on
+        this path.</span>
+    </form>
+    <form method="post" action="/recalls/monitor">
+      <button type="submit">Run monitor now</button>
+      <span class="fine">The same function the schedule calls.</span>
+    </form>
+  </section>
+
   <section class="sites">
     <h2>Sites</h2>
     <p class="fine">Every building on the roster {{ ui.provenance('sites') }} appears here.

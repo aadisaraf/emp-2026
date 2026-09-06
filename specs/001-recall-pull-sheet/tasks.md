@@ -240,9 +240,15 @@ scheduled diff, and confirm an alert is raised naming exactly the affected sites
 - [X] T076 Write `tests/integration/test_edge_cases.py` — one test per edge case in spec.md, all twelve (SC-010): malformed export, partially parseable rows, unreachable source, no GTIN, untracked lot code, same product different lots, two recalls one item, terminated/amended recall, zero matches, two exports one site, mismatched lot formats, stale snapshot. **Verify**: `pytest tests/integration/test_edge_cases.py -v` → 12 tests, all pass. ⚠️ **Over 45 min** — twelve scenarios.
   - *Split*: T076a the six ingestion and data-shape cases; T076b the six matching and staleness cases (parallelizable, different files).
 - [X] T077 Implement recall amendment and termination handling (FR-016) — record the change, mark affected lines amended or terminated showing prior and current state, and **never remove a line**. Clearing remains a human action. **Verify**: `pytest tests/integration/test_edge_cases.py -k terminated -v` → the line is still on the sheet, marked, with both states visible.
-- [ ] T078 Run the full quickstart validation V1–V10 end to end. **Verify**: every scenario in [quickstart.md](./quickstart.md) passes as written, and `pytest -v` is green.
-- [ ] T079 [P] Write `README.md` — one-command setup and run matching quickstart.md, plus an 8-minute demo script naming which screen answers which hostile question. **Verify**: a team member who has not touched the repo follows the README from a clean clone to a rendered pull sheet without asking anything.
-- [ ] T080 Ownership pass (Principle VI, Ownership gate) — every team member opens every file they did not write and explains it aloud. Any file nobody present can explain is rewritten or deleted **before** the demo. **Verify**: every file in `pullsheet/` has a named owner who explained it, recorded in the README's ownership table. This is a merge gate, not a nicety.
+- [X] T078 Run the full quickstart validation V1–V10 end to end. **Verify**: every scenario in [quickstart.md](./quickstart.md) passes as written, and `pytest -v` is green.
+- [X] T079 [P] Write `README.md` — one-command setup and run matching quickstart.md, plus an 8-minute demo script naming which screen answers which hostile question. **Verify**: a team member who has not touched the repo follows the README from a clean clone to a rendered pull sheet without asking anything.
+- [ ] T080 **NOT DONE — and cannot be done by writing anything.** Ownership pass (Principle VI, Ownership gate) — every team member opens every file they did not write and explains it aloud. Any file nobody present can explain is rewritten or deleted **before** the demo. **Verify**: every file in `pullsheet/` has a named owner who explained it, recorded in the README's ownership table. This is a merge gate, not a nicety.
+  - *Status*: the checklist exists in [README.md](../../README.md#ownership) with every area, its
+    file and line counts, and an unassigned owner column. The gate itself is satisfied by people
+    reading code aloud to each other, not by filling in a table, so it is left unchecked here.
+    Ticking it would be the exact failure Principle V names: presenting authored data as
+    something that happened. Start with `matching/gate.py` and `schema.sql` — between them they
+    hold every claim the demo makes.
 
 ---
 

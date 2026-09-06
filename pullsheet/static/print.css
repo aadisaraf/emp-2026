@@ -45,3 +45,4 @@ tr { break-inside: avoid; }
 .artifact-links { display: none !important; }
 .rule { min-width: 18rem; border-bottom: 1px solid #000; }
 .sig-line { margin: 1.4rem 0 0; }
+.refresh, .alerts form { display: none !important; }

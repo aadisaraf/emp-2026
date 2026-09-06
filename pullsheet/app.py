@@ -59,10 +59,25 @@ def _conn():
 
 
 def _resolve_site(conn, slug: str) -> str:
-    """Map a URL slug back to the site name exactly as the export spelled it."""
-    for known in pull_sheet.sites(conn):
-        if known.lower().replace(" ", "-") == slug.lower() or known.lower() == slug.lower():
-            return known
+    """Map a URL slug back to the site name exactly as the export spelled it.
+
+    An unambiguous prefix is accepted -- `/sheet/lincoln` reaches Lincoln
+    Elementary -- because the operator typing that URL is standing in a kitchen.
+    An AMBIGUOUS prefix is a 404 naming the candidates, never a guess: sending
+    somebody to the wrong building's pull sheet is the one failure this
+    convenience could cause.
+    """
+    known = pull_sheet.sites(conn)
+    wanted = slug.lower().replace("-", " ").strip()
+    for site in known:
+        if site.lower() == wanted:
+            return site
+    prefixed = [s for s in known if s.lower().startswith(wanted)]
+    if len(prefixed) == 1:
+        return prefixed[0]
+    if prefixed:
+        raise HTTPException(404, f"{slug!r} matches {len(prefixed)} sites: "
+                                 f"{', '.join(prefixed)}. Name one exactly.")
     raise HTTPException(404, f"no site named {slug!r}")
 
 

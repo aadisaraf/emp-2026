@@ -152,3 +152,6 @@ mark { background: #ffe680; padding: 0 .1em; }
 form.inline { display: inline-flex; gap: .3rem; }
 form.inline input { width: 7rem; }
 .note-amended { color: #7a2a00; font-weight: 600; }
+.refresh { display: flex; gap: 1.5rem; align-items: baseline; flex-wrap: wrap;
+           margin: 1rem 0; }
+.refresh form { display: flex; gap: .5rem; align-items: baseline; }

@@ -26,10 +26,14 @@ the committed FSIS snapshot.
 ## Run
 
 ```bash
-uvicorn pullsheet.main:app --reload --port 8000
+python -m pullsheet.main --port 8000
 ```
 
-One command, one process. Open `http://localhost:8000`.
+One command, one process: this starts the web app **and** the folder poller
+together. Starting uvicorn against `pullsheet.app:app` directly serves the site
+but does not poll `data/watched/`, so V1 would silently never fire.
+
+Open `http://localhost:8000`.
 
 ---
 
