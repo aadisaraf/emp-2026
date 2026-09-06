@@ -27,10 +27,18 @@ const CHANNELS = [
     path: "data/watched/",
   },
   {
+    /* Deliberately not described as working mail. The reader is real and
+       tested, and an attachment parses into exactly the same record as a
+       dropped file. What does not exist is a mail server: nothing here
+       connects to IMAP, holds a mailbox credential, or polls for new mail.
+       The fixture below is a committed file. Saying otherwise on this page
+       would be the one place in the application that claims a channel it
+       does not run. */
     term: "Email",
     detail:
-      "An export that arrives as an attachment. It is read by the same code as a " +
-      "dropped file, so a row parses identically either way.",
+      "The same reader, behind an attachment instead of a file. There is no " +
+      "mail server: this reads a committed fixture mailbox, so it demonstrates " +
+      "that a row parses identically either way and nothing more.",
     path: "data/fixtures/inbox.mbox",
   },
   {
