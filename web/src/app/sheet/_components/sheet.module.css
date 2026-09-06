@@ -710,3 +710,30 @@
     display: none;
   }
 }
+
+/* The pinned column widths above total 592px. Below that the two unpinned
+   text columns get whatever is left, which on a phone is nothing: the item
+   description rendered one letter per line. The sheet keeps its real column
+   widths and scrolls sideways inside its own body instead, which is what a
+   wide table should do -- the page itself never moves. */
+@media (max-width: 720px) {
+  /* A grid item defaults to min-width:auto, so it refuses to shrink below its
+     content and the 900px table above dragged the whole page out with it. */
+  .stack > * {
+    min-width: 0;
+  }
+
+  .surface {
+    max-width: 100%;
+  }
+
+  .body {
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .sheetTable {
+    min-width: 900px;
+  }
+}

@@ -46,3 +46,31 @@
 .spacer {
   flex: 1 1 auto;
 }
+
+/* The bar is a nowrap flex row, so on a phone it could not shrink and pushed
+   the document to 906px -- which then dragged every other element's layout
+   width out with it, including the sheet. The date and the run identifier are
+   both stated again in the page body, so the bar keeps the two things that are
+   only here: which product this is, and which location it is reporting on. */
+@media (max-width: 720px) {
+  .masthead {
+    gap: var(--space-2);
+    padding: 0 var(--space-2);
+  }
+
+  .fact,
+  .rule {
+    display: none;
+  }
+
+  .brand {
+    flex: 0 0 auto;
+  }
+
+  .where {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

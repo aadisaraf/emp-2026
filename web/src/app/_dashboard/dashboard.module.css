@@ -389,3 +389,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Same grid blowout as the sheet: a grid item's default min-width:auto means
+   the widest table inside decides the page width, and the page scrolls
+   sideways instead of the table scrolling inside its panel. */
+@media (max-width: 720px) {
+  .stack > *,
+  .stack > * > * {
+    min-width: 0;
+  }
+}
